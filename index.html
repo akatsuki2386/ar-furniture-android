@@ -19,13 +19,16 @@
             z-index: 10;
             font-family: sans-serif;
         }
+        /* UIを最初は非表示にしておく！ */
+        #side-palette, #bottom-bar {
+            display: none; 
+        }
         /* 左側の家具選択パレット */
         #side-palette {
             position: absolute;
             left: 20px;
             top: 50%;
             transform: translateY(-50%);
-            display: none; /* AR開始後に表示 */
             flex-direction: column;
             gap: 15px;
             padding: 10px;
@@ -62,20 +65,18 @@
             padding: 0 20px;
             box-sizing: border-box;
             pointer-events: auto;
-            display: none; /* AR開始後に表示 */
             justify-content: center;
             align-items: center;
         }
-        /* ▼▼▼ 変更点1：ボタンのレイアウトとスタイルを全面的に刷新 ▼▼▼ */
         #place-button-container {
              display: block;
         }
         #action-controls {
             width: 100%;
             display: flex;
-            justify-content: space-between; /* ボタンを左右に配置 */
+            justify-content: space-between;
             align-items: center;
-            display: none; /* 最初は隠しておく */
+            display: none; 
         }
         .circle-button {
             width: 64px;
@@ -115,12 +116,9 @@
             <!-- 家具選択ボタンがここに動的に追加される -->
         </div>
         <div id="bottom-bar">
-            <!-- 配置モードの時に表示 -->
             <div id="place-button-container">
                 <button id="place-button">ここに置く</button>
             </div>
-            
-            <!-- ▼▼▼ 変更点2：選択モードの時のボタンレイアウト ▼▼▼ -->
             <div id="action-controls">
                 <button id="delete-button" class="circle-button">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
@@ -136,7 +134,14 @@
         </div>
     </div>
 
-    <script type="importmap">...</script>
+    <script type="importmap">
+        {
+            "imports": {
+                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+            }
+        }
+    </script>
 
     <script type="module">
         import * as THREE from 'three';
@@ -177,31 +182,34 @@
             renderer.xr.enabled = true;
             document.body.appendChild(renderer.domElement);
             
-            document.body.appendChild(ARButton.createButton(renderer, {
-                requiredFeatures: ['hit-test'],
-                optionalFeatures: ['dom-overlay'],
-                domOverlay: { root: document.querySelector("#overlay") }
-            }));
-
+            // ▼▼▼ 変更点1：ARButtonの生成とDOMへの追加をinitの最後に移動 ▼▼▼
+            // これで、他の要素が準備できてからARボタンが作られるようになる
+            
             const sidePalette = document.getElementById('side-palette');
             const bottomBar = document.getElementById('bottom-bar');
             
             renderer.xr.addEventListener('sessionstart', () => {
+                console.log('ARセッションが開始されました。UIを表示します。');
                 sidePalette.style.display = 'flex';
                 bottomBar.style.display = 'flex';
                 updatePreviewObject();
             });
             renderer.xr.addEventListener('sessionend', () => {
+                console.log('ARセッションが終了しました。UIを非表示にします。');
                 sidePalette.style.display = 'none';
                 bottomBar.style.display = 'none';
             });
-
 
             reticle = new THREE.Mesh( new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial());
             reticle.matrixAutoUpdate = false;
             reticle.visible = false;
             scene.add(reticle);
 
+            // ▼▼▼ 変更点2：UIの準備とイベントリスナーの設定を関数にまとめる ▼▼▼
+            setupUI();
+        }
+
+        function setupUI() {
             const palette = document.getElementById('side-palette');
             furnitureData.forEach((item, index) => {
                 const button = document.createElement('button');
@@ -224,6 +232,13 @@
             document.getElementById('delete-button').addEventListener('click', onDelete);
         }
         
+        // ▼▼▼ 変更点3：ARButtonの生成を、他のすべての準備が終わった後に行う ▼▼▼
+        document.body.appendChild(ARButton.createButton(renderer, {
+            requiredFeatures: ['hit-test'],
+            optionalFeatures: ['dom-overlay'],
+            domOverlay: { root: document.querySelector("#overlay") }
+        }));
+        
         function onRotate() {
             if (selectedObject) {
                 selectedObject.rotation.y += Math.PI / 4;
@@ -232,15 +247,56 @@
         function onDelete() {
             if (selectedObject) {
                 const objectToRemove = selectedObject;
-                unhighlightSelected(); // ハイライトを消してから削除
+                unhighlightSelected();
                 scene.remove(objectToRemove);
                 const index = placedObjects.indexOf(objectToRemove);
                 if (index > -1) placedObjects.splice(index, 1);
             }
         }
 
-        function updatePreviewObject() { /* ...変更なし... */ }
-        function onConfirmPlacement() { /* ...変更なし... */ }
+        function updatePreviewObject() { 
+            if (previewObject) {
+                scene.remove(previewObject);
+            }
+            loader.load(currentFurniture.file, (gltf) => {
+                previewObject = gltf.scene;
+                previewObject.traverse(child => {
+                    if (child.isMesh) {
+                        child.material = child.material.clone();
+                        child.material.transparent = true;
+                        child.material.opacity = 0.5;
+                    }
+                });
+                const box = new THREE.Box3().setFromObject(previewObject);
+                const size = box.getSize(new THREE.Vector3());
+                const scale = currentFurniture.height / size.y;
+                previewObject.scale.set(scale, scale, scale);
+                previewObject.visible = false;
+                scene.add(previewObject);
+            });
+         }
+        function onConfirmPlacement() { 
+            if (reticle.visible) {
+                loader.load(currentFurniture.file, (gltf) => {
+                    const solidObject = gltf.scene;
+                    const box = new THREE.Box3().setFromObject(solidObject);
+                    const size = box.getSize(new THREE.Vector3());
+                    const scale = currentFurniture.height / size.y;
+                    solidObject.scale.set(scale, scale, scale);
+                    solidObject.position.setFromMatrixPosition(reticle.matrix);
+                    
+                    solidObject.userData.originalMaterials = new Map();
+                    solidObject.traverse(child => {
+                        if(child.isMesh) {
+                            solidObject.userData.originalMaterials.set(child.uuid, child.material);
+                        }
+                    });
+                    
+                    scene.add(solidObject);
+                    placedObjects.push(solidObject);
+                });
+            }
+         }
         
         function unhighlightSelected() {
             if (selectedObject) {
@@ -253,7 +309,6 @@
             }
         }
         
-        // ▼▼▼ 変更点3：この中のUI切り替えロジックを修正 ▼▼▼
         function handleInteractions() {
             raycaster.setFromCamera({x: 0, y: 0}, camera);
             const intersects = raycaster.intersectObjects(placedObjects, true);
@@ -291,10 +346,12 @@
             }
         }
 
-        function animate() { /* ...変更なし... */ }
+        function animate() {
+             renderer.setAnimationLoop(render);
+        }
 
         function render(timestamp, frame) {
-            if (renderer.xr.isPresenting) { // ARモード中のみ実行
+            if (renderer.xr.isPresenting) {
                 handleInteractions();
 
                 if (!selectedObject && frame) {
