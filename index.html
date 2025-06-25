@@ -32,15 +32,18 @@
             text-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
 
+        /* ▼▼▼ 変更点：「AR開始」ボタンのスタイルを統一 ▼▼▼ */
         #ARButton {
             color: white !important;
-            background-color: #007AFF !important;
+            background-color: rgba(255, 255, 255, 0.2) !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
             border-radius: 9999px !important;
-            border: none !important;
             font-size: 16px !important;
             font-weight: bold !important;
             padding: 14px 28px !important;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
+            box-shadow: none !important;
             opacity: 1 !important;
             position: absolute !important;
             bottom: 15% !important;
@@ -135,8 +138,8 @@
             transform: scale(0.9);
         }
 
+        /* ▼▼▼ 変更点：「＋」ボタンの背景色指定を削除し、.circle-buttonを継承 ▼▼▼ */
         #add-button {
-            background-color: #007AFF;
             display: none; /* 初期状態は非表示 */
         }
     </style>
@@ -364,7 +367,6 @@
             });
         }
         
-        // ▼▼▼ 変更点：元の色情報を正しく保存するように修正 ▼▼▼
         function placeNewObject() { 
             if (!previewObject) return;
             
@@ -373,16 +375,13 @@
 
             solidObject.traverse(child => {
                 if (child.isMesh) {
-                    // プレビュー用の半透明マテリアルから、最終的な不透明マテリアルを複製して作成
                     const opaqueMaterial = child.material.clone();
                     opaqueMaterial.transparent = false;
                     opaqueMaterial.opacity = 1.0;
                     
-                    // 作成した不透明マテリアルをオブジェクトに適用
                     child.material = opaqueMaterial;
                     
-                    // この不透明マテリアルを「元のマテリアル」として保存する
-                    solidObject.userData.originalMaterials.set(child.uuid, opaqueMaterial);
+                    solidObject.userData.originalMaterials.set(child.uuid, opaqueMaterial.clone());
                 }
             });
 
