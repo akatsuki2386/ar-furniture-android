@@ -7,13 +7,13 @@
     <style>
         body { 
             margin: 0;
-            background-color: #1A202C; /* 濃い紺色 */
-            color: white; /* デフォルトの文字色を白に */
+            background-color: #1A202C;
+            color: white;
             font-family: sans-serif;
+            overflow: hidden; /* スクロールバーを防止 */
         }
         canvas { display: block; }
 
-        /* ▼▼▼ 変更点：タイトル要素のスタイルを追加 ▼▼▼ */
         #title-container {
             position: absolute;
             top: 40%;
@@ -32,7 +32,6 @@
             text-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
 
-        /* ▼▼▼ 変更点：AR開始ボタンのスタイルを調整 ▼▼▼ */
         #ARButton {
             color: white !important;
             background-color: #007AFF !important;
@@ -44,13 +43,12 @@
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3) !important;
             opacity: 1 !important;
             position: absolute !important;
-            bottom: 15% !important; /* 位置を調整 */
+            bottom: 15% !important;
             left: 50% !important;
             transform: translateX(-50%) !important;
             z-index: 100 !important;
         }
 
-        /* UI全体のレイアウト */
         #overlay {
             position: fixed;
             top: 0;
@@ -118,8 +116,9 @@
         }
         #action-controls {
             width: 100%;
+            max-width: 300px; /* ボタンが広がりすぎないように */
             display: flex;
-            justify-content: space-between;
+            justify-content: space-around; /* ボタンを均等に配置 */
             align-items: center;
             display: none; 
         }
@@ -156,7 +155,6 @@
     </style>
 </head>
 <body>
-    <!-- ▼▼▼ 変更点：タイトルを追加 ▼▼▼ -->
     <div id="title-container">
         <h1>AR家具配置<br>シミュレーション</h1>
     </div>
@@ -169,10 +167,16 @@
             <div id="place-button-container">
                 <button id="place-button">ここに置く</button>
             </div>
+            <!-- ▼▼▼ 変更点：決定ボタンを追加 ▼▼▼ -->
             <div id="action-controls">
                 <button id="delete-button" class="circle-button">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 0 0-2.09 2.134v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                    </svg>
+                </button>
+                <button id="confirm-button" class="circle-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                     </svg>
                 </button>
                 <button id="rotate-button" class="circle-button">
@@ -231,13 +235,11 @@
             renderer.xr.enabled = true;
             document.body.appendChild(renderer.domElement);
            
-            // ▼▼▼ 変更点：sessionstartでタイトルを非表示にする ▼▼▼
             renderer.xr.addEventListener('sessionstart', () => {
                 document.getElementById('title-container').style.display = 'none';
                 initializeARExperience();
             });
 
-            // ▼▼▼ 変更点：sessionendでタイトルを再表示する ▼▼▼
             renderer.xr.addEventListener('sessionend', () => {
                 document.getElementById('title-container').style.display = 'block';
                 const sidePalette = document.getElementById('side-palette');
@@ -274,6 +276,7 @@
 
             setupUI();
             updatePreviewObject();
+            updateUI(); // 初期UI状態を設定
         }
        
         function setupUI() {
@@ -286,8 +289,12 @@
                 if (index === 0) button.classList.add('selected');
                
                 button.addEventListener('click', () => {
-                    if(selectedObject) unhighlightObject(selectedObject);
-                    selectedObject = null;
+                    // 既に何かを選択していたら、それを解除する
+                    if(selectedObject) {
+                        unhighlightObject(selectedObject);
+                        selectedObject = null;
+                        updateUI();
+                    }
                     palette.querySelectorAll('.furniture-button').forEach(btn => btn.classList.remove('selected'));
                     button.classList.add('selected');
                     currentFurniture = item;
@@ -299,6 +306,17 @@
             document.getElementById('place-button').addEventListener('click', onConfirmPlacement);
             document.getElementById('rotate-button').addEventListener('click', onRotate);
             document.getElementById('delete-button').addEventListener('click', onDelete);
+            // ▼▼▼ 変更点：決定ボタンのイベントリスナーを追加 ▼▼▼
+            document.getElementById('confirm-button').addEventListener('click', onConfirmMove);
+        }
+
+        // ▼▼▼ 変更点：家具の移動を確定する関数 ▼▼▼
+        function onConfirmMove() {
+            if (selectedObject) {
+                unhighlightObject(selectedObject);
+                selectedObject = null;
+                updateUI();
+            }
         }
        
         function onRotate() {
@@ -310,9 +328,11 @@
             if (selectedObject) {
                 const objectToRemove = selectedObject;
                 selectedObject = null;
+                unhighlightObject(objectToRemove); // ハイライトを消す
                 scene.remove(objectToRemove);
                 const index = placedObjects.indexOf(objectToRemove);
                 if (index > -1) placedObjects.splice(index, 1);
+                updateUI();
             }
         }
 
@@ -368,7 +388,7 @@
         }
        
         function unhighlightObject(object) {
-            if (!object) return;
+            if (!object || !object.userData.originalMaterials) return;
             object.traverse(child => {
                 if(child.isMesh && object.userData.originalMaterials.has(child.uuid)) {
                     child.material = object.userData.originalMaterials.get(child.uuid);
@@ -380,35 +400,13 @@
             if (!object) return;
             object.traverse(child => {
                 if (child.isMesh) {
-                    if (object.userData.originalMaterials && object.userData.originalMaterials.has(child.uuid)) {
-                         child.material = highlightMaterial;
-                    }
+                    child.material = highlightMaterial;
                 }
             });
         }
 
-        function handleInteractions() {
-            raycaster.setFromCamera({x: 0, y: 0}, camera);
-            const intersects = raycaster.intersectObjects(placedObjects, true);
-
-            let intersectedRoot = null;
-            if (intersects.length > 0) {
-                let currentObject = intersects[0].object;
-                while (currentObject.parent) {
-                    if (placedObjects.includes(currentObject)) {
-                        intersectedRoot = currentObject;
-                        break; 
-                    }
-                    currentObject = currentObject.parent;
-                }
-            }
-           
-            if (intersectedRoot !== selectedObject) {
-                unhighlightObject(selectedObject);
-                selectedObject = intersectedRoot;
-                highlightObject(selectedObject);
-            }
-
+        // ▼▼▼ 変更点：UIの表示状態を管理する関数 ▼▼▼
+        function updateUI() {
             const placeControl = document.getElementById('place-button-container');
             const actionControls = document.getElementById('action-controls');
             if (selectedObject) {
@@ -420,15 +418,47 @@
             }
         }
 
+        // ▼▼▼ 変更点：オブジェクトの選択ロジックを修正 ▼▼▼
+        function handleInteractions() {
+            // 既にオブジェクトを移動中の場合は、新たな選択処理を行わない
+            if (selectedObject) {
+                return;
+            }
+
+            raycaster.setFromCamera({x: 0, y: 0}, camera);
+            const intersects = raycaster.intersectObjects(placedObjects, true);
+
+            if (intersects.length > 0) {
+                let currentObject = intersects[0].object;
+                let intersectedRoot = null;
+                // 交差したオブジェクトの親を辿って、placedObjectsに含まれる最上位のオブジェクトを見つける
+                while (currentObject.parent) {
+                    if (placedObjects.includes(currentObject)) {
+                        intersectedRoot = currentObject;
+                        break; 
+                    }
+                    currentObject = currentObject.parent;
+                }
+                
+                if (intersectedRoot) {
+                   // 新しくオブジェクトを選択した
+                   selectedObject = intersectedRoot;
+                   highlightObject(selectedObject);
+                   updateUI(); // UIをアクションモードに切り替え
+                }
+            }
+        }
+
         function animate() {
              renderer.setAnimationLoop(render);
         }
 
         function render(timestamp, frame) {
             if (renderer.xr.isPresenting) {
+                // 常にインタラクション（オブジェクト選択）を試みる
                 handleInteractions();
 
-                if (!selectedObject && frame) {
+                if (frame) {
                     const referenceSpace = renderer.xr.getReferenceSpace();
                     const session = renderer.xr.getSession();
 
@@ -448,24 +478,30 @@
                         const hitTestResults = frame.getHitTestResults(hitTestSource);
                         if (hitTestResults.length > 0) {
                             const hit = hitTestResults[0];
-                            if(reticle) reticle.visible = true;
-                            if(reticle) reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+                            reticle.visible = true;
+                            reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
                         } else {
-                            if(reticle) reticle.visible = false;
+                            reticle.visible = false;
                         }
                     }
-                } else {
-                     if(reticle) reticle.visible = false;
+                }
+                
+                // ▼▼▼ 変更点：オブジェクトの移動とプレビューの表示ロジックを修正 ▼▼▼
+                
+                // オブジェクトを選択している場合、それをレティクルの位置に移動させる
+                if (selectedObject && reticle.visible) {
+                    selectedObject.position.setFromMatrixPosition(reticle.matrix);
                 }
 
-                 if (previewObject) {
-                     if (!selectedObject && reticle && reticle.visible) {
-                         previewObject.visible = true;
-                         previewObject.position.setFromMatrixPosition(reticle.matrix);
-                     } else {
-                         previewObject.visible = false;
-                     }
-                 }
+                // プレビューオブジェクトは、何も選択していない時にのみ表示する
+                if (previewObject) {
+                    if (!selectedObject && reticle.visible) {
+                        previewObject.visible = true;
+                        previewObject.position.setFromMatrixPosition(reticle.matrix);
+                    } else {
+                        previewObject.visible = false;
+                    }
+                }
             }
             renderer.render(scene, camera);
         }
