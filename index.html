@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!DOCTYPE html>More actions
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -22,7 +22,7 @@
             justify-content: center;
             align-items: flex-end;
         }
-        /* UIを最初は非表示にしておく！ */
+        /* ▼▼▼ 変更点1：UIを最初は非表示にしておく！ ▼▼▼ */
         #side-palette, #bottom-bar {
             display: none; /* JavaScriptでAR開始後に表示する */
         }
@@ -32,7 +32,7 @@
             left: 20px;
             top: 50%;
             transform: translateY(-50%);
-            display: none; /* AR開始後に表示 */
+            display: flex;
             flex-direction: column;
             gap: 15px;
             padding: 10px;
@@ -63,43 +63,17 @@
         /* 下のバー */
         #bottom-bar {
             padding-bottom: 30px;
-            position: absolute;
-            bottom: 20px;
-            left: 0;
-            width: 100%;
-            padding: 0 20px;
-            box-sizing: border-box;
             pointer-events: auto;
             text-align: center;
-            display: none; /* AR開始後に表示 */
-            justify-content: center;
-            align-items: center;
         }
-        /* ▼▼▼ 変更点1：ボタンのレイアウトとスタイルを全面的に刷新 ▼▼▼ */
-        #place-button-container {
-             display: block;
-        }
-        #action-controls {
-            width: 100%;
-            display: flex;
-            justify-content: space-between; /* ボタンを左右に配置 */
-            align-items: center;
-            display: none; /* 最初は隠しておく */
-        }
+        /* ▼▼▼ 変更点1：ボタンの共通スタイルと、アクションボタンのコンテナを追加 ▼▼▼ */
         .action-button {
-        .circle-button {
             width: 64px;
             height: 64px;
             background-color: rgba(255, 255, 255, 0.9);
             color: #333;
             border: none;
             border-radius: 9999px;
-            background-color: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            color: white;
-            border-radius: 50%;
             cursor: pointer;
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             display: flex;
@@ -108,24 +82,12 @@
             transition: transform 0.1s ease;
         }
         .action-button:active {
-        .circle-button:active {
             transform: scale(0.9);
         }
         #action-controls {
             display: flex;
             gap: 20px;
-        #place-button {
-            padding: 14px 28px;
-            background-color: #007AFF;
-            color: white;
-            border: none;
-            border-radius: 9999px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
-
     </style>
 </head>
 <body>
@@ -133,36 +95,28 @@
         <div id="side-palette">
             <!-- 家具選択ボタンがここに動的に追加される -->
         </div>
+        <!-- ▼▼▼ 変更点2：ボタンのレイアウトを全面的に変更 ▼▼▼ -->
         <div id="bottom-bar">
             <!-- 配置モードの時に表示 -->
             <button id="place-button" class="action-button" style="width: auto; padding: 0 28px;">ここに置く</button>
-            <div id="place-button-container">
-                <button id="place-button">ここに置く</button>
-            </div>
 
             <!-- 選択モードの時に表示（最初は隠しておく） -->
             <div id="action-controls" style="display: none;">
                 <button id="rotate-button" class="action-button">
-            <!-- ▼▼▼ 変更点2：選択モードの時のボタンレイアウト ▼▼▼ -->
-            <div id="action-controls">
-                <button id="delete-button" class="circle-button">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
                         <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001a7.5 7.5 0 0 1-1.063 4.124l-1.58-1.58m-1.34-1.34-1.58-1.58m-1.34-1.34a7.5 7.5 0 0 1 4.282 5.042h-9.282m-1.34 1.34a7.5 7.5 0 0 1-4.282-5.042h9.282" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 0 0-2.09 2.134v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                     </svg>
                 </button>
                 <button id="delete-button" class="action-button">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px; color: #EF4444;">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 0 0-2.09 2.134v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                <button id="rotate-button" class="circle-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-6-6m0 0l6-6m-6 6h12a6 6 0 0 1 0 12h-3" transform="scale(-1, 1) translate(-24, 0)" />
                     </svg>
                 </button>
             </div>
         </div>
     </div>
 
+    <script type="importmap"> ... </script>
     <script type="importmap">
         {
             "imports": {
@@ -171,7 +125,6 @@
             }
         }
     </script>
-    <script type="importmap">...</script>
 
     <script type="module">
         import * as THREE from 'three';
@@ -195,9 +148,10 @@
         const placedObjects = [];
         const raycaster = new THREE.Raycaster();
 
+        // ▼▼▼ 変更点3：モード管理の変数を削除し、選択オブジェクトだけを管理 ▼▼▼
         let selectedObject = null;
+        const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0x34D399, transparent: true, opacity: 0.6 }); // ハイライトは緑色に統一
         const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0x34D399, transparent: true, opacity: 0.6 });
-        const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0x007AFF, transparent: true, opacity: 0.6 });
 
         init();
         animate();
@@ -213,25 +167,23 @@
             renderer.xr.enabled = true;
             document.body.appendChild(renderer.domElement);
 
-            const arButton = ARButton.createButton(renderer, {
             document.body.appendChild(ARButton.createButton(renderer, {
+            const arButton = ARButton.createButton(renderer, {
                 requiredFeatures: ['hit-test'],
                 optionalFeatures: ['dom-overlay'],
                 domOverlay: { root: document.querySelector("#overlay") }
+            }));
             });
             document.body.appendChild(arButton);
             
-            }));
-
+            // ▼▼▼ 変更点2：ARセッションの開始と終了でUIの表示を切り替える！ ▼▼▼
             const sidePalette = document.getElementById('side-palette');
             const bottomBar = document.getElementById('bottom-bar');
-
+            
             renderer.xr.addEventListener('sessionstart', () => {
                 console.log('ARセッションが開始されました。UIを表示します。');
                 sidePalette.style.display = 'flex';
                 bottomBar.style.display = 'block';
-                bottomBar.style.display = 'flex';
-                updatePreviewObject();
             });
             renderer.xr.addEventListener('sessionend', () => {
                 console.log('ARセッションが終了しました。UIを非表示にします。');
@@ -245,6 +197,7 @@
             reticle.visible = false;
             scene.add(reticle);
 
+            // ▼▼▼ 変更点4：UIボタンのイベントリスナーを再設定 ▼▼▼
             const palette = document.getElementById('side-palette');
             furnitureData.forEach((item, index) => {
                 const button = document.createElement('button');
@@ -253,7 +206,6 @@
                 if (index === 0) button.classList.add('selected');
 
                 button.addEventListener('click', () => {
-                    unhighlightSelected();
                     palette.querySelectorAll('.furniture-button').forEach(btn => btn.classList.remove('selected'));
                     button.classList.add('selected');
                     currentFurniture = item;
@@ -265,8 +217,11 @@
             document.getElementById('place-button').addEventListener('click', onConfirmPlacement);
             document.getElementById('rotate-button').addEventListener('click', onRotate);
             document.getElementById('delete-button').addEventListener('click', onDelete);
+
+            updatePreviewObject();
         }
 
+        // ▼▼▼ 変更点5：回転と削除の関数を定義 ▼▼▼
         function onRotate() {
             if (selectedObject) {
                 selectedObject.rotation.y += Math.PI / 4;
@@ -276,77 +231,24 @@
             if (selectedObject) {
                 const objectToRemove = selectedObject;
                 unhighlightSelected();
-                unhighlightSelected(); // ハイライトを消してから削除
                 scene.remove(objectToRemove);
                 const index = placedObjects.indexOf(objectToRemove);
                 if (index > -1) placedObjects.splice(index, 1);
             }
         }
 
-        function updatePreviewObject() {
-            if (previewObject) {
-                scene.remove(previewObject);
-            }
-            loader.load(currentFurniture.file, (gltf) => {
-                previewObject = gltf.scene;
-                previewObject.traverse(child => {
-                    if (child.isMesh) {
-                        child.material = child.material.clone();
-                        child.material.transparent = true;
-                        child.material.opacity = 0.5;
-                    }
-                });
-                const box = new THREE.Box3().setFromObject(previewObject);
-                const size = box.getSize(new THREE.Vector3());
-                const scale = currentFurniture.height / size.y;
-                previewObject.scale.set(scale, scale, scale);
-                previewObject.visible = false;
-                scene.add(previewObject);
-                console.log('プレビューモデルを更新しました:', currentFurniture.name);
-            });
-        }
+        function onRotate() { /* ...変更なし... */ }
+        function onDelete() { /* ...変更なし... */ }
         function updatePreviewObject() { /* ...変更なし... */ }
         function onConfirmPlacement() { /* ...変更なし... */ }
-
-        function onConfirmPlacement() {
-            if (reticle.visible) {
-                 loader.load(currentFurniture.file, (gltf) => {
-                    const solidObject = gltf.scene;
-                    const box = new THREE.Box3().setFromObject(solidObject);
-                    const size = box.getSize(new THREE.Vector3());
-                    const scale = currentFurniture.height / size.y;
-                    solidObject.scale.set(scale, scale, scale);
-                    solidObject.position.setFromMatrixPosition(reticle.matrix);
-                    
-                    solidObject.userData.originalMaterials = new Map();
-                    solidObject.traverse(child => {
-                        if(child.isMesh) {
-                            solidObject.userData.originalMaterials.set(child.uuid, child.material);
-                        }
-                    });
-                    
-                    scene.add(solidObject);
-                    placedObjects.push(solidObject);Add commentMore actions
-                });
-            }
-        }
-
-        function unhighlightSelected() {
-            if (selectedObject) {
-                selectedObject.traverse(child => {
-                    if (child.isMesh && selectedObject.userData.originalMaterials.has(child.uuid)) {
-                       child.material = selectedObject.userData.originalMaterials.get(child.uuid);
-                    }
-                });
-                selectedObject = null;
-            }
-        }
-
-        // ▼▼▼ 変更点3：この中のUI切り替えロジックを修正 ▼▼▼
+        function unhighlightSelected() { /* ...変更なし... */ }
+        
+        // ▼▼▼ 変更点6：オブジェクト選択とUIの切り替えを行う関数 ▼▼▼
         function handleInteractions() {
             raycaster.setFromCamera({x: 0, y: 0}, camera);
             const intersects = raycaster.intersectObjects(placedObjects, true);
-
+            
+            // フォーカスしているオブジェクトがあるか？
             let intersectedRoot = null;
             if (intersects.length > 0) {
                 let currentObject = intersects[0].object;
@@ -358,25 +260,30 @@
                     currentObject = currentObject.parent;
                 }
             }
-
+            
+            // 前のフレームで選択していたものと違うか？
             if (selectedObject !== intersectedRoot) {
                 unhighlightSelected();
                 selectedObject = intersectedRoot;
                 if (selectedObject) {
+                    // 新しく選択されたものをハイライト
                     selectedObject.traverse(child => {
                         if (child.isMesh) child.material = highlightMaterial;
                     });
                 }
             }
 
+            // UIの表示を切り替える
             const placeControl = document.getElementById('place-button');
-            const placeControl = document.getElementById('place-button-container');
             const actionControls = document.getElementById('action-controls');
             if (selectedObject) {
+                // オブジェクト選択中 -> アクションボタン表示
                 placeControl.style.display = 'none';
                 actionControls.style.display = 'flex';
                 reticle.visible = false;
+                if (previewObject) previewObject.visible = false;
             } else {
+                // オブジェクト未選択 -> 配置ボタン表示
                 placeControl.style.display = 'block';
                 actionControls.style.display = 'none';
             }
@@ -385,66 +292,37 @@
         function animate() {
             renderer.setAnimationLoop(render);
         }
-        function animate() { /* ...変更なし... */ }
 
         function render(timestamp, frame) {
-            if (frame) {
-            if (renderer.xr.isPresenting) { // ARモード中のみ実行
-                handleInteractions();
+            handleInteractions(); // 常にオブジェクトの選択状態をチェック
 
-                if (!selectedObject) {
-                if (!selectedObject && frame) {
-                    const referenceSpace = renderer.xr.getReferenceSpace();
-                    const session = renderer.xr.getSession();
+            if (!selectedObject && frame) { // オブジェクトが選択されていない時だけ、床認識を行う
+                const referenceSpace = renderer.xr.getReferenceSpace();
+                const session = renderer.xr.getSession();
 
-                    if (hitTestSourceRequested === false) {
-                        console.log('床認識ソースをリクエストします...');
-                        session.requestReferenceSpace('viewer').then((referenceSpace) => {
-                            session.requestHitTestSource({ space: referenceSpace }).then((source) => {
-                                console.log('✅ 床認識ソースを取得しました！');
-                                hitTestSource = source;
-                            });
-                        });
-                        session.addEventListener('end', () => {
-                            console.log('セッションが終了しました。床認識ソースをリセットします。');
-                            hitTestSourceRequested = false;
-                            hitTestSource = null;
-                            hitTestSourceRequested = false; hitTestSource = null;
-                        });
-                        hitTestSourceRequested = true;
-                    }
+                if (hitTestSourceRequested === false) { /* ... */ }
 
-                    if (hitTestSource) {
-                        const hitTestResults = frame.getHitTestResults(hitTestSource);
-                        if (hitTestResults.length > 0) {
-                            const hit = hitTestResults[0];
-                            reticle.visible = true;
-                            reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
-                        } else {
-                            reticle.visible = false;
+                if (hitTestSource) {
+                    const hitTestResults = frame.getHitTestResults(hitTestSource);
+                    if (hitTestResults.length) {
+                        const hit = hitTestResults[0];
+                        reticle.visible = true;
+                        reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+                        if (previewObject) {
+                            previewObject.visible = true;
+                            previewObject.position.setFromMatrixPosition(reticle.matrix);
                         }
-                    }
-                }
-            }
-            
-            if (previewObject) {
-                if (!selectedObject && reticle.visible) {
-                    previewObject.visible = true;
-                    previewObject.position.setFromMatrixPosition(reticle.matrix);
-                } else {
-                    previewObject.visible = false;
-                 if (previewObject) {
-                    if (!selectedObject && reticle.visible) {
-                        previewObject.visible = true;
-                        previewObject.position.setFromMatrixPosition(reticle.matrix);
                     } else {
-                        previewObject.visible = false;
+                        reticle.visible = false;
+                        if (previewObject) previewObject.visible = false;
                     }
                 }
             }
-            
             renderer.render(scene, camera);
         }
+        function handleInteractions() { /* ...変更なし... */ }
+        function animate() { /* ...変更なし... */ }
+        function render(timestamp, frame) { /* ...変更なし... */ }
     </script>
 </body>
 </html>
