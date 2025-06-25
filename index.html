@@ -2,37 +2,55 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>A-Frame動作確認テスト</title>
+    <title>【再構築】平面認識AR</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- ▼▼▼ 変更点1：ライブラリをA-Frame本体だけにする！ ▼▼▼ -->
+    <!-- ▼▼▼ 変更点1：必要なライブラリを2つ追加！ ▼▼▼ -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.2.0/dist/aframe-extras.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/aframe-xr-hit-test-component@0.3.0/dist/aframe-xr-hit-test-component.min.js"></script>
+
 
     <style>
       body { margin: 0; }
+      /* ARのボタンを押しやすく、見やすくする */
+      .a-enter-ar-button {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 12px 24px;
+        background-color: #007AFF;
+        color: white;
+        border: none;
+        border-radius: 9999px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 10000;
+      }
     </style>
   </head>
 
   <body>
-    <!-- ▼▼▼ 変更点2：ARの機能をすべて削除！ ▼▼▼ -->
-    <!-- ただの3D空間を作るだけの、究極にシンプルなa-scene -->
-    <a-scene>
-      <!-- 背景を水色にする -->
-      <a-sky color="#87CEEB"></a-sky>
+    <!-- ▼▼▼ 変更点2：ARの魔法をかけるための設定を追加！ ▼▼▼ -->
+    <a-scene 
+      webxr="requiredFeatures: hit-test, local-floor"
+      xr-hit-test>
 
-      <!-- 赤い箱を置く -->
-      <a-box position="-1 0.5 -3" rotation="0 45 0" color="#4CC3D9"></a-box>
-
-      <!-- 緑の球を置く -->
-      <a-sphere position="0 1.25 -5" radius="1.25" color="#EF2D5E"></a-sphere>
-
-      <!-- 黄色い円柱を置く -->
-      <a-cylinder position="1 0.75 -3" radius="0.5" height="1.5" color="#FFC65D"></a-cylinder>
-
-      <!-- ただの白い床を置く -->
-      <a-plane position="0 0 -4" rotation="-90 0 0" width="4" height="4" color="#7BC8A4"></a-plane>
+      <!-- ライトとカメラ -->
+      <a-light type="ambient" color="#FFF" intensity="0.5"></a-light>
+      <a-light type="directional" color="#FFF" intensity="1" position="-1 2 1"></a-light>
+      <a-camera></a-camera>
+      
+      <!-- ▼▼▼ 変更点3：床に置ける場所を示す「カーソル」を追加 ▼▼▼ -->
+      <a-entity
+        id="reticle"
+        xr-hit-test-target>
+        <a-ring color="#007AFF" radius-inner="0.10" radius-outer="0.15" rotation="-90 0 0"></a-ring>
+      </a-entity>
 
     </a-scene>
   </body>
 </html>
-
