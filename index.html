@@ -2,7 +2,7 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>【新】平面認識ARアプリ</title>
+    <title>【新】平面認識ARアプリ (最終デバッグ)</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
     <!-- ライブラリはA-Frameとaframe-extrasの2つ！ -->
@@ -11,7 +11,7 @@
 
     <style>
       body { margin: 0; }
-      /* ARのボタンを押しやすく、見やすくする */
+      /* ARのボタンのスタイルはそのまま */
       .a-enter-ar-button {
         position: fixed;
         bottom: 20px;
@@ -32,83 +32,27 @@
   </head>
 
   <body>
-    <!-- ▼▼▼ 変更点：webxrの設定から不要な呪文を削除！ ▼▼▼ -->
+    <!-- ▼▼▼ 変更点：JavaScriptを全部削除し、HTMLの属性だけで動かす！ ▼▼▼ -->
     <a-scene 
-      id="ar-scene"
       webxr="requiredFeatures: hit-test, local-floor"
-      ar-hit-test="enabled: false"
-      renderer="logarithmicDepthBuffer: true">
+      ar-hit-test="enabled: true"
+      renderer="logarithmicDepthBuffer: true;">
 
-      <!-- ライト（これがないと影がなくてのっぺりする） -->
+      <!-- ライトとカメラはそのまま -->
       <a-light type="ambient" color="#FFF" intensity="0.5"></a-light>
       <a-light type="directional" color="#FFF" intensity="1" position="-1 2 1"></a-light>
+      <a-camera></a-camera>
       
       <!-- 床に置ける場所を示す「カーソル」 -->
+      <!-- ar-hit-test-targetで、これが床認識のカーソルであることを示す -->
       <a-entity
-        id="reticle"
-        ar-hit-test-target
-        visible="false">
+        ar-hit-test-target>
         <a-ring color="#007AFF" radius-inner="0.10" radius-outer="0.15" rotation="-90 0 0"></a-ring>
       </a-entity>
 
-      <!-- カメラと、タップを認識するためのカーソル -->
-      <a-camera></a-camera>
-
     </a-scene>
 
-    <!-- ▼▼▼ 変更点：JavaScriptのロジックをより確実に！ ▼▼▼ -->
-    <script>
-      window.addEventListener('DOMContentLoaded', () => {
-        const sceneEl = document.querySelector('a-scene');
-        const reticle = document.querySelector('#reticle');
+    <!-- 俺が書いたJavaScriptは、一旦全部削除！ -->
 
-        // ARモードが開始されたら、床認識を有効にする
-        sceneEl.addEventListener('enter-vr', () => {
-          if (sceneEl.is('ar-mode')) {
-            console.log('ARモード開始！床認識を有効にします。');
-            sceneEl.setAttribute('ar-hit-test', { enabled: true });
-          }
-        });
-        
-        // 床認識システムが、床を見つけたり見失ったりした時の処理
-        sceneEl.addEventListener('ar-hit-test-start', () => {
-            reticle.setAttribute('visible', false);
-        });
-        sceneEl.addEventListener('ar-hit-test-processed', () => {
-            reticle.setAttribute('visible', true);
-        });
-        
-        // 画面全体がタップされた時の処理
-        sceneEl.addEventListener('click', () => {
-          // カーソルが見えている（＝床が認識されている）時だけ実行
-          if (reticle.getAttribute('visible')) {
-            console.log('床をタップ！箱を置きます。');
-            
-            const newBox = document.createElement('a-box');
-            newBox.setAttribute('color', 'tomato');
-            newBox.setAttribute('scale', '0.2 0.2 0.2');
-
-            const position = reticle.getAttribute('position');
-            newBox.setAttribute('position', position);
-
-            sceneEl.appendChild(newBox);
-          }
-        });
-      });
-    </script>
   </body>
 </html>
-```
-
-### どこを変えたか
-
-1.  **問題の設定を削除！**
-    * `<a-scene>`の`webxr`設定から、エラーの原因だった`dom-overlay`の部分をまるっと削除した。これでシーンが正しく表示されるはず。
-
-2.  **JavaScriptをより確実に**
-    * 念のため、`DOMContentLoaded`で囲ったり、ARモードに入ったことを`sceneEl.is('ar-mode')`で確認したりして、より確実に動くようにロジックを強化した。
-    * 不要な`raycaster`をカメラから削除した。`ar-hit-test`ではシーン全体のクリックで判定できるからね。
-
-今度こそ、俺たちの新しい船は港を出るはずだ！
-またGitHubの`sotsuken-ar-furniture`リポジトリのコードをこれで更新して、試してみてくれ！
-「START AR」ボタンが見えるは
