@@ -61,13 +61,10 @@
             z-index: 10;
         }
         
-        #side-palette {
-            position: absolute;
-            left: 20px;
-            top: 50%;
-            transform: translateY(-50%);
+        /* ▼▼▼ 変更点：#side-palette を #furniture-palette に変更し、スタイルを調整 ▼▼▼ */
+        #furniture-palette {
             display: flex;
-            flex-direction: column;
+            flex-direction: row; /* 横並びに変更 */
             gap: 15px;
             padding: 10px;
             background-color: rgba(0, 0, 0, 0.5);
@@ -75,6 +72,7 @@
             pointer-events: auto;
             display: none; /* 初期状態は非表示 */
         }
+
         .furniture-button {
             width: 60px;
             height: 60px;
@@ -148,15 +146,17 @@
     </div>
 
     <div id="overlay">
-        <div id="side-palette">
-            <!-- 家具選択ボタンがここに動的に追加される -->
-        </div>
+        <!-- ▼▼▼ 変更点：#side-paletteを削除 ▼▼▼ -->
         <div id="bottom-bar">
             <button id="add-button" class="circle-button">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
             </button>
+            <!-- ▼▼▼ 変更点：家具パレットを#bottom-bar内に移動 ▼▼▼ -->
+            <div id="furniture-palette">
+                <!-- 家具選択ボタンがここに動的に追加される -->
+            </div>
             <div id="action-controls">
                 <button id="delete-button" class="circle-button">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
@@ -214,7 +214,6 @@
         
         let appState = 'IDLE'; // 'IDLE', 'CHOOSING', 'PLACING', 'EDITING'
         
-        // ▼▼▼ 変更点：ハイライトの色を白に変更 ▼▼▼
         const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5, emissive: 0xFFFFFF, emissiveIntensity: 0.2 });
        
         init();
@@ -244,7 +243,7 @@
             renderer.xr.addEventListener('sessionend', () => {
                 document.getElementById('title-container').style.display = 'block';
                 document.getElementById('add-button').style.display = 'none';
-                document.getElementById('side-palette').style.display = 'none';
+                document.getElementById('furniture-palette').style.display = 'none';
                 document.getElementById('action-controls').style.display = 'none';
             });
            
@@ -273,7 +272,8 @@
                 }
             });
 
-            const palette = document.getElementById('side-palette');
+            // ▼▼▼ 変更点：参照IDを #furniture-palette に変更 ▼▼▼
+            const palette = document.getElementById('furniture-palette');
             palette.innerHTML = '';
             furnitureData.forEach((item) => {
                 const button = document.createElement('button');
@@ -418,11 +418,11 @@
 
         function updateUI() {
             const addButton = document.getElementById('add-button');
-            const sidePalette = document.getElementById('side-palette');
+            const furniturePalette = document.getElementById('furniture-palette');
             const actionControls = document.getElementById('action-controls');
 
             addButton.style.display = 'none';
-            sidePalette.style.display = 'none';
+            furniturePalette.style.display = 'none';
             actionControls.style.display = 'none';
 
             switch (appState) {
@@ -430,7 +430,7 @@
                     addButton.style.display = 'flex';
                     break;
                 case 'CHOOSING':
-                    sidePalette.style.display = 'flex';
+                    furniturePalette.style.display = 'flex';
                     break;
                 case 'PLACING':
                 case 'EDITING':
