@@ -8,7 +8,7 @@
         body { margin: 0; }
         canvas { display: block; }
 
-        /* ▼▼▼ 変更点1：AR画面の上に重ねるUIのスタイル ▼▼▼ */
+        /* AR画面の上に重ねるUIのスタイル */
         #overlay {
             position: fixed;
             top: 0;
@@ -41,7 +41,7 @@
     </style>
 </head>
 <body>
-    <!-- ▼▼▼ 変更点2：ARの上に重ねるためのHTML要素を追加 ▼▼▼ -->
+    <!-- ARの上に重ねるためのHTML要素を追加 -->
     <div id="overlay">
         <div id="ui-container">
             <!-- ここに後から家具を選ぶボタンなどを追加できる！ -->
@@ -61,12 +61,17 @@
     <script type="module">
         import * as THREE from 'three';
         import { ARButton } from 'three/addons/webxr/ARButton.js';
+        // ▼▼▼ 変更点1：GLTFLoaderをインポート！ ▼▼▼
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
         let camera, scene, renderer;
         let hitTestSource = null;
         let hitTestSourceRequested = false;
         let reticle; // 床に置ける場所を示すカーソル
         let placedObject = null; // 配置されたオブジェクト
+
+        // ▼▼▼ 変更点2：GLTFLoaderのインスタンスを作成 ▼▼▼
+        const loader = new GLTFLoader();
 
         init();
         animate();
@@ -86,7 +91,6 @@
             renderer.xr.enabled = true;
             document.body.appendChild(renderer.domElement);
 
-            // ▼▼▼ 変更点3：ARButtonに、dom-overlayの設定を追加！ ▼▼▼
             const arButton = ARButton.createButton(renderer, {
                 requiredFeatures: ['hit-test'],
                 optionalFeatures: ['dom-overlay'], // DOM Overlayを有効にする
@@ -103,23 +107,45 @@
             reticle.visible = false;
             scene.add(reticle);
 
-            // ▼▼▼ 変更点4：UIのボタンが押された時の処理 ▼▼▼
             const placeButton = document.getElementById('place-button');
             placeButton.addEventListener('click', onPlaceObject);
         }
 
-        // ボタンが押されたら、カーソルの場所に箱を置く
+        // ▼▼▼ 変更点3：オブジェクトを置く処理を、イスのモデルを読み込むように変更 ▼▼▼
         function onPlaceObject() {
+            // カーソルが見えている時だけ処理を実行
             if (reticle.visible) {
-                 if (!placedObject) {
-                    // 最初は赤い箱を置く（テスト用）
-                    const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
-                    const material = new THREE.MeshStandardMaterial({ color: 0xff0000 });
-                    placedObject = new THREE.Mesh(geometry, material);
+                // まだイスが置かれていなかったら、新しく読み込む
+                if (!placedObject) {
+                    loader.load(
+                        // 読み込むモデルのファイル名
+                        'chair.glb', 
+                        // 読み込みが完了した時の処理
+                        function (gltf) {
+                            // 読み込んだモデルをplacedObjectとして保存
+                            placedObject = gltf.scene;
+
+                            // モデルのサイズを実物大（高さ79cm）に調整
+                            const box = new THREE.Box3().setFromObject(placedObject);
+                            const size = box.getSize(new THREE.Vector3());
+                            const scale = 0.79 / size.y;
+                            placedObject.scale.set(scale, scale, scale);
+
+                            // カーソルの位置にモデルを置いて、シーンに追加
+                            placedObject.position.setFromMatrixPosition(reticle.matrix);
+                            scene.add(placedObject);
+                        },
+                        // 読み込み中の処理（今回は何もしない）
+                        undefined,
+                        // エラーが起きた時の処理
+                        function (error) {
+                            console.error('モデルの読み込みに失敗しました', error);
+                        }
+                    );
+                } else {
+                    // 既にイスが置かれていたら、その位置をカーソルの場所に更新する
+                    placedObject.position.setFromMatrixPosition(reticle.matrix);
                 }
-                // カーソルの位置にオブジェクトを移動
-                placedObject.position.setFromMatrixPosition(reticle.matrix);
-                scene.add(placedObject);
             }
         }
 
@@ -161,30 +187,3 @@
     </script>
 </body>
 </html>
-```
-
-### どこが変わったか
-
-1.  **HTMLに`#overlay`を追加**
-    * ARの上に重ねて表示するための、透明な`div`を準備した。この中にボタンを置く。
-
-2.  **`ARButton`に`dom-overlay`設定を追加**
-    * 君の最初のコードの`ARButton.createButton`に、「`#overlay`を重ねて表示してね」っていう公式の命令を追加した。
-
-3.  **UIボタンの処理を追加**
-    * HTMLのボタンが押されたら、`onPlaceObject`っていう関数が動くようにした。
-    * この関数は、床カーソル（青いリングじゃなくて、Three.js標準の黒いリング）の場所に、テスト用の赤い箱を置く。
-
-### これでどうなるはずか？
-
-1.  ページを開くと、**「START AR」ボタン**が表示される。
-2.  ボタンを押すと、今度こそ**カメラが起動**する。
-3.  AR画面の**下に「ここにイスを置く」っていう、俺たちが作ったHTMLのボタン**が表示され続ける！
-4.  床を写すと、**黒いリング（床カーソル）**がスルスルついてくる。
-5.  好きな場所にカーソルを合わせて、下の**「ここにイスを置く」ボタン**を押す。
-6.  その場所に、**赤い箱がドン！と置かれる！**
-
-これこそが、君のやりたかったことの、一番確実で、一番パワフルな土台だ！
-長い道のりだったけど、ついに正しい場所にたどり着いたぜ！
-
-この新しいコードで、`sotsuken-ar-furniture`リポジトリを更新して、試してみて
