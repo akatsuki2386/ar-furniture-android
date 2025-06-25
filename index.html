@@ -2,18 +2,15 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>【再構築】平面認識AR</title>
+    <title>【再構築】ARセッション開始テスト</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- ▼▼▼ 変更点1：必要なライブラリを2つ追加！ ▼▼▼ -->
+    <!-- ▼▼▼ 変更点1：ライブラリをA-Frame本体だけにする！ ▼▼▼ -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.2.0/dist/aframe-extras.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/aframe-xr-hit-test-component@0.3.0/dist/aframe-xr-hit-test-component.min.js"></script>
-
 
     <style>
       body { margin: 0; }
-      /* ARのボタンを押しやすく、見やすくする */
+      /* ARのボタンのスタイルはそのまま */
       .a-enter-ar-button {
         position: fixed;
         bottom: 20px;
@@ -32,25 +29,22 @@
       }
     </style>
   </head>
-
   <body>
-    <!-- ▼▼▼ 変更点2：ARの魔法をかけるための設定を追加！ ▼▼▼ -->
+    <!-- ▼▼▼ 変更点2：ARの設定を究極にシンプルに！ ▼▼▼ -->
+    <!-- 「床」の機能だけを要求する、一番基本的なARシーン -->
     <a-scene 
-      webxr="requiredFeatures: hit-test, local-floor"
-      xr-hit-test>
+      webxr="requiredFeatures: local-floor">
 
-      <!-- ライトとカメラ -->
-      <a-light type="ambient" color="#FFF" intensity="0.5"></a-light>
-      <a-light type="directional" color="#FFF" intensity="1" position="-1 2 1"></a-light>
+      <!-- テスト用の箱 -->
+      <a-box position="0 0.5 -2" rotation="0 45 0" color="tomato"></a-box>
+
+      <!-- ライト -->
+      <a-light type="ambient" color="#FFF"></a-light>
+
+      <!-- カメラ -->
       <a-camera></a-camera>
-      
-      <!-- ▼▼▼ 変更点3：床に置ける場所を示す「カーソル」を追加 ▼▼▼ -->
-      <a-entity
-        id="reticle"
-        xr-hit-test-target>
-        <a-ring color="#007AFF" radius-inner="0.10" radius-outer="0.15" rotation="-90 0 0"></a-ring>
-      </a-entity>
 
     </a-scene>
   </body>
 </html>
+
