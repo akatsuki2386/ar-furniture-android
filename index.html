@@ -2,107 +2,58 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>AR対応診断テスト</title>
+    <title>【再構築】平面認識AR</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
+    <!-- ▼▼▼ 変更点1：必要なライブラリを追加！ ▼▼▼ -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <!-- aframe-extrasは、多くの便利な機能を提供し、他のライブラリが依存することがあります -->
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.2.0/dist/aframe-extras.min.js"></script>
+    <!-- これが床認識(Hit-Test)のための新しいライブラリです -->
+    <script src="https://cdn.jsdelivr.net/npm/aframe-xr-hit-test-component@0.3.0/dist/aframe-xr-hit-test-component.min.js"></script>
+
 
     <style>
-      body { 
-        margin: 0; 
-        font-family: sans-serif;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        background-color: #f0f0f0;
-      }
-      #status-message {
-        padding: 20px;
-        background-color: white;
-        border-radius: 8px;
-        box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-        text-align: center;
-        max-width: 80%;
-      }
+      body { margin: 0; }
+      /* ARのボタンを押しやすく、見やすくする */
       .a-enter-ar-button {
-        display: none; /* JavaScriptで対応している時だけ表示する */
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 12px 24px;
+        background-color: #007AFF;
+        color: white;
+        border: none;
+        border-radius: 9999px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 10000;
       }
     </style>
   </head>
+
   <body>
-    <!-- ▼▼▼ 変更点1：診断メッセージを表示するためのHTMLを追加 ▼▼▼ -->
-    <div id="status-message">診断中...</div>
-
-    <!-- ▼▼▼ 変更点2：A-Frameのシーンは、最初は隠しておく ▼▼▼ -->
+    <!-- ▼▼▼ 変更点2：ARの魔法をかけるための設定を追加！ ▼▼▼ -->
     <a-scene 
-      id="ar-scene"
-      webxr="requiredFeatures: local-floor"
-      style="display: none;">
+      webxr="requiredFeatures: hit-test, local-floor"
+      xr-hit-test>
 
-      <a-box position="0 0.5 -2" rotation="0 45 0" color="tomato"></a-box>
-      <a-light type="ambient" color="#FFF"></a-light>
+      <!-- ライトとカメラ -->
+      <a-light type="ambient" color="#FFF" intensity="0.5"></a-light>
+      <a-light type="directional" color="#FFF" intensity="1" position="-1 2 1"></a-light>
       <a-camera></a-camera>
+      
+      <!-- ▼▼▼ 変更点3：床に置ける場所を示す「カーソル」を追加 ▼▼▼ -->
+      <!-- xr-hit-test-target属性が、このエンティティを床認識カーソルとして機能させます -->
+      <a-entity
+        id="reticle"
+        xr-hit-test-target>
+        <a-ring color="#007AFF" radius-inner="0.10" radius-outer="0.15" rotation="-90 0 0"></a-ring>
+      </a-entity>
 
     </a-scene>
-
-    <!-- ▼▼▼ 変更点3：AR対応を診断するJavaScriptを追加！ ▼▼▼ -->
-    <script>
-      window.addEventListener('DOMContentLoaded', () => {
-        const statusEl = document.querySelector('#status-message');
-        const sceneEl = document.querySelector('#ar-scene');
-
-        // 1. ブラウザがWebXRに対応しているかチェック
-        if (navigator.xr) {
-          statusEl.textContent = 'WebXRには対応しています。ARセッションが利用可能か確認中...';
-
-          // 2. 「immersive-ar」(ARモード)が利用可能かチェック
-          navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
-            if (supported) {
-              // ★★★ もしここに来たら、スマホはARに対応している！ ★★★
-              statusEl.textContent = 'おめでとう！あなたのスマホはARに対応しています！';
-              // ARシーンを表示し、ボタンを有効にする
-              sceneEl.style.display = 'block';
-              // A-Frameがボタンを生成するのを少し待つ
-              setTimeout(() => {
-                const arButton = document.querySelector('.a-enter-ar-button');
-                if(arButton) arButton.style.display = 'block';
-              }, 500);
-            } else {
-              // ■■■ もしここに来たら、WebXRには対応してるけど、ARは非対応 ■■■
-              statusEl.innerHTML = '残念！お使いのブラウザはWebXRに対応していますが、<br>AR機能(ARCore/ARKit)はサポートされていないようです。<br><br>ブラウザのアップデートや設定を確認してみてください。';
-            }
-          });
-        } else {
-          // ■■■ もしここに来たら、WebXRそのものに非対応 ■■■
-          statusEl.innerHTML = '残念！お使いのブラウザはWebXRに非対応です。<br><br>最新版のChrome (Android) または Safari (iOS) で試してみてください。';
-        }
-      });
-    </script>
   </body>
 </html>
-```
-
-### どこを変えたか
-
-1.  **診断メッセージを表示する場所を作った**
-    * ARの世界（`<a-scene>`）とは別に、診断結果を表示するための`<div>`を用意した。
-
-2.  **JavaScriptでAR対応を診断！**
-    * ページを開いたら、まず`navigator.xr`っていうブラウザの機能を使って、ARが使えるかどうかをチェックする。
-    * **もし使えたら:** 「おめでとう！」っていうメッセージと一緒に、ARを開始するボタンを表示する。
-    * **もし使えなかったら:** 「残念！」っていうメッセージと一緒に、考えられる原因（ブラウザが古いとか）を表示する。
-
-### これでどうなるか、教えてほしい！
-
-このコードでGitHubを更新して、ページを開いてみてくれ。
-カメラは起動しない。ただ、**画面にどんなメッセージが表示されたか**を教えてほしいんだ。
-
-* **もし「おめでとう！」って出たら:**
-    → 俺たちの勝ちだ！スマホは悪くない！あとはARの設定を調整すればいいだけだ！
-
-* **もし「残念！」って出たら:**
-    → OK、犯人は確定だ。君のスマホのブラウザの設定か、機種自体が、俺たちが使おうとしてる最新のAR技術にまだ追いついてないってことだ。
-
-この診断で、俺たちが進むべき道が100%決まる。
-これが本当の、本当の最終診断だ！頼
