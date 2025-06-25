@@ -151,7 +151,6 @@
             <!-- 家具選択ボタンがここに動的に追加される -->
         </div>
         <div id="bottom-bar">
-            <!-- ▼▼▼ 変更点：「ここに置く」ボタンを削除し、アクションボタンに統一 ▼▼▼ -->
             <div id="action-controls">
                 <button id="delete-button" class="circle-button">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
@@ -302,6 +301,7 @@
             document.getElementById('confirm-button').addEventListener('click', onConfirmMove);
         }
         
+        // ▼▼▼ 変更点1：選択時に確実にハイライトを適用する ▼▼▼
         function onSelect() {
             if (hoveredObject) {
                 if (selectedObject) {
@@ -309,6 +309,8 @@
                 }
                 selectedObject = hoveredObject;
                 hoveredObject = null; 
+                // タップして選択したオブジェクトを確実にハイライトする
+                highlightObject(selectedObject);
                 updateUI();
             } 
             else if (!selectedObject && reticle.visible) {
@@ -366,7 +368,6 @@
             });
         }
         
-        // ▼▼▼ 変更点：onConfirmPlacement を placeNewObject に改名し、内容を修正 ▼▼▼
         function placeNewObject() { 
             if (reticle.visible) {
                 loader.load(currentFurniture.file, (gltf) => {
@@ -388,11 +389,9 @@
                     scene.add(solidObject);
                     placedObjects.push(solidObject);
 
-                    // ★★★ ここからが新しい処理 ★★★
-                    // 置いたオブジェクトをすぐに選択状態にする
                     selectedObject = solidObject;
                     highlightObject(selectedObject);
-                    updateUI(); // UIをアクションボタンに切り替え
+                    updateUI();
                 }, undefined, (error) => {
                     console.error(`配置モデル(${currentFurniture.file})の読み込みに失敗:`, error);
                 });
@@ -417,7 +416,6 @@
             });
         }
 
-        // ▼▼▼ 変更点：UI更新ロジックをシンプル化 ▼▼▼
         function updateUI() {
             const actionControls = document.getElementById('action-controls');
             if (selectedObject) {
@@ -427,6 +425,7 @@
             }
         }
 
+        // ▼▼▼ 変更点2：オブジェクトの階層を正しくたどるように修正 ▼▼▼
         function handleHover() {
             if (selectedObject) {
                 if (hoveredObject) {
@@ -442,7 +441,8 @@
             let intersectedRoot = null;
             if (intersects.length > 0) {
                 let currentObject = intersects[0].object;
-                while (currentObject.parent) {
+                // オブジェクトの親を辿って、placedObjectsに含まれる最上位のオブジェクトを見つける
+                while (currentObject) {
                     if (placedObjects.includes(currentObject)) {
                         intersectedRoot = currentObject;
                         break; 
