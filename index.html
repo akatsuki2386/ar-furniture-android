@@ -167,7 +167,6 @@
             <div id="place-button-container">
                 <button id="place-button">ここに置く</button>
             </div>
-            <!-- ▼▼▼ 変更点：決定ボタンを追加 ▼▼▼ -->
             <div id="action-controls">
                 <button id="delete-button" class="circle-button">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
@@ -219,8 +218,12 @@
         let previewObject = null;
         const placedObjects = [];
         const raycaster = new THREE.Raycaster();
-        let selectedObject = null;
-        const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0x007AFF, transparent: true, opacity: 0.6 });
+        
+        // ▼▼▼ 変更点：オブジェクトの状態管理変数を変更 ▼▼▼
+        let selectedObject = null; // 移動・回転・削除の対象として「選択」されたオブジェクト
+        let hoveredObject = null;  // フォーカスが合っている「ホバー」状態のオブジェクト
+        
+        const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0x007AFF, transparent: true, opacity: 0.6, emissive: 0x007AFF, emissiveIntensity: 0.3 });
        
         init();
 
@@ -235,9 +238,11 @@
             renderer.xr.enabled = true;
             document.body.appendChild(renderer.domElement);
            
-            renderer.xr.addEventListener('sessionstart', () => {
+            renderer.xr.addEventListener('sessionstart', (e) => {
                 document.getElementById('title-container').style.display = 'none';
                 initializeARExperience();
+                // ▼▼▼ 変更点：セッション開始時にタップイベントを登録 ▼▼▼
+                e.target.addEventListener('select', onSelect);
             });
 
             renderer.xr.addEventListener('sessionend', () => {
@@ -276,7 +281,7 @@
 
             setupUI();
             updatePreviewObject();
-            updateUI(); // 初期UI状態を設定
+            updateUI();
         }
        
         function setupUI() {
@@ -289,12 +294,15 @@
                 if (index === 0) button.classList.add('selected');
                
                 button.addEventListener('click', () => {
-                    // 既に何かを選択していたら、それを解除する
                     if(selectedObject) {
                         unhighlightObject(selectedObject);
                         selectedObject = null;
-                        updateUI();
                     }
+                    if(hoveredObject) {
+                         unhighlightObject(hoveredObject);
+                        hoveredObject = null;
+                    }
+                    updateUI();
                     palette.querySelectorAll('.furniture-button').forEach(btn => btn.classList.remove('selected'));
                     button.classList.add('selected');
                     currentFurniture = item;
@@ -306,11 +314,23 @@
             document.getElementById('place-button').addEventListener('click', onConfirmPlacement);
             document.getElementById('rotate-button').addEventListener('click', onRotate);
             document.getElementById('delete-button').addEventListener('click', onDelete);
-            // ▼▼▼ 変更点：決定ボタンのイベントリスナーを追加 ▼▼▼
             document.getElementById('confirm-button').addEventListener('click', onConfirmMove);
         }
+        
+        // ▼▼▼ 変更点：画面タップ時の処理をまとめた関数 ▼▼▼
+        function onSelect() {
+            // ホバー状態のオブジェクトをタップしたら、それを「選択」状態にする
+            if (hoveredObject) {
+                selectedObject = hoveredObject;
+                hoveredObject = null; 
+                updateUI();
+            } 
+            // 何も選択・ホバーしていない状態で、床をタップしたら新しい家具を配置する
+            else if (!selectedObject && reticle.visible) {
+                onConfirmPlacement();
+            }
+        }
 
-        // ▼▼▼ 変更点：家具の移動を確定する関数 ▼▼▼
         function onConfirmMove() {
             if (selectedObject) {
                 unhighlightObject(selectedObject);
@@ -328,7 +348,7 @@
             if (selectedObject) {
                 const objectToRemove = selectedObject;
                 selectedObject = null;
-                unhighlightObject(objectToRemove); // ハイライトを消す
+                unhighlightObject(objectToRemove);
                 scene.remove(objectToRemove);
                 const index = placedObjects.indexOf(objectToRemove);
                 if (index > -1) placedObjects.splice(index, 1);
@@ -405,7 +425,6 @@
             });
         }
 
-        // ▼▼▼ 変更点：UIの表示状態を管理する関数 ▼▼▼
         function updateUI() {
             const placeControl = document.getElementById('place-button-container');
             const actionControls = document.getElementById('action-controls');
@@ -418,20 +437,24 @@
             }
         }
 
-        // ▼▼▼ 変更点：オブジェクトの選択ロジックを修正 ▼▼▼
-        function handleInteractions() {
-            // 既にオブジェクトを移動中の場合は、新たな選択処理を行わない
+        // ▼▼▼ 変更点：フォーカス（ホバー）の処理をする関数 ▼▼▼
+        function handleHover() {
+            // オブジェクトを移動させている最中は、他のオブジェクトにホバーしない
             if (selectedObject) {
+                // 念のためホバー状態は解除しておく
+                if (hoveredObject) {
+                    unhighlightObject(hoveredObject);
+                    hoveredObject = null;
+                }
                 return;
             }
 
-            raycaster.setFromCamera({x: 0, y: 0}, camera);
+            raycaster.setFromCamera({ x: 0, y: 0 }, camera);
             const intersects = raycaster.intersectObjects(placedObjects, true);
 
+            let intersectedRoot = null;
             if (intersects.length > 0) {
                 let currentObject = intersects[0].object;
-                let intersectedRoot = null;
-                // 交差したオブジェクトの親を辿って、placedObjectsに含まれる最上位のオブジェクトを見つける
                 while (currentObject.parent) {
                     if (placedObjects.includes(currentObject)) {
                         intersectedRoot = currentObject;
@@ -439,12 +462,19 @@
                     }
                     currentObject = currentObject.parent;
                 }
+            }
+            
+            // ホバー状態が変化した場合のみ処理
+            if (intersectedRoot !== hoveredObject) {
+                // 前にホバーしていたオブジェクトのハイライトを消す
+                if (hoveredObject) {
+                    unhighlightObject(hoveredObject);
+                }
                 
-                if (intersectedRoot) {
-                   // 新しくオブジェクトを選択した
-                   selectedObject = intersectedRoot;
-                   highlightObject(selectedObject);
-                   updateUI(); // UIをアクションモードに切り替え
+                // 新しくホバーしたオブジェクトを記録し、ハイライトする
+                hoveredObject = intersectedRoot;
+                if (hoveredObject) {
+                    highlightObject(hoveredObject);
                 }
             }
         }
@@ -455,8 +485,8 @@
 
         function render(timestamp, frame) {
             if (renderer.xr.isPresenting) {
-                // 常にインタラクション（オブジェクト選択）を試みる
-                handleInteractions();
+                // ▼▼▼ 変更点：handleInteractions() を handleHover() に変更 ▼▼▼
+                handleHover();
 
                 if (frame) {
                     const referenceSpace = renderer.xr.getReferenceSpace();
@@ -486,14 +516,10 @@
                     }
                 }
                 
-                // ▼▼▼ 変更点：オブジェクトの移動とプレビューの表示ロジックを修正 ▼▼▼
-                
-                // オブジェクトを選択している場合、それをレティクルの位置に移動させる
                 if (selectedObject && reticle.visible) {
                     selectedObject.position.setFromMatrixPosition(reticle.matrix);
                 }
 
-                // プレビューオブジェクトは、何も選択していない時にのみ表示する
                 if (previewObject) {
                     if (!selectedObject && reticle.visible) {
                         previewObject.visible = true;
