@@ -125,23 +125,19 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 0 0-2.09 2.134v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                     </svg>
                 </button>
+                <!-- ▼▼▼ 変更点1：回転アイコンのSVGを修正 ▼▼▼ -->
                 <button id="rotate-button" class="circle-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-6-6m0 0l6-6m-6 6h12a6 6 0 0 1 0 12h-3" transform="scale(-1, 1) translate(-24, 0)" />
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
+                       <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.092 1.21-.138 2.43-.138 3.662s.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.092-1.21.138-2.43.138-3.662Z" />
+                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 18.75v-5.25c0-.621.504-1.125 1.125-1.125h2.25" />
+                       <path stroke-linecap="round" stroke-linejoin="round" d="m15 12.75-3-3m0 0-3 3m3-3v5.25" />
                     </svg>
                 </button>
             </div>
         </div>
     </div>
 
-    <script type="importmap">
-        {
-            "imports": {
-                "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
-                "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
-            }
-        }
-    </script>
+    <script type="importmap">...</script>
 
     <script type="module">
         import * as THREE from 'three';
@@ -167,11 +163,17 @@
 
         let selectedObject = null;
         const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0x007AFF, transparent: true, opacity: 0.6 });
+        
+        // ▼▼▼ 変更点2：モデルを事前に読み込んで保存しておくための場所 ▼▼▼
+        const preloadedModels = new Map();
 
         init();
         animate();
 
-        function init() {
+        async function init() {
+            // ▼▼▼ 変更点3：アプリの起動と同時に、モデルの事前読み込みを開始！ ▼▼▼
+            await preloadModels();
+
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
             scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, 3));
@@ -182,84 +184,64 @@
             renderer.xr.enabled = true;
             document.body.appendChild(renderer.domElement);
             
-            // ▼▼▼ 変更点1：ARButtonの生成とDOMへの追加をinitの最後に移動 ▼▼▼
-            // これで、他の要素が準備できてからARボタンが作られるようになる
-            
+            document.body.appendChild(ARButton.createButton(renderer, {
+                requiredFeatures: ['hit-test'],
+                optionalFeatures: ['dom-overlay'],
+                domOverlay: { root: document.querySelector("#overlay") }
+            }));
+
             const sidePalette = document.getElementById('side-palette');
             const bottomBar = document.getElementById('bottom-bar');
             
             renderer.xr.addEventListener('sessionstart', () => {
-                console.log('ARセッションが開始されました。UIを表示します。');
                 sidePalette.style.display = 'flex';
                 bottomBar.style.display = 'flex';
                 updatePreviewObject();
             });
             renderer.xr.addEventListener('sessionend', () => {
-                console.log('ARセッションが終了しました。UIを非表示にします。');
                 sidePalette.style.display = 'none';
                 bottomBar.style.display = 'none';
             });
+
 
             reticle = new THREE.Mesh( new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial());
             reticle.matrixAutoUpdate = false;
             reticle.visible = false;
             scene.add(reticle);
 
-            // ▼▼▼ 変更点2：UIの準備とイベントリスナーの設定を関数にまとめる ▼▼▼
             setupUI();
         }
 
-        function setupUI() {
-            const palette = document.getElementById('side-palette');
-            furnitureData.forEach((item, index) => {
-                const button = document.createElement('button');
-                button.className = 'furniture-button';
-                button.textContent = item.name;
-                if (index === 0) button.classList.add('selected');
-                
-                button.addEventListener('click', () => {
-                    unhighlightSelected();
-                    palette.querySelectorAll('.furniture-button').forEach(btn => btn.classList.remove('selected'));
-                    button.classList.add('selected');
-                    currentFurniture = item;
-                    updatePreviewObject();
-                });
-                palette.appendChild(button);
-            });
-            
-            document.getElementById('place-button').addEventListener('click', onConfirmPlacement);
-            document.getElementById('rotate-button').addEventListener('click', onRotate);
-            document.getElementById('delete-button').addEventListener('click', onDelete);
+        // ▼▼▼ 変更点4：モデルを事前に読み込むための新しい関数 ▼▼▼
+        async function preloadModels() {
+            console.log("モデルの事前読み込みを開始します...");
+            for (const item of furnitureData) {
+                try {
+                    const gltf = await loader.loadAsync(item.file);
+                    preloadedModels.set(item.file, gltf);
+                    console.log(`${item.file} の読み込みが完了しました。`);
+                } catch (error) {
+                    console.error(`${item.file} の読み込みに失敗しました:`, error);
+                }
+            }
+            console.log("すべてのモデルの事前読み込みが試行されました。");
         }
         
-        // ▼▼▼ 変更点3：ARButtonの生成を、他のすべての準備が終わった後に行う ▼▼▼
-        document.body.appendChild(ARButton.createButton(renderer, {
-            requiredFeatures: ['hit-test'],
-            optionalFeatures: ['dom-overlay'],
-            domOverlay: { root: document.querySelector("#overlay") }
-        }));
-        
-        function onRotate() {
-            if (selectedObject) {
-                selectedObject.rotation.y += Math.PI / 4;
-            }
-        }
-        function onDelete() {
-            if (selectedObject) {
-                const objectToRemove = selectedObject;
-                unhighlightSelected();
-                scene.remove(objectToRemove);
-                const index = placedObjects.indexOf(objectToRemove);
-                if (index > -1) placedObjects.splice(index, 1);
-            }
-        }
+        function setupUI() { /* ...変更なし... */ }
+        function onRotate() { /* ...変更なし... */ }
+        function onDelete() { /* ...変更なし... */ }
 
+        // ▼▼▼ 変更点5：プレビューと配置の関数を、事前読み込みしたモデルを使うように変更 ▼▼▼
         function updatePreviewObject() { 
             if (previewObject) {
                 scene.remove(previewObject);
             }
-            loader.load(currentFurniture.file, (gltf) => {
-                previewObject = gltf.scene;
+            // 保存しておいたモデルデータがあるか確認
+            if (preloadedModels.has(currentFurniture.file)) {
+                const gltf = preloadedModels.get(currentFurniture.file);
+                // モデルを複製（clone）して使う
+                previewObject = gltf.scene.clone(); 
+                
                 previewObject.traverse(child => {
                     if (child.isMesh) {
                         child.material = child.material.clone();
@@ -273,125 +255,39 @@
                 previewObject.scale.set(scale, scale, scale);
                 previewObject.visible = false;
                 scene.add(previewObject);
-            });
+            } else {
+                 console.error("プレビュー用のモデルが読み込まれていません:", currentFurniture.file);
+            }
          }
         function onConfirmPlacement() { 
-            if (reticle.visible) {
-                loader.load(currentFurniture.file, (gltf) => {
-                    const solidObject = gltf.scene;
-                    const box = new THREE.Box3().setFromObject(solidObject);
-                    const size = box.getSize(new THREE.Vector3());
-                    const scale = currentFurniture.height / size.y;
-                    solidObject.scale.set(scale, scale, scale);
-                    solidObject.position.setFromMatrixPosition(reticle.matrix);
-                    
-                    solidObject.userData.originalMaterials = new Map();
-                    solidObject.traverse(child => {
-                        if(child.isMesh) {
-                            solidObject.userData.originalMaterials.set(child.uuid, child.material);
-                        }
-                    });
-                    
-                    scene.add(solidObject);
-                    placedObjects.push(solidObject);
+            if (reticle.visible && preloadedModels.has(currentFurniture.file)) {
+                const gltf = preloadedModels.get(currentFurniture.file);
+                const solidObject = gltf.scene.clone();
+
+                const box = new THREE.Box3().setFromObject(solidObject);
+                const size = box.getSize(new THREE.Vector3());
+                const scale = currentFurniture.height / size.y;
+                solidObject.scale.set(scale, scale, scale);
+                solidObject.position.setFromMatrixPosition(reticle.matrix);
+                
+                solidObject.userData.originalMaterials = new Map();
+                solidObject.traverse(child => {
+                    if(child.isMesh) {
+                        // clone()で元のマテリアルも複製しておく
+                        const originalMaterial = child.material.clone();
+                        solidObject.userData.originalMaterials.set(child.uuid, originalMaterial);
+                    }
                 });
+                
+                scene.add(solidObject);
+                placedObjects.push(solidObject);
             }
          }
         
-        function unhighlightSelected() {
-            if (selectedObject) {
-                selectedObject.traverse(child => {
-                    if (child.isMesh && selectedObject.userData.originalMaterials.has(child.uuid)) {
-                       child.material = selectedObject.userData.originalMaterials.get(child.uuid);
-                    }
-                });
-                selectedObject = null;
-            }
-        }
-        
-        function handleInteractions() {
-            raycaster.setFromCamera({x: 0, y: 0}, camera);
-            const intersects = raycaster.intersectObjects(placedObjects, true);
-            
-            let intersectedRoot = null;
-            if (intersects.length > 0) {
-                let currentObject = intersects[0].object;
-                while (currentObject.parent) {
-                    if (placedObjects.includes(currentObject)) {
-                        intersectedRoot = currentObject;
-                        break; 
-                    }
-                    currentObject = currentObject.parent;
-                }
-            }
-            
-            if (selectedObject !== intersectedRoot) {
-                unhighlightSelected();
-                selectedObject = intersectedRoot;
-                if (selectedObject) {
-                    selectedObject.traverse(child => {
-                        if (child.isMesh) child.material = highlightMaterial;
-                    });
-                }
-            }
-
-            const placeControl = document.getElementById('place-button-container');
-            const actionControls = document.getElementById('action-controls');
-            if (selectedObject) {
-                placeControl.style.display = 'none';
-                actionControls.style.display = 'flex';
-            } else {
-                placeControl.style.display = 'block';
-                actionControls.style.display = 'none';
-            }
-        }
-
-        function animate() {
-             renderer.setAnimationLoop(render);
-        }
-
-        function render(timestamp, frame) {
-            if (renderer.xr.isPresenting) {
-                handleInteractions();
-
-                if (!selectedObject && frame) {
-                    const referenceSpace = renderer.xr.getReferenceSpace();
-                    const session = renderer.xr.getSession();
-
-                    if (hitTestSourceRequested === false) {
-                        session.requestReferenceSpace('viewer').then((referenceSpace) => {
-                            session.requestHitTestSource({ space: referenceSpace }).then((source) => {
-                                hitTestSource = source;
-                            });
-                        });
-                        session.addEventListener('end', () => {
-                            hitTestSourceRequested = false; hitTestSource = null;
-                        });
-                        hitTestSourceRequested = true;
-                    }
-
-                    if (hitTestSource) {
-                        const hitTestResults = frame.getHitTestResults(hitTestSource);
-                        if (hitTestResults.length > 0) {
-                            const hit = hitTestResults[0];
-                            reticle.visible = true;
-                            reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
-                        } else {
-                            reticle.visible = false;
-                        }
-                    }
-                }
-                 if (previewObject) {
-                    if (!selectedObject && reticle.visible) {
-                        previewObject.visible = true;
-                        previewObject.position.setFromMatrixPosition(reticle.matrix);
-                    } else {
-                        previewObject.visible = false;
-                    }
-                }
-            }
-            renderer.render(scene, camera);
-        }
+        function unhighlightSelected() { /* ...変更なし... */ }
+        function handleInteractions() { /* ...変更なし... */ }
+        function animate() { /* ...変更なし... */ }
+        function render(timestamp, frame) { /* ...変更なし... */ }
     </script>
 </body>
 </html>
