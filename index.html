@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>【最終形態】AR家具配置アプリ</title>
+    <title>【機能追加】AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
         body { margin: 0; }
@@ -15,37 +15,61 @@
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none; /* 下のAR空間をタップできるように */
+            pointer-events: none;
             z-index: 10;
+            font-family: sans-serif;
         }
         #ui-container {
             position: absolute;
             bottom: 20px;
             left: 50%;
             transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px; /* 要素間の隙間 */
+            pointer-events: auto;
+        }
+        #info-text {
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 9999px;
+            font-size: 14px;
+        }
+        #furniture-palette {
+            display: flex;
+            gap: 10px; /* ボタン間の隙間 */
             padding: 10px;
             background-color: rgba(0, 0, 0, 0.5);
             border-radius: 16px;
-            pointer-events: auto; /* この中のボタンはタップできるように */
         }
-        #place-button {
-            padding: 12px 24px;
-            background-color: #007AFF;
+        .furniture-button {
+            padding: 12px;
+            background-color: #6B7280;
             color: white;
-            border: none;
-            border-radius: 9999px;
-            font-size: 16px;
+            border: 2px solid transparent;
+            border-radius: 12px;
+            font-size: 14px;
             font-weight: bold;
             cursor: pointer;
+            transition: all 0.2s ease-in-out;
+        }
+        .furniture-button.selected {
+            background-color: #007AFF;
+            border-color: #FFF;
+            transform: scale(1.1);
         }
     </style>
 </head>
 <body>
-    <!-- ARの上に重ねるためのHTML要素を追加 -->
+    <!-- ▼▼▼ 変更点1：UIの構造を変更 ▼▼▼ -->
     <div id="overlay">
         <div id="ui-container">
-            <!-- ここに後から家具を選ぶボタンなどを追加できる！ -->
-            <button id="place-button">ここにイスを置く</button>
+            <div id="info-text">イス を選択中</div>
+            <div id="furniture-palette">
+                <!-- ここに家具を選ぶボタンが動的に追加される -->
+            </div>
         </div>
     </div>
 
@@ -61,17 +85,28 @@
     <script type="module">
         import * as THREE from 'three';
         import { ARButton } from 'three/addons/webxr/ARButton.js';
-        // ▼▼▼ 変更点1：GLTFLoaderをインポート！ ▼▼▼
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
         let camera, scene, renderer;
         let hitTestSource = null;
         let hitTestSourceRequested = false;
-        let reticle; // 床に置ける場所を示すカーソル
-        let placedObject = null; // 配置されたオブジェクト
-
-        // ▼▼▼ 変更点2：GLTFLoaderのインスタンスを作成 ▼▼▼
+        let reticle;
+        
         const loader = new GLTFLoader();
+        
+        // ▼▼▼ 変更点2：家具のデータを定義 ▼▼▼
+        const furnitureData = [
+            { name: 'イス', file: 'chair.glb', height: 0.79 },
+            // 将来的にモデルを入れ替えれば、テーブルも置けるようになります
+            { name: 'テーブル', file: 'chair.glb', height: 0.75 }, 
+            // 将来的にモデルを入れ替えれば、ランプも置けるようになります
+            { name: 'ランプ', file: 'chair.glb', height: 1.5 }, 
+        ];
+        // 現在選択されている家具の情報を保持する変数
+        let currentFurniture = furnitureData[0];
+        
+        // シーンに配置されたオブジェクトを管理する配列
+        const placedObjects = [];
 
         init();
         animate();
@@ -80,7 +115,6 @@
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
 
-            // ライト
             const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 3);
             light.position.set(0.5, 1, 0.25);
             scene.add(light);
@@ -93,12 +127,11 @@
 
             const arButton = ARButton.createButton(renderer, {
                 requiredFeatures: ['hit-test'],
-                optionalFeatures: ['dom-overlay'], // DOM Overlayを有効にする
-                domOverlay: { root: document.querySelector("#overlay") } // 重ねる要素を指定
+                optionalFeatures: ['dom-overlay'],
+                domOverlay: { root: document.querySelector("#overlay") }
             });
             document.body.appendChild(arButton);
 
-            // 床カーソル（レティクル）の作成
             reticle = new THREE.Mesh(
                 new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
                 new THREE.MeshBasicMaterial()
@@ -107,45 +140,60 @@
             reticle.visible = false;
             scene.add(reticle);
 
-            const placeButton = document.getElementById('place-button');
-            placeButton.addEventListener('click', onPlaceObject);
+            // ▼▼▼ 変更点3：家具選択ボタンを動的に生成 ▼▼▼
+            const palette = document.getElementById('furniture-palette');
+            const infoText = document.getElementById('info-text');
+
+            furnitureData.forEach((item, index) => {
+                const button = document.createElement('button');
+                button.className = 'furniture-button';
+                button.textContent = item.name;
+                // 最初のボタンを「選択済み」状態にする
+                if (index === 0) {
+                    button.classList.add('selected');
+                }
+                button.addEventListener('click', () => {
+                    // 他のボタンの選択状態を解除
+                    palette.querySelectorAll('.furniture-button').forEach(btn => btn.classList.remove('selected'));
+                    // クリックされたボタンを選択状態にする
+                    button.classList.add('selected');
+                    // 現在の家具情報を更新
+                    currentFurniture = item;
+                    infoText.textContent = `${item.name} を選択中`;
+                });
+                palette.appendChild(button);
+            });
+
+            // ▼▼▼ 変更点4：画面をタップしたらオブジェクトを配置 ▼▼▼
+            renderer.domElement.addEventListener('click', onPlaceObject);
         }
 
-        // ▼▼▼ 変更点3：オブジェクトを置く処理を、イスのモデルを読み込むように変更 ▼▼▼
         function onPlaceObject() {
-            // カーソルが見えている時だけ処理を実行
             if (reticle.visible) {
-                // まだイスが置かれていなかったら、新しく読み込む
-                if (!placedObject) {
-                    loader.load(
-                        // 読み込むモデルのファイル名
-                        'chair.glb', 
-                        // 読み込みが完了した時の処理
-                        function (gltf) {
-                            // 読み込んだモデルをplacedObjectとして保存
-                            placedObject = gltf.scene;
+                // loader.loadを使って、選択された家具のモデルを読み込む
+                loader.load(
+                    currentFurniture.file, 
+                    (gltf) => {
+                        const model = gltf.scene;
 
-                            // モデルのサイズを実物大（高さ79cm）に調整
-                            const box = new THREE.Box3().setFromObject(placedObject);
-                            const size = box.getSize(new THREE.Vector3());
-                            const scale = 0.79 / size.y;
-                            placedObject.scale.set(scale, scale, scale);
+                        // モデルのサイズを実物大に調整
+                        const box = new THREE.Box3().setFromObject(model);
+                        const size = box.getSize(new THREE.Vector3());
+                        const scale = currentFurniture.height / size.y;
+                        model.scale.set(scale, scale, scale);
 
-                            // カーソルの位置にモデルを置いて、シーンに追加
-                            placedObject.position.setFromMatrixPosition(reticle.matrix);
-                            scene.add(placedObject);
-                        },
-                        // 読み込み中の処理（今回は何もしない）
-                        undefined,
-                        // エラーが起きた時の処理
-                        function (error) {
-                            console.error('モデルの読み込みに失敗しました', error);
-                        }
-                    );
-                } else {
-                    // 既にイスが置かれていたら、その位置をカーソルの場所に更新する
-                    placedObject.position.setFromMatrixPosition(reticle.matrix);
-                }
+                        // カーソルの位置にモデルを置いて、シーンに追加
+                        model.position.setFromMatrixPosition(reticle.matrix);
+                        scene.add(model);
+                        
+                        // 配置したオブジェクトを配列に追加して管理
+                        placedObjects.push(model);
+                    },
+                    undefined,
+                    (error) => {
+                        console.error('モデルの読み込みに失敗しました', error);
+                    }
+                );
             }
         }
 
