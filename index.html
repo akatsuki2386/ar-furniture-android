@@ -2,13 +2,13 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>【機能改善】AR家具配置アプリ</title>
+    <title>【機能追加】AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
         body { margin: 0; }
         canvas { display: block; }
 
-        /* ▼▼▼ 変更点1：UI全体のレイアウトを変更 ▼▼▼ */
+        /* UI全体のレイアウト */
         #overlay {
             position: fixed;
             top: 0;
@@ -22,21 +22,21 @@
             justify-content: center;
             align-items: flex-end;
         }
-        /* 左側の家具選択パレット */
+        /* 左側の選択パレット */
         #side-palette {
             position: absolute;
             left: 20px;
             top: 50%;
             transform: translateY(-50%);
             display: flex;
-            flex-direction: column; /* 縦に並べる */
+            flex-direction: column;
             gap: 15px;
             padding: 10px;
             background-color: rgba(0, 0, 0, 0.5);
             border-radius: 16px;
             pointer-events: auto;
         }
-        .furniture-button {
+        .palette-button {
             width: 60px;
             height: 60px;
             background-color: #6B7280;
@@ -51,15 +51,22 @@
             justify-content: center;
             align-items: center;
         }
-        .furniture-button.selected {
+        .palette-button.selected {
             background-color: #007AFF;
             border-color: #FFF;
             transform: scale(1.1);
         }
-        /* 下の「ここに置く」ボタン */
+        /* ▼▼▼ 変更点1：削除ボタンが選択された時のスタイルを追加 ▼▼▼ */
+        #delete-button.selected {
+            background-color: #EF4444; /* 赤色にする */
+            border-color: #FFF;
+            transform: scale(1.1);
+        }
+        /* 下のバー */
         #bottom-bar {
             padding-bottom: 30px;
             pointer-events: auto;
+            text-align: center;
         }
         #place-button {
             padding: 14px 28px;
@@ -76,9 +83,15 @@
 </head>
 <body>
     <div id="overlay">
-        <!-- 家具選択パレット（左側） -->
-        <div id="side-palette"></div>
-        <!-- 配置ボタン（下側） -->
+        <div id="side-palette">
+            <!-- 家具選択ボタンがここに動的に追加される -->
+            <!-- ▼▼▼ 変更点2：削除ボタンを追加 ▼▼▼ -->
+            <button id="delete-button" class="palette-button">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 30px; height: 30px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 0 0-2.09 2.134v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                </svg>
+            </button>
+        </div>
         <div id="bottom-bar">
             <button id="place-button">ここに置く</button>
         </div>
@@ -102,7 +115,6 @@
         let hitTestSource = null;
         let hitTestSourceRequested = false;
         let reticle;
-        
         const loader = new GLTFLoader();
         
         const furnitureData = [
@@ -112,9 +124,14 @@
         ];
         let currentFurniture = furnitureData[0];
         
-        // ▼▼▼ 変更点2：プレビュー用のオブジェクトと、配置済みのオブジェクトを分ける ▼▼▼
-        let previewObject = null; // プレビュー用の半透明オブジェクト
-        const placedObjects = []; // 配置済みのオブジェクトを管理する配列
+        let previewObject = null;
+        const placedObjects = [];
+
+        // ▼▼▼ 変更点3：削除モードと、タップ操作の変数を追加 ▼▼▼
+        let isDeleteMode = false;
+        let controller; // タップ操作を管理
+        let selectedForDeletion = null; // 削除対象として選択されたオブジェクト
+        const highlightMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000, transparent: true, opacity: 0.7 });
 
         init();
         animate();
@@ -132,6 +149,11 @@
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.xr.enabled = true;
             document.body.appendChild(renderer.domElement);
+            
+            // ▼▼▼ 変更点4：コントローラーのセットアップとタップイベントの追加 ▼▼▼
+            controller = renderer.xr.getController(0);
+            controller.addEventListener('select', onSelect); // selectはタップ時に発生
+            scene.add(controller);
 
             const arButton = ARButton.createButton(renderer, {
                 requiredFeatures: ['hit-test'],
@@ -151,68 +173,105 @@
             const palette = document.getElementById('side-palette');
             furnitureData.forEach((item, index) => {
                 const button = document.createElement('button');
-                button.className = 'furniture-button';
+                button.className = 'palette-button furniture-button';
                 button.textContent = item.name;
                 if (index === 0) button.classList.add('selected');
-
                 button.addEventListener('click', () => {
+                    // 削除モードを解除
+                    if (isDeleteMode) toggleDeleteMode();
+                    
                     palette.querySelectorAll('.furniture-button').forEach(btn => btn.classList.remove('selected'));
                     button.classList.add('selected');
                     currentFurniture = item;
-                    // ▼▼▼ 変更点3：家具を選んだら、プレビューを更新する ▼▼▼
                     updatePreviewObject();
                 });
                 palette.appendChild(button);
             });
             
-            // ▼▼▼ 変更点4：「ここに置く」ボタンの処理 ▼▼▼
+            // 削除ボタンの処理
+            const deleteButton = document.getElementById('delete-button');
+            deleteButton.addEventListener('click', toggleDeleteMode);
+
             document.getElementById('place-button').addEventListener('click', onConfirmPlacement);
-            
-            // 最初にプレビューオブジェクトを読み込んでおく
             updatePreviewObject();
         }
 
-        // プレビューオブジェクトを更新する関数
-        function updatePreviewObject() {
-            // もし既にプレビューがあれば、シーンから削除
-            if (previewObject) {
-                scene.remove(previewObject);
+        // ▼▼▼ 変更点5：削除モードを切り替える関数を追加 ▼▼▼
+        function toggleDeleteMode() {
+            isDeleteMode = !isDeleteMode;
+            const deleteButton = document.getElementById('delete-button');
+            const placeButton = document.getElementById('place-button');
+            
+            if (isDeleteMode) {
+                console.log("削除モードON");
+                deleteButton.classList.add('selected');
+                placeButton.style.display = 'none'; // 配置ボタンを隠す
+                if(previewObject) previewObject.visible = false; // プレビューを隠す
+                reticle.visible = false; // カーソルも隠す
+            } else {
+                console.log("削除モードOFF");
+                deleteButton.classList.remove('selected');
+                placeButton.style.display = 'block'; // 配置ボタンを表示
             }
+        }
+        
+        // ▼▼▼ 変更点6：タップ時の処理を一元管理する関数を追加 ▼▼▼
+        function onSelect() {
+            if (isDeleteMode) {
+                // 削除モードの時
+                if (selectedForDeletion) {
+                    const objectToRemove = selectedForDeletion;
+                    // シーンから削除
+                    scene.remove(objectToRemove);
+                    // 配列からも削除
+                    const index = placedObjects.indexOf(objectToRemove);
+                    if (index > -1) {
+                        placedObjects.splice(index, 1);
+                    }
+                    selectedForDeletion = null;
+                }
+            }
+        }
+
+
+        function updatePreviewObject() {
+            if (previewObject) scene.remove(previewObject);
             loader.load(currentFurniture.file, (gltf) => {
                 previewObject = gltf.scene;
-                // モデルを半透明にする
                 previewObject.traverse(child => {
                     if (child.isMesh) {
-                        child.material = child.material.clone(); // マテリアルを複製しないと他のオブジェクトにも影響する
+                        child.material = child.material.clone();
                         child.material.transparent = true;
                         child.material.opacity = 0.5;
                     }
                 });
-                // サイズ調整
                 const box = new THREE.Box3().setFromObject(previewObject);
                 const size = box.getSize(new THREE.Vector3());
                 const scale = currentFurniture.height / size.y;
                 previewObject.scale.set(scale, scale, scale);
-                // 最初は非表示にしておく
                 previewObject.visible = false; 
                 scene.add(previewObject);
             });
         }
         
-        // 「ここに置く」ボタンが押された時の関数
         function onConfirmPlacement() {
-            // プレビューが表示されている（＝床が認識されている）時だけ実行
             if (previewObject && previewObject.visible) {
-                // 同じモデルを、今度は不透明な状態で新しく読み込む
                 loader.load(currentFurniture.file, (gltf) => {
                     const solidObject = gltf.scene;
-                    // サイズ調整
                     const box = new THREE.Box3().setFromObject(solidObject);
                     const size = box.getSize(new THREE.Vector3());
                     const scale = currentFurniture.height / size.y;
                     solidObject.scale.set(scale, scale, scale);
-                    // プレビューオブジェクトの位置に配置
                     solidObject.position.copy(previewObject.position);
+                    
+                    // ▼▼▼ 変更点7：配置したオブジェクトに元のマテリアル情報を保存 ▼▼▼
+                    solidObject.userData.originalMaterials = new Map();
+                    solidObject.traverse(child => {
+                        if(child.isMesh) {
+                            solidObject.userData.originalMaterials.set(child, child.material);
+                        }
+                    });
+                    
                     scene.add(solidObject);
                     placedObjects.push(solidObject);
                 });
@@ -224,39 +283,68 @@
         }
 
         function render(timestamp, frame) {
-            if (frame) {
-                const referenceSpace = renderer.xr.getReferenceSpace();
-                const session = renderer.xr.getSession();
+            // ▼▼▼ 変更点8：削除モードの時のハイライト処理を追加 ▼▼▼
+            if (isDeleteMode) {
+                const raycaster = new THREE.Raycaster();
+                raycaster.setFromCamera({x: 0, y: 0}, camera); // 画面中央からレイを飛ばす
+                const intersects = raycaster.intersectObjects(placedObjects, true);
 
-                if (hitTestSourceRequested === false) {
-                    session.requestReferenceSpace('viewer').then((referenceSpace) => {
-                        session.requestHitTestSource({ space: referenceSpace }).then((source) => {
-                            hitTestSource = source;
-                        });
+                // 前のフレームで選択されていたオブジェクトのハイライトを解除
+                if (selectedForDeletion) {
+                    selectedForDeletion.traverse(child => {
+                        if(child.isMesh && selectedForDeletion.userData.originalMaterials.has(child)) {
+                           child.material = selectedForDeletion.userData.originalMaterials.get(child);
+                        }
                     });
-                    session.addEventListener('end', () => {
-                        hitTestSourceRequested = false;
-                        hitTestSource = null;
-                    });
-                    hitTestSourceRequested = true;
+                    selectedForDeletion = null;
                 }
 
-                if (hitTestSource) {
-                    const hitTestResults = frame.getHitTestResults(hitTestSource);
-                    if (hitTestResults.length) {
-                        const hit = hitTestResults[0];
-                        reticle.visible = true;
-                        reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
-                        
-                        // ▼▼▼ 変更点5：プレビューオブジェクトをカーソルの位置に追従させる ▼▼▼
-                        if (previewObject) {
-                            previewObject.visible = true;
-                            previewObject.position.setFromMatrixPosition(reticle.matrix);
-                        }
+                if (intersects.length > 0) {
+                    // 最も近い、配置済みのオブジェクトを探す
+                    let intersectedRoot = intersects[0].object;
+                    while (intersectedRoot.parent && !placedObjects.includes(intersectedRoot.parent)) {
+                        intersectedRoot = intersectedRoot.parent;
+                    }
+                    if(placedObjects.includes(intersectedRoot)) {
+                        selectedForDeletion = intersectedRoot;
+                        // ハイライトを適用
+                        selectedForDeletion.traverse(child => {
+                            if (child.isMesh) child.material = highlightMaterial;
+                        });
+                    }
+                }
+            } else {
+                 if (frame) {
+                    const referenceSpace = renderer.xr.getReferenceSpace();
+                    const session = renderer.xr.getSession();
 
-                    } else {
-                        reticle.visible = false;
-                        if (previewObject) previewObject.visible = false;
+                    if (hitTestSourceRequested === false) {
+                        session.requestReferenceSpace('viewer').then((referenceSpace) => {
+                            session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+                                hitTestSource = source;
+                            });
+                        });
+                        session.addEventListener('end', () => {
+                            hitTestSourceRequested = false;
+                            hitTestSource = null;
+                        });
+                        hitTestSourceRequested = true;
+                    }
+
+                    if (hitTestSource) {
+                        const hitTestResults = frame.getHitTestResults(hitTestSource);
+                        if (hitTestResults.length) {
+                            const hit = hitTestResults[0];
+                            reticle.visible = true;
+                            reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+                            if (previewObject) {
+                                previewObject.visible = true;
+                                previewObject.position.setFromMatrixPosition(reticle.matrix);
+                            }
+                        } else {
+                            reticle.visible = false;
+                            if (previewObject) previewObject.visible = false;
+                        }
                     }
                 }
             }
