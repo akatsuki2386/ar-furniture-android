@@ -153,7 +153,6 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
             </button>
-            <!-- ▼▼▼ 変更点：編集ボタンを追加 ▼▼▼ -->
             <button id="edit-button" class="circle-button">
                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
@@ -219,7 +218,13 @@
         
         let appState = 'IDLE'; // 'IDLE', 'CHOOSING', 'PLACING', 'EDITING'
         
-        const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5, emissive: 0xFFFFFF, emissiveIntensity: 0.2 });
+        // ▼▼▼ 変更点1：ハイライト用マテリアルの定義を修正 ▼▼▼
+        const highlightMaterial = new THREE.MeshStandardMaterial({
+            color: 0xFFFFFF,
+            transparent: true,
+            opacity: 0.4,
+            depthWrite: false // 奥にあるオブジェクトと色が混ざらないようにする
+        });
        
         init();
 
@@ -278,12 +283,10 @@
                 }
             });
 
-            // ▼▼▼ 変更点：編集ボタンのイベントリスナーを追加 ▼▼▼
             document.getElementById('edit-button').addEventListener('click', () => {
                 if (appState === 'IDLE' && hoveredObject) {
                     selectedObject = hoveredObject;
                     hoveredObject = null;
-                    highlightObject(selectedObject);
                     appState = 'EDITING';
                     updateUI();
                 }
@@ -316,7 +319,6 @@
             if (appState === 'IDLE' && hoveredObject) {
                 selectedObject = hoveredObject;
                 hoveredObject = null;
-                highlightObject(selectedObject);
                 appState = 'EDITING';
                 updateUI();
             }
@@ -346,7 +348,7 @@
                 previewObject = null;
             } else if (appState === 'EDITING') {
                 if(selectedObject) {
-                    unhighlightObject(selectedObject);
+                    unhighlightObject(selectedObject); // ゴーストを消す
                     scene.remove(selectedObject);
                     const index = placedObjects.indexOf(selectedObject);
                     if (index > -1) placedObjects.splice(index, 1);
@@ -382,21 +384,16 @@
             });
         }
         
+        // ▼▼▼ 変更点2：「元の色」の保存処理を削除し、ロジックを簡潔に ▼▼▼
         function placeNewObject() { 
             if (!previewObject) return;
             
             const solidObject = previewObject.clone();
-            solidObject.userData.originalMaterials = new Map();
-
             solidObject.traverse(child => {
                 if (child.isMesh) {
-                    const opaqueMaterial = child.material.clone();
-                    opaqueMaterial.transparent = false;
-                    opaqueMaterial.opacity = 1.0;
-                    
-                    child.material = opaqueMaterial;
-                    
-                    solidObject.userData.originalMaterials.set(child.uuid, opaqueMaterial.clone());
+                    child.material = child.material.clone();
+                    child.material.transparent = false;
+                    child.material.opacity = 1.0;
                 }
             });
 
@@ -414,32 +411,31 @@
             updateUI();
         }
        
+        // ▼▼▼ 変更点3：ハイライトを「重ねる」方式に変更 ▼▼▼
         function unhighlightObject(object) {
-            if (!object || !object.userData.originalMaterials) return;
-            object.traverse(child => {
-                if(child.isMesh && object.userData.originalMaterials.has(child.uuid)) {
-                    child.material = object.userData.originalMaterials.get(child.uuid);
-                }
-            });
+            if (!object || !object.userData.highlightGhost) return;
+            scene.remove(object.userData.highlightGhost);
+            object.userData.highlightGhost = null;
         }
 
         function highlightObject(object) {
-            if (!object) return;
-            object.traverse(child => {
+            if (!object || object.userData.highlightGhost) return;
+            const highlightGhost = object.clone();
+            highlightGhost.traverse(child => {
                 if (child.isMesh) {
                     child.material = highlightMaterial;
                 }
             });
+            object.userData.highlightGhost = highlightGhost;
+            scene.add(highlightGhost);
         }
 
-        // ▼▼▼ 変更点：UIの表示ロジックを更新 ▼▼▼
         function updateUI() {
             const addButton = document.getElementById('add-button');
             const editButton = document.getElementById('edit-button');
             const furniturePalette = document.getElementById('furniture-palette');
             const actionControls = document.getElementById('action-controls');
 
-            // いったんすべて非表示
             addButton.style.display = 'none';
             editButton.style.display = 'none';
             furniturePalette.style.display = 'none';
@@ -448,7 +444,6 @@
             switch (appState) {
                 case 'IDLE':
                     addButton.style.display = 'flex';
-                    // ホバー中なら編集ボタンも表示
                     if (hoveredObject) {
                         editButton.style.display = 'flex';
                     }
@@ -464,11 +459,29 @@
         }
 
         function handleHover() {
+            // ハイライト状態の同期
+            const currentHighlightTarget = appState === 'EDITING' ? selectedObject : hoveredObject;
+            scene.children.forEach(child => {
+                if (child.userData.isHighlightGhost) {
+                    if (child.userData.originalObject !== currentHighlightTarget) {
+                        scene.remove(child);
+                    }
+                }
+            });
+
+            if(appState === 'EDITING' && selectedObject && !selectedObject.userData.highlightGhost) {
+                 highlightObject(selectedObject);
+            }
+            if(appState !== 'EDITING' && selectedObject && selectedObject.userData.highlightGhost) {
+                unhighlightObject(selectedObject);
+            }
+
+
             if (appState !== 'IDLE') {
                 if(hoveredObject) {
                     unhighlightObject(hoveredObject);
                     hoveredObject = null;
-                    updateUI(); // UIを更新して編集ボタンを隠す
+                    updateUI();
                 }
                 return;
             };
@@ -496,7 +509,7 @@
                 if (hoveredObject) {
                     highlightObject(hoveredObject);
                 }
-                updateUI(); // ホバー状態が変わったらUIを更新
+                updateUI();
             }
         }
 
@@ -511,20 +524,6 @@
 
             if (frame) {
                 const referenceSpace = renderer.xr.getReferenceSpace();
-                const session = renderer.xr.getSession();
-
-                if (hitTestSourceRequested === false) {
-                    session.requestReferenceSpace('viewer').then((referenceSpace) => {
-                        session.requestHitTestSource({ space: referenceSpace }).then((source) => {
-                            hitTestSource = source;
-                        });
-                    });
-                    session.addEventListener('end', () => {
-                        hitTestSourceRequested = false; hitTestSource = null;
-                    });
-                    hitTestSourceRequested = true;
-                }
-
                 if (hitTestSource) {
                     const hitTestResults = frame.getHitTestResults(hitTestSource);
                     if (hitTestResults.length > 0) {
@@ -542,8 +541,34 @@
                 target.position.setFromMatrixPosition(reticle.matrix);
             }
             
+            // ハイライト用ゴーストの位置を常に本体と同期させる
+            placedObjects.forEach(obj => {
+                if (obj.userData.highlightGhost) {
+                    obj.userData.highlightGhost.position.copy(obj.position);
+                    obj.userData.highlightGhost.quaternion.copy(obj.quaternion);
+                }
+            });
+             if (selectedObject && selectedObject.userData.highlightGhost) {
+                selectedObject.userData.highlightGhost.position.copy(selectedObject.position);
+                selectedObject.userData.highlightGhost.quaternion.copy(selectedObject.quaternion);
+            }
+
             if(previewObject) {
                 previewObject.visible = appState === 'PLACING';
+            }
+
+            // Hit-test sourceの初期化
+            if (!hitTestSourceRequested && renderer.xr.getSession()) {
+                const session = renderer.xr.getSession();
+                session.requestReferenceSpace('viewer').then((referenceSpace) => {
+                    session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+                        hitTestSource = source;
+                    });
+                });
+                session.addEventListener('end', () => {
+                    hitTestSourceRequested = false; hitTestSource = null;
+                });
+                hitTestSourceRequested = true;
             }
 
             renderer.render(scene, camera);
