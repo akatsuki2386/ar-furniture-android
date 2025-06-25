@@ -61,10 +61,9 @@
             z-index: 10;
         }
         
-        /* ▼▼▼ 変更点：#side-palette を #furniture-palette に変更し、スタイルを調整 ▼▼▼ */
         #furniture-palette {
             display: flex;
-            flex-direction: row; /* 横並びに変更 */
+            flex-direction: row;
             gap: 15px;
             padding: 10px;
             background-color: rgba(0, 0, 0, 0.5);
@@ -105,6 +104,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
+            gap: 15px; /* ボタン間のスペース */
         }
         
         #action-controls {
@@ -130,12 +130,13 @@
             align-items: center;
             transition: transform 0.1s ease, background-color 0.2s ease;
             pointer-events: auto;
+            flex-shrink: 0; /* ボタンが縮まないようにする */
         }
         .circle-button:active {
             transform: scale(0.9);
         }
 
-        #add-button {
+        #add-button, #edit-button {
             display: none; /* 初期状態は非表示 */
         }
     </style>
@@ -146,14 +147,18 @@
     </div>
 
     <div id="overlay">
-        <!-- ▼▼▼ 変更点：#side-paletteを削除 ▼▼▼ -->
         <div id="bottom-bar">
             <button id="add-button" class="circle-button">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                 </svg>
             </button>
-            <!-- ▼▼▼ 変更点：家具パレットを#bottom-bar内に移動 ▼▼▼ -->
+            <!-- ▼▼▼ 変更点：編集ボタンを追加 ▼▼▼ -->
+            <button id="edit-button" class="circle-button">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                </svg>
+            </button>
             <div id="furniture-palette">
                 <!-- 家具選択ボタンがここに動的に追加される -->
             </div>
@@ -243,6 +248,7 @@
             renderer.xr.addEventListener('sessionend', () => {
                 document.getElementById('title-container').style.display = 'block';
                 document.getElementById('add-button').style.display = 'none';
+                document.getElementById('edit-button').style.display = 'none';
                 document.getElementById('furniture-palette').style.display = 'none';
                 document.getElementById('action-controls').style.display = 'none';
             });
@@ -272,7 +278,17 @@
                 }
             });
 
-            // ▼▼▼ 変更点：参照IDを #furniture-palette に変更 ▼▼▼
+            // ▼▼▼ 変更点：編集ボタンのイベントリスナーを追加 ▼▼▼
+            document.getElementById('edit-button').addEventListener('click', () => {
+                if (appState === 'IDLE' && hoveredObject) {
+                    selectedObject = hoveredObject;
+                    hoveredObject = null;
+                    highlightObject(selectedObject);
+                    appState = 'EDITING';
+                    updateUI();
+                }
+            });
+
             const palette = document.getElementById('furniture-palette');
             palette.innerHTML = '';
             furnitureData.forEach((item) => {
@@ -416,18 +432,26 @@
             });
         }
 
+        // ▼▼▼ 変更点：UIの表示ロジックを更新 ▼▼▼
         function updateUI() {
             const addButton = document.getElementById('add-button');
+            const editButton = document.getElementById('edit-button');
             const furniturePalette = document.getElementById('furniture-palette');
             const actionControls = document.getElementById('action-controls');
 
+            // いったんすべて非表示
             addButton.style.display = 'none';
+            editButton.style.display = 'none';
             furniturePalette.style.display = 'none';
             actionControls.style.display = 'none';
 
             switch (appState) {
                 case 'IDLE':
                     addButton.style.display = 'flex';
+                    // ホバー中なら編集ボタンも表示
+                    if (hoveredObject) {
+                        editButton.style.display = 'flex';
+                    }
                     break;
                 case 'CHOOSING':
                     furniturePalette.style.display = 'flex';
@@ -444,6 +468,7 @@
                 if(hoveredObject) {
                     unhighlightObject(hoveredObject);
                     hoveredObject = null;
+                    updateUI(); // UIを更新して編集ボタンを隠す
                 }
                 return;
             };
@@ -471,6 +496,7 @@
                 if (hoveredObject) {
                     highlightObject(hoveredObject);
                 }
+                updateUI(); // ホバー状態が変わったらUIを更新
             }
         }
 
