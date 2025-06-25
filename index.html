@@ -130,7 +130,6 @@
                     </svg>
                 </button>
                 <button id="rotate-button" class="circle-button">
-                    <!-- ▼▼▼ 変更点：ご提案の画像に近い、新しい回転アイコンに変更 ▼▼▼ -->
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
                       <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.092 1.21-.138 2.43-.138 3.662s.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.092-1.21.138-2.43.138-3.662Z" />
                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5" />
@@ -162,8 +161,9 @@
         
         const furnitureData = [
             { name: 'イス', file: 'chair.glb', height: 0.79 },
-            { name: 'テーブル', file: 'chair.glb', height: 0.75 }, 
-            { name: 'ランプ', file: 'chair.glb', height: 1.5 }, 
+            // 重要：新しいモデルを使うには、必ずGitHubにファイルをアップロードしてください！
+            { name: '本棚', file: 'bookshelf.glb', height: 1.8 }, 
+            { name: '脚立', file: 'stand.glb', height: 1.2 }, 
         ];
         let currentFurniture = furnitureData[0];
         
@@ -174,7 +174,6 @@
         const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0x007AFF, transparent: true, opacity: 0.6 });
         
         init();
-        animate();
 
         function init() {
             scene = new THREE.Scene();
@@ -187,12 +186,9 @@
             renderer.xr.enabled = true;
             document.body.appendChild(renderer.domElement);
             
-            document.body.appendChild(ARButton.createButton(renderer, {
-                requiredFeatures: ['hit-test'],
-                optionalFeatures: ['dom-overlay'],
-                domOverlay: { root: document.querySelector("#overlay") }
-            }));
-
+            // ▼▼▼ 変更点1：ARButtonの生成とDOMへの追加をinit()の最後に移動 ▼▼▼
+            // これで、他の処理が失敗しても、AR開始ボタンの表示は邪魔されない
+            
             renderer.xr.addEventListener('sessionstart', () => {
                 initializeARExperience();
             });
@@ -206,7 +202,15 @@
                 bottomBar.style.opacity = 0;
             });
             
+            // ▼▼▼ 変更点2：animate()の呼び出しをinit()の最後の一回だけにする ▼▼▼
             animate();
+
+             // ▼▼▼ 変更点3：ARButtonの生成を、他のすべての準備が終わった後に行う ▼▼▼
+            document.body.appendChild(ARButton.createButton(renderer, {
+                requiredFeatures: ['hit-test'],
+                optionalFeatures: ['dom-overlay'],
+                domOverlay: { root: document.querySelector("#overlay") }
+            }));
         }
 
         function initializeARExperience() {
@@ -288,6 +292,8 @@
                 previewObject.scale.set(scale, scale, scale);
                 previewObject.visible = false;
                 scene.add(previewObject);
+            }, undefined, (error) => {
+                console.error(`プレビューモデル(${currentFurniture.file})の読み込みに失敗:`, error);
             });
         }
 
@@ -311,6 +317,8 @@
                     
                     scene.add(solidObject);
                     placedObjects.push(solidObject);
+                }, undefined, (error) => {
+                    console.error(`配置モデル(${currentFurniture.file})の読み込みに失敗:`, error);
                 });
             }
         }
