@@ -32,19 +32,18 @@
   </head>
 
   <body>
-    <!-- ▼▼▼ 変更点：webxr="requiredFeatures: hit-test"で、床認識モードに！ ▼▼▼ -->
+    <!-- ▼▼▼ 変更点：webxrの設定から不要な呪文を削除！ ▼▼▼ -->
     <a-scene 
       id="ar-scene"
-      webxr="requiredFeatures: hit-test,local-floor; optionalFeatures: dom-overlay; overlayElement: #overlay;"
-      ar-hit-test="enabled: false;"
-      renderer="logarithmicDepthBuffer: true;">
+      webxr="requiredFeatures: hit-test, local-floor"
+      ar-hit-test="enabled: false"
+      renderer="logarithmicDepthBuffer: true">
 
       <!-- ライト（これがないと影がなくてのっぺりする） -->
       <a-light type="ambient" color="#FFF" intensity="0.5"></a-light>
       <a-light type="directional" color="#FFF" intensity="1" position="-1 2 1"></a-light>
       
-      <!-- ▼▼▼ 変更点：床に置ける場所を示す「カーソル」▼▼▼ -->
-      <!-- この青いリングが、床の上を追従するカーソルになる -->
+      <!-- 床に置ける場所を示す「カーソル」 -->
       <a-entity
         id="reticle"
         ar-hit-test-target
@@ -53,49 +52,45 @@
       </a-entity>
 
       <!-- カメラと、タップを認識するためのカーソル -->
-      <a-camera>
-        <a-entity cursor="fuse: false; rayOrigin: mouse;" raycaster="objects: .clickable"></a-entity>
-      </a-camera>
+      <a-camera></a-camera>
 
     </a-scene>
 
-    <!-- ▼▼▼ 変更点：新しいロジックのJavaScript！ ▼▼▼ -->
+    <!-- ▼▼▼ 変更点：JavaScriptのロジックをより確実に！ ▼▼▼ -->
     <script>
-      document.addEventListener('DOMContentLoaded', () => {
-        const sceneEl = document.querySelector('#ar-scene');
+      window.addEventListener('DOMContentLoaded', () => {
+        const sceneEl = document.querySelector('a-scene');
         const reticle = document.querySelector('#reticle');
 
         // ARモードが開始されたら、床認識を有効にする
         sceneEl.addEventListener('enter-vr', () => {
-          // WebXRでは、ARモードのことを'enter-vr'と呼ぶことがある
-          console.log('ARモード開始！床認識を有効にします。');
-          sceneEl.setAttribute('ar-hit-test', 'enabled', true);
+          if (sceneEl.is('ar-mode')) {
+            console.log('ARモード開始！床認識を有効にします。');
+            sceneEl.setAttribute('ar-hit-test', { enabled: true });
+          }
         });
         
         // 床認識システムが、床を見つけたり見失ったりした時の処理
         sceneEl.addEventListener('ar-hit-test-start', () => {
-            reticle.setAttribute('visible', false); // まだ床が見つからないのでカーソルは隠す
+            reticle.setAttribute('visible', false);
         });
         sceneEl.addEventListener('ar-hit-test-processed', () => {
-            reticle.setAttribute('visible', true); // 床の探索が終わったらカーソルを表示
+            reticle.setAttribute('visible', true);
         });
         
-        // タップした時の処理
+        // 画面全体がタップされた時の処理
         sceneEl.addEventListener('click', () => {
           // カーソルが見えている（＝床が認識されている）時だけ実行
           if (reticle.getAttribute('visible')) {
             console.log('床をタップ！箱を置きます。');
             
-            // 1. 新しい箱（テスト用）を作る
             const newBox = document.createElement('a-box');
             newBox.setAttribute('color', 'tomato');
-            newBox.setAttribute('scale', '0.2 0.2 0.2'); // 20cmの箱
+            newBox.setAttribute('scale', '0.2 0.2 0.2');
 
-            // 2. カーソルの現在の世界での位置を取得
             const position = reticle.getAttribute('position');
             newBox.setAttribute('position', position);
 
-            // 3. 作った箱をシーンに追加
             sceneEl.appendChild(newBox);
           }
         });
@@ -105,27 +100,15 @@
 </html>
 ```
 
-### どこが変わったか
+### どこを変えたか
 
-1.  **ARの主役を完全に交代！**
-    * `<a-scene>`から`arjs`を削除し、代わりに`webxr`っていう新しい主役を呼んだ。これが、最新のスマホで動く平面認識ARの標準的なやり方だ。
+1.  **問題の設定を削除！**
+    * `<a-scene>`の`webxr`設定から、エラーの原因だった`dom-overlay`の部分をまるっと削除した。これでシーンが正しく表示されるはず。
 
-2.  **床カーソル（`reticle`）**
-    * 前に試した青いリングが、今度こそちゃんと**床の上をスルスルついてくる**カーソルになる。
+2.  **JavaScriptをより確実に**
+    * 念のため、`DOMContentLoaded`で囲ったり、ARモードに入ったことを`sceneEl.is('ar-mode')`で確認したりして、より確実に動くようにロジックを強化した。
+    * 不要な`raycaster`をカメラから削除した。`ar-hit-test`ではシーン全体のクリックで判定できるからね。
 
-3.  **新しいJavaScript**
-    * **ARモードが始まったら**、床認識をONにする。
-    * **床が見つかったら**、カーソルを表示する。
-    * **タップしたら**、カーソルの場所にテスト用の赤い箱を置く。
-
-### これでどうなるはずか？
-
-1.  ページを開くと、画面下に「**START AR**」みたいなボタンが表示される。
-2.  そのボタンを押すと、ARモードが開始される。
-3.  スマホをゆっくり動かして、**床をカメラに写す**。
-4.  すると、**床に青いリング（カーソル）**が表示されるようになる。
-5.  好きな場所にカーソルを合わせて、**画面をタップ**する。
-6.  その場所に、**赤い箱がドン！と置かれれば**、俺たちの新しい船出は完璧だ！
-
-遠回りさせて本当にごめんな！でも、今度こそ君が本当に作りたかったアプリへの、一番の近道だ。
-GitHubのコードを、この新しい土台でまるっと更新して、試してみて
+今度こそ、俺たちの新しい船は港を出るはずだ！
+またGitHubの`sotsuken-ar-furniture`リポジトリのコードをこれで更新して、試してみてくれ！
+「START AR」ボタンが見えるは
