@@ -135,7 +135,6 @@
             transform: scale(0.9);
         }
 
-        /* ▼▼▼ 変更点：新しい「＋」ボタンのスタイル ▼▼▼ */
         #add-button {
             background-color: #007AFF;
             display: none; /* 初期状態は非表示 */
@@ -152,7 +151,6 @@
             <!-- 家具選択ボタンがここに動的に追加される -->
         </div>
         <div id="bottom-bar">
-            <!-- ▼▼▼ 変更点：「＋」ボタンをここに追加 ▼▼▼ -->
             <button id="add-button" class="circle-button">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -213,7 +211,6 @@
         let selectedObject = null;
         let hoveredObject = null;
         
-        // ▼▼▼ 変更点：アプリの状態を管理する変数 ▼▼▼
         let appState = 'IDLE'; // 'IDLE', 'CHOOSING', 'PLACING', 'EDITING'
         
         const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0x007AFF, transparent: true, opacity: 0.6, emissive: 0x007AFF, emissiveIntensity: 0.3 });
@@ -244,7 +241,6 @@
 
             renderer.xr.addEventListener('sessionend', () => {
                 document.getElementById('title-container').style.display = 'block';
-                // AR終了時にすべてのUIを隠す
                 document.getElementById('add-button').style.display = 'none';
                 document.getElementById('side-palette').style.display = 'none';
                 document.getElementById('action-controls').style.display = 'none';
@@ -277,7 +273,7 @@
 
             const palette = document.getElementById('side-palette');
             palette.innerHTML = '';
-            furnitureData.forEach((item, index) => {
+            furnitureData.forEach((item) => {
                 const button = document.createElement('button');
                 button.className = 'furniture-button';
                 button.textContent = item.name;
@@ -299,7 +295,6 @@
         }
         
         function onSelect() {
-            // IDLE状態でホバー中のオブジェクトがあれば、編集モードに移行
             if (appState === 'IDLE' && hoveredObject) {
                 selectedObject = hoveredObject;
                 hoveredObject = null;
@@ -362,32 +357,32 @@
                 const size = box.getSize(new THREE.Vector3());
                 const scale = currentFurniture.height / size.y;
                 previewObject.scale.set(scale, scale, scale);
-                previewObject.visible = true; // 最初から表示
+                previewObject.visible = true;
                 scene.add(previewObject);
             }, undefined, (error) => {
                 console.error(`プレビューモデル(${currentFurniture.file})の読み込みに失敗:`, error);
             });
         }
         
+        // ▼▼▼ 変更点：元の色情報を正しく保存するように修正 ▼▼▼
         function placeNewObject() { 
             if (!previewObject) return;
             
-            const solidObject = previewObject.clone(); // プレビューをクローンして実体化
+            const solidObject = previewObject.clone();
+            solidObject.userData.originalMaterials = new Map();
+
             solidObject.traverse(child => {
                 if (child.isMesh) {
-                    child.material = child.material.clone();
-                    child.material.transparent = false; // 不透明に戻す
-                    child.material.opacity = 1.0;
-                }
-            });
-
-            solidObject.userData.originalMaterials = new Map();
-            previewObject.traverse(child => {
-                if(child.isMesh) {
-                    const originalMaterial = child.material.clone();
-                    originalMaterial.transparent = false;
-                    originalMaterial.opacity = 1.0;
-                    solidObject.userData.originalMaterials.set(child.uuid, originalMaterial);
+                    // プレビュー用の半透明マテリアルから、最終的な不透明マテリアルを複製して作成
+                    const opaqueMaterial = child.material.clone();
+                    opaqueMaterial.transparent = false;
+                    opaqueMaterial.opacity = 1.0;
+                    
+                    // 作成した不透明マテリアルをオブジェクトに適用
+                    child.material = opaqueMaterial;
+                    
+                    // この不透明マテリアルを「元のマテリアル」として保存する
+                    solidObject.userData.originalMaterials.set(child.uuid, opaqueMaterial);
                 }
             });
 
@@ -428,7 +423,6 @@
             const sidePalette = document.getElementById('side-palette');
             const actionControls = document.getElementById('action-controls');
 
-            // デフォルトですべて非表示
             addButton.style.display = 'none';
             sidePalette.style.display = 'none';
             actionControls.style.display = 'none';
@@ -524,7 +518,6 @@
                 target.position.setFromMatrixPosition(reticle.matrix);
             }
             
-            // プレビュー表示は配置モードの時だけ
             if(previewObject) {
                 previewObject.visible = appState === 'PLACING';
             }
