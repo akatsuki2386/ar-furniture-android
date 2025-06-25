@@ -202,7 +202,7 @@
         import { ARButton } from 'three/addons/webxr/ARButton.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-        let camera, scene, renderer;
+        let camera, scene, renderer, controller;
         let hitTestSource = null;
         let hitTestSourceRequested = false;
         let reticle;
@@ -219,9 +219,8 @@
         const placedObjects = [];
         const raycaster = new THREE.Raycaster();
         
-        // ▼▼▼ 変更点：オブジェクトの状態管理変数を変更 ▼▼▼
-        let selectedObject = null; // 移動・回転・削除の対象として「選択」されたオブジェクト
-        let hoveredObject = null;  // フォーカスが合っている「ホバー」状態のオブジェクト
+        let selectedObject = null;
+        let hoveredObject = null;
         
         const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0x007AFF, transparent: true, opacity: 0.6, emissive: 0x007AFF, emissiveIntensity: 0.3 });
        
@@ -238,11 +237,14 @@
             renderer.xr.enabled = true;
             document.body.appendChild(renderer.domElement);
            
-            renderer.xr.addEventListener('sessionstart', (e) => {
+            // ▼▼▼ 変更点1：コントローラー（タップ入力）の準備 ▼▼▼
+            controller = renderer.xr.getController(0);
+            controller.addEventListener('select', onSelect);
+            scene.add(controller);
+
+            renderer.xr.addEventListener('sessionstart', () => {
                 document.getElementById('title-container').style.display = 'none';
                 initializeARExperience();
-                // ▼▼▼ 変更点：セッション開始時にタップイベントを登録 ▼▼▼
-                e.target.addEventListener('select', onSelect);
             });
 
             renderer.xr.addEventListener('sessionend', () => {
@@ -311,21 +313,22 @@
                 palette.appendChild(button);
             });
            
-            document.getElementById('place-button').addEventListener('click', onConfirmPlacement);
+            // ▼▼▼ 変更点2：「ここに置く」ボタンのタップイベントを削除 ▼▼▼
+            // document.getElementById('place-button').addEventListener('click', onConfirmPlacement);
             document.getElementById('rotate-button').addEventListener('click', onRotate);
             document.getElementById('delete-button').addEventListener('click', onDelete);
             document.getElementById('confirm-button').addEventListener('click', onConfirmMove);
         }
         
-        // ▼▼▼ 変更点：画面タップ時の処理をまとめた関数 ▼▼▼
         function onSelect() {
-            // ホバー状態のオブジェクトをタップしたら、それを「選択」状態にする
             if (hoveredObject) {
+                if (selectedObject) {
+                    unhighlightObject(selectedObject);
+                }
                 selectedObject = hoveredObject;
                 hoveredObject = null; 
                 updateUI();
             } 
-            // 何も選択・ホバーしていない状態で、床をタップしたら新しい家具を配置する
             else if (!selectedObject && reticle.visible) {
                 onConfirmPlacement();
             }
@@ -437,11 +440,8 @@
             }
         }
 
-        // ▼▼▼ 変更点：フォーカス（ホバー）の処理をする関数 ▼▼▼
         function handleHover() {
-            // オブジェクトを移動させている最中は、他のオブジェクトにホバーしない
             if (selectedObject) {
-                // 念のためホバー状態は解除しておく
                 if (hoveredObject) {
                     unhighlightObject(hoveredObject);
                     hoveredObject = null;
@@ -464,14 +464,11 @@
                 }
             }
             
-            // ホバー状態が変化した場合のみ処理
             if (intersectedRoot !== hoveredObject) {
-                // 前にホバーしていたオブジェクトのハイライトを消す
                 if (hoveredObject) {
                     unhighlightObject(hoveredObject);
                 }
                 
-                // 新しくホバーしたオブジェクトを記録し、ハイライトする
                 hoveredObject = intersectedRoot;
                 if (hoveredObject) {
                     highlightObject(hoveredObject);
@@ -485,7 +482,6 @@
 
         function render(timestamp, frame) {
             if (renderer.xr.isPresenting) {
-                // ▼▼▼ 変更点：handleInteractions() を handleHover() に変更 ▼▼▼
                 handleHover();
 
                 if (frame) {
