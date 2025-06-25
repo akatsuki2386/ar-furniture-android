@@ -2,13 +2,13 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>【機能追加】AR家具配置アプリ</title>
+    <title>【機能改善】AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
         body { margin: 0; }
         canvas { display: block; }
 
-        /* AR画面の上に重ねるUIのスタイル */
+        /* ▼▼▼ 変更点1：UI全体のレイアウトを変更 ▼▼▼ */
         #overlay {
             position: fixed;
             top: 0;
@@ -18,34 +18,27 @@
             pointer-events: none;
             z-index: 10;
             font-family: sans-serif;
+            display: flex;
+            justify-content: center;
+            align-items: flex-end;
         }
-        #ui-container {
+        /* 左側の家具選択パレット */
+        #side-palette {
             position: absolute;
-            bottom: 20px;
-            left: 50%;
-            transform: translateX(-50%);
+            left: 20px;
+            top: 50%;
+            transform: translateY(-50%);
             display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px; /* 要素間の隙間 */
-            pointer-events: auto;
-        }
-        #info-text {
-            background-color: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 8px 16px;
-            border-radius: 9999px;
-            font-size: 14px;
-        }
-        #furniture-palette {
-            display: flex;
-            gap: 10px; /* ボタン間の隙間 */
+            flex-direction: column; /* 縦に並べる */
+            gap: 15px;
             padding: 10px;
             background-color: rgba(0, 0, 0, 0.5);
             border-radius: 16px;
+            pointer-events: auto;
         }
         .furniture-button {
-            padding: 12px;
+            width: 60px;
+            height: 60px;
             background-color: #6B7280;
             color: white;
             border: 2px solid transparent;
@@ -54,22 +47,40 @@
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s ease-in-out;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
         .furniture-button.selected {
             background-color: #007AFF;
             border-color: #FFF;
             transform: scale(1.1);
         }
+        /* 下の「ここに置く」ボタン */
+        #bottom-bar {
+            padding-bottom: 30px;
+            pointer-events: auto;
+        }
+        #place-button {
+            padding: 14px 28px;
+            background-color: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 9999px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
     </style>
 </head>
 <body>
-    <!-- ▼▼▼ 変更点1：UIの構造を変更 ▼▼▼ -->
     <div id="overlay">
-        <div id="ui-container">
-            <div id="info-text">イス を選択中</div>
-            <div id="furniture-palette">
-                <!-- ここに家具を選ぶボタンが動的に追加される -->
-            </div>
+        <!-- 家具選択パレット（左側） -->
+        <div id="side-palette"></div>
+        <!-- 配置ボタン（下側） -->
+        <div id="bottom-bar">
+            <button id="place-button">ここに置く</button>
         </div>
     </div>
 
@@ -94,19 +105,16 @@
         
         const loader = new GLTFLoader();
         
-        // ▼▼▼ 変更点2：家具のデータを定義 ▼▼▼
         const furnitureData = [
             { name: 'イス', file: 'chair.glb', height: 0.79 },
-            // 将来的にモデルを入れ替えれば、テーブルも置けるようになります
             { name: 'テーブル', file: 'chair.glb', height: 0.75 }, 
-            // 将来的にモデルを入れ替えれば、ランプも置けるようになります
             { name: 'ランプ', file: 'chair.glb', height: 1.5 }, 
         ];
-        // 現在選択されている家具の情報を保持する変数
         let currentFurniture = furnitureData[0];
         
-        // シーンに配置されたオブジェクトを管理する配列
-        const placedObjects = [];
+        // ▼▼▼ 変更点2：プレビュー用のオブジェクトと、配置済みのオブジェクトを分ける ▼▼▼
+        let previewObject = null; // プレビュー用の半透明オブジェクト
+        const placedObjects = []; // 配置済みのオブジェクトを管理する配列
 
         init();
         animate();
@@ -140,60 +148,74 @@
             reticle.visible = false;
             scene.add(reticle);
 
-            // ▼▼▼ 変更点3：家具選択ボタンを動的に生成 ▼▼▼
-            const palette = document.getElementById('furniture-palette');
-            const infoText = document.getElementById('info-text');
-
+            const palette = document.getElementById('side-palette');
             furnitureData.forEach((item, index) => {
                 const button = document.createElement('button');
                 button.className = 'furniture-button';
                 button.textContent = item.name;
-                // 最初のボタンを「選択済み」状態にする
-                if (index === 0) {
-                    button.classList.add('selected');
-                }
+                if (index === 0) button.classList.add('selected');
+
                 button.addEventListener('click', () => {
-                    // 他のボタンの選択状態を解除
                     palette.querySelectorAll('.furniture-button').forEach(btn => btn.classList.remove('selected'));
-                    // クリックされたボタンを選択状態にする
                     button.classList.add('selected');
-                    // 現在の家具情報を更新
                     currentFurniture = item;
-                    infoText.textContent = `${item.name} を選択中`;
+                    // ▼▼▼ 変更点3：家具を選んだら、プレビューを更新する ▼▼▼
+                    updatePreviewObject();
                 });
                 palette.appendChild(button);
             });
-
-            // ▼▼▼ 変更点4：画面をタップしたらオブジェクトを配置 ▼▼▼
-            renderer.domElement.addEventListener('click', onPlaceObject);
+            
+            // ▼▼▼ 変更点4：「ここに置く」ボタンの処理 ▼▼▼
+            document.getElementById('place-button').addEventListener('click', onConfirmPlacement);
+            
+            // 最初にプレビューオブジェクトを読み込んでおく
+            updatePreviewObject();
         }
 
-        function onPlaceObject() {
-            if (reticle.visible) {
-                // loader.loadを使って、選択された家具のモデルを読み込む
-                loader.load(
-                    currentFurniture.file, 
-                    (gltf) => {
-                        const model = gltf.scene;
-
-                        // モデルのサイズを実物大に調整
-                        const box = new THREE.Box3().setFromObject(model);
-                        const size = box.getSize(new THREE.Vector3());
-                        const scale = currentFurniture.height / size.y;
-                        model.scale.set(scale, scale, scale);
-
-                        // カーソルの位置にモデルを置いて、シーンに追加
-                        model.position.setFromMatrixPosition(reticle.matrix);
-                        scene.add(model);
-                        
-                        // 配置したオブジェクトを配列に追加して管理
-                        placedObjects.push(model);
-                    },
-                    undefined,
-                    (error) => {
-                        console.error('モデルの読み込みに失敗しました', error);
+        // プレビューオブジェクトを更新する関数
+        function updatePreviewObject() {
+            // もし既にプレビューがあれば、シーンから削除
+            if (previewObject) {
+                scene.remove(previewObject);
+            }
+            loader.load(currentFurniture.file, (gltf) => {
+                previewObject = gltf.scene;
+                // モデルを半透明にする
+                previewObject.traverse(child => {
+                    if (child.isMesh) {
+                        child.material = child.material.clone(); // マテリアルを複製しないと他のオブジェクトにも影響する
+                        child.material.transparent = true;
+                        child.material.opacity = 0.5;
                     }
-                );
+                });
+                // サイズ調整
+                const box = new THREE.Box3().setFromObject(previewObject);
+                const size = box.getSize(new THREE.Vector3());
+                const scale = currentFurniture.height / size.y;
+                previewObject.scale.set(scale, scale, scale);
+                // 最初は非表示にしておく
+                previewObject.visible = false; 
+                scene.add(previewObject);
+            });
+        }
+        
+        // 「ここに置く」ボタンが押された時の関数
+        function onConfirmPlacement() {
+            // プレビューが表示されている（＝床が認識されている）時だけ実行
+            if (previewObject && previewObject.visible) {
+                // 同じモデルを、今度は不透明な状態で新しく読み込む
+                loader.load(currentFurniture.file, (gltf) => {
+                    const solidObject = gltf.scene;
+                    // サイズ調整
+                    const box = new THREE.Box3().setFromObject(solidObject);
+                    const size = box.getSize(new THREE.Vector3());
+                    const scale = currentFurniture.height / size.y;
+                    solidObject.scale.set(scale, scale, scale);
+                    // プレビューオブジェクトの位置に配置
+                    solidObject.position.copy(previewObject.position);
+                    scene.add(solidObject);
+                    placedObjects.push(solidObject);
+                });
             }
         }
 
@@ -225,8 +247,16 @@
                         const hit = hitTestResults[0];
                         reticle.visible = true;
                         reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+                        
+                        // ▼▼▼ 変更点5：プレビューオブジェクトをカーソルの位置に追従させる ▼▼▼
+                        if (previewObject) {
+                            previewObject.visible = true;
+                            previewObject.position.setFromMatrixPosition(reticle.matrix);
+                        }
+
                     } else {
                         reticle.visible = false;
+                        if (previewObject) previewObject.visible = false;
                     }
                 }
             }
