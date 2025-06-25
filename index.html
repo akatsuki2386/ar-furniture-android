@@ -1,4 +1,4 @@
-<!DOCTYPE html>More actions
+<!DOCTYPE html>
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
@@ -18,13 +18,12 @@
             pointer-events: none;
             z-index: 10;
             font-family: sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: flex-end;
         }
-        /* ▼▼▼ 変更点1：UIを最初は非表示にしておく！ ▼▼▼ */
+        /* ▼▼▼ UIを最初は必ず非表示にする！ ▼▼▼ */
         #side-palette, #bottom-bar {
-            display: none; /* JavaScriptでAR開始後に表示する */
+            display: none; 
+            opacity: 0;
+            transition: opacity 0.5s ease;
         }
         /* 左側の家具選択パレット */
         #side-palette {
@@ -62,32 +61,57 @@
         }
         /* 下のバー */
         #bottom-bar {
-            padding-bottom: 30px;
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            padding: 0 20px;
+            box-sizing: border-box;
             pointer-events: auto;
-            text-align: center;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
-        /* ▼▼▼ 変更点1：ボタンの共通スタイルと、アクションボタンのコンテナを追加 ▼▼▼ */
-        .action-button {
+        #place-button-container {
+             display: block;
+        }
+        #action-controls {
+            width: 100%;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            display: none; 
+        }
+        .circle-button {
             width: 64px;
             height: 64px;
-            background-color: rgba(255, 255, 255, 0.9);
-            color: #333;
-            border: none;
-            border-radius: 9999px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: white;
+            border-radius: 50%;
             cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
             display: flex;
             justify-content: center;
             align-items: center;
             transition: transform 0.1s ease;
         }
-        .action-button:active {
+        .circle-button:active {
             transform: scale(0.9);
         }
-        #action-controls {
-            display: flex;
-            gap: 20px;
+        #place-button {
+            padding: 14px 28px;
+            background-color: #007AFF;
+            color: white;
+            border: none;
+            border-radius: 9999px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
+
     </style>
 </head>
 <body>
@@ -95,28 +119,25 @@
         <div id="side-palette">
             <!-- 家具選択ボタンがここに動的に追加される -->
         </div>
-        <!-- ▼▼▼ 変更点2：ボタンのレイアウトを全面的に変更 ▼▼▼ -->
         <div id="bottom-bar">
-            <!-- 配置モードの時に表示 -->
-            <button id="place-button" class="action-button" style="width: auto; padding: 0 28px;">ここに置く</button>
-
-            <!-- 選択モードの時に表示（最初は隠しておく） -->
-            <div id="action-controls" style="display: none;">
-                <button id="rotate-button" class="action-button">
+            <div id="place-button-container">
+                <button id="place-button">ここに置く</button>
+            </div>
+            <div id="action-controls">
+                <button id="delete-button" class="circle-button">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001a7.5 7.5 0 0 1-1.063 4.124l-1.58-1.58m-1.34-1.34-1.58-1.58m-1.34-1.34a7.5 7.5 0 0 1 4.282 5.042h-9.282m-1.34 1.34a7.5 7.5 0 0 1-4.282-5.042h9.282" />
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 0 0-2.09 2.134v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
                     </svg>
                 </button>
-                <button id="delete-button" class="action-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px; color: #EF4444;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 0 0-2.09 2.134v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
+                <button id="rotate-button" class="circle-button">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 30px; height: 30px;">
+                       <path stroke-linecap="round" stroke-linejoin="round" d="M15 15l-6-6m0 0l6-6m-6 6h12a6 6 0 0 1 0 12h-3" transform="scale(-1, 1) translate(-24, 0)" />
                     </svg>
                 </button>
             </div>
         </div>
     </div>
 
-    <script type="importmap"> ... </script>
     <script type="importmap">
         {
             "imports": {
@@ -136,23 +157,20 @@
         let hitTestSourceRequested = false;
         let reticle;
         const loader = new GLTFLoader();
-
+        
         const furnitureData = [
             { name: 'イス', file: 'chair.glb', height: 0.79 },
             { name: 'テーブル', file: 'chair.glb', height: 0.75 }, 
             { name: 'ランプ', file: 'chair.glb', height: 1.5 }, 
         ];
         let currentFurniture = furnitureData[0];
-
+        
         let previewObject = null;
         const placedObjects = [];
         const raycaster = new THREE.Raycaster();
-
-        // ▼▼▼ 変更点3：モード管理の変数を削除し、選択オブジェクトだけを管理 ▼▼▼
         let selectedObject = null;
-        const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0x34D399, transparent: true, opacity: 0.6 }); // ハイライトは緑色に統一
-        const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0x34D399, transparent: true, opacity: 0.6 });
-
+        const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0x007AFF, transparent: true, opacity: 0.6 });
+        
         init();
         animate();
 
@@ -160,52 +178,66 @@
             scene = new THREE.Scene();
             camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
             scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, 3));
-
+            
             renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setPixelRatio(window.devicePixelRatio);
             renderer.setSize(window.innerWidth, window.innerHeight);
             renderer.xr.enabled = true;
             document.body.appendChild(renderer.domElement);
-
+            
             document.body.appendChild(ARButton.createButton(renderer, {
-            const arButton = ARButton.createButton(renderer, {
                 requiredFeatures: ['hit-test'],
                 optionalFeatures: ['dom-overlay'],
                 domOverlay: { root: document.querySelector("#overlay") }
             }));
-            });
-            document.body.appendChild(arButton);
-            
-            // ▼▼▼ 変更点2：ARセッションの開始と終了でUIの表示を切り替える！ ▼▼▼
-            const sidePalette = document.getElementById('side-palette');
-            const bottomBar = document.getElementById('bottom-bar');
-            
+
             renderer.xr.addEventListener('sessionstart', () => {
-                console.log('ARセッションが開始されました。UIを表示します。');
-                sidePalette.style.display = 'flex';
-                bottomBar.style.display = 'block';
-            });
-            renderer.xr.addEventListener('sessionend', () => {
-                console.log('ARセッションが終了しました。UIを非表示にします。');
-                sidePalette.style.display = 'none';
-                bottomBar.style.display = 'none';
+                initializeARExperience();
             });
 
+            renderer.xr.addEventListener('sessionend', () => {
+                const sidePalette = document.getElementById('side-palette');
+                const bottomBar = document.getElementById('bottom-bar');
+                sidePalette.style.display = 'none';
+                bottomBar.style.display = 'none';
+                sidePalette.style.opacity = 0;
+                bottomBar.style.opacity = 0;
+            });
+            
+            animate();
+        }
+
+        function initializeARExperience() {
+            const sidePalette = document.getElementById('side-palette');
+            const bottomBar = document.getElementById('bottom-bar');
+            sidePalette.style.display = 'flex';
+            bottomBar.style.display = 'flex';
+            setTimeout(() => {
+                sidePalette.style.opacity = 1;
+                bottomBar.style.opacity = 1;
+            }, 100);
 
             reticle = new THREE.Mesh( new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial());
             reticle.matrixAutoUpdate = false;
             reticle.visible = false;
             scene.add(reticle);
 
-            // ▼▼▼ 変更点4：UIボタンのイベントリスナーを再設定 ▼▼▼
+            setupUI();
+            updatePreviewObject();
+        }
+        
+        function setupUI() {
             const palette = document.getElementById('side-palette');
+            palette.innerHTML = '';
             furnitureData.forEach((item, index) => {
                 const button = document.createElement('button');
                 button.className = 'furniture-button';
                 button.textContent = item.name;
                 if (index === 0) button.classList.add('selected');
-
+                
                 button.addEventListener('click', () => {
+                    if(selectedObject) unhighlightObject(selectedObject);
+                    selectedObject = null;
                     palette.querySelectorAll('.furniture-button').forEach(btn => btn.classList.remove('selected'));
                     button.classList.add('selected');
                     currentFurniture = item;
@@ -213,15 +245,12 @@
                 });
                 palette.appendChild(button);
             });
-
+            
             document.getElementById('place-button').addEventListener('click', onConfirmPlacement);
             document.getElementById('rotate-button').addEventListener('click', onRotate);
             document.getElementById('delete-button').addEventListener('click', onDelete);
-
-            updatePreviewObject();
         }
-
-        // ▼▼▼ 変更点5：回転と削除の関数を定義 ▼▼▼
+        
         function onRotate() {
             if (selectedObject) {
                 selectedObject.rotation.y += Math.PI / 4;
@@ -230,25 +259,83 @@
         function onDelete() {
             if (selectedObject) {
                 const objectToRemove = selectedObject;
-                unhighlightSelected();
+                selectedObject = null;
                 scene.remove(objectToRemove);
                 const index = placedObjects.indexOf(objectToRemove);
                 if (index > -1) placedObjects.splice(index, 1);
             }
         }
 
-        function onRotate() { /* ...変更なし... */ }
-        function onDelete() { /* ...変更なし... */ }
-        function updatePreviewObject() { /* ...変更なし... */ }
-        function onConfirmPlacement() { /* ...変更なし... */ }
-        function unhighlightSelected() { /* ...変更なし... */ }
-        
-        // ▼▼▼ 変更点6：オブジェクト選択とUIの切り替えを行う関数 ▼▼▼
+        function updatePreviewObject() { 
+            if (previewObject) {
+                scene.remove(previewObject);
+                previewObject = null;
+            }
+            loader.load(currentFurniture.file, (gltf) => {
+                previewObject = gltf.scene;
+                previewObject.traverse(child => {
+                    if (child.isMesh) {
+                        child.material = child.material.clone();
+                        child.material.transparent = true;
+                        child.material.opacity = 0.5;
+                    }
+                });
+                const box = new THREE.Box3().setFromObject(previewObject);
+                const size = box.getSize(new THREE.Vector3());
+                const scale = currentFurniture.height / size.y;
+                previewObject.scale.set(scale, scale, scale);
+                previewObject.visible = false;
+                scene.add(previewObject);
+            });
+        }
+
+        function onConfirmPlacement() { 
+            if (reticle.visible) {
+                loader.load(currentFurniture.file, (gltf) => {
+                    const solidObject = gltf.scene;
+                    const box = new THREE.Box3().setFromObject(solidObject);
+                    const size = box.getSize(new THREE.Vector3());
+                    const scale = currentFurniture.height / size.y;
+                    solidObject.scale.set(scale, scale, scale);
+                    solidObject.position.setFromMatrixPosition(reticle.matrix);
+                    
+                    solidObject.userData.originalMaterials = new Map();
+                    solidObject.traverse(child => {
+                        if(child.isMesh) {
+                            const originalMaterial = child.material.clone();
+                            solidObject.userData.originalMaterials.set(child.uuid, originalMaterial);
+                        }
+                    });
+                    
+                    scene.add(solidObject);
+                    placedObjects.push(solidObject);
+                });
+            }
+        }
+         
+        function unhighlightObject(object) {
+            if (!object) return;
+            object.traverse(child => {
+                if(child.isMesh && object.userData.originalMaterials.has(child.uuid)) {
+                    child.material = object.userData.originalMaterials.get(child.uuid);
+                }
+            });
+        }
+
+        function highlightObject(object) {
+            if (!object) return;
+            object.traverse(child => {
+                if (child.isMesh) {
+                    const originalMaterial = object.userData.originalMaterials.get(child.uuid);
+                    child.material = highlightMaterial;
+                }
+            });
+        }
+
         function handleInteractions() {
             raycaster.setFromCamera({x: 0, y: 0}, camera);
             const intersects = raycaster.intersectObjects(placedObjects, true);
-            
-            // フォーカスしているオブジェクトがあるか？
+
             let intersectedRoot = null;
             if (intersects.length > 0) {
                 let currentObject = intersects[0].object;
@@ -261,68 +348,72 @@
                 }
             }
             
-            // 前のフレームで選択していたものと違うか？
-            if (selectedObject !== intersectedRoot) {
-                unhighlightSelected();
+            if (intersectedRoot !== selectedObject) {
+                unhighlightObject(selectedObject);
                 selectedObject = intersectedRoot;
-                if (selectedObject) {
-                    // 新しく選択されたものをハイライト
-                    selectedObject.traverse(child => {
-                        if (child.isMesh) child.material = highlightMaterial;
-                    });
-                }
+                highlightObject(selectedObject);
             }
 
-            // UIの表示を切り替える
-            const placeControl = document.getElementById('place-button');
+            const placeControl = document.getElementById('place-button-container');
             const actionControls = document.getElementById('action-controls');
             if (selectedObject) {
-                // オブジェクト選択中 -> アクションボタン表示
                 placeControl.style.display = 'none';
                 actionControls.style.display = 'flex';
-                reticle.visible = false;
-                if (previewObject) previewObject.visible = false;
             } else {
-                // オブジェクト未選択 -> 配置ボタン表示
                 placeControl.style.display = 'block';
                 actionControls.style.display = 'none';
             }
         }
 
         function animate() {
-            renderer.setAnimationLoop(render);
+             renderer.setAnimationLoop(render);
         }
 
         function render(timestamp, frame) {
-            handleInteractions(); // 常にオブジェクトの選択状態をチェック
+            if (renderer.xr.isPresenting) {
+                handleInteractions();
 
-            if (!selectedObject && frame) { // オブジェクトが選択されていない時だけ、床認識を行う
-                const referenceSpace = renderer.xr.getReferenceSpace();
-                const session = renderer.xr.getSession();
+                if (!selectedObject && frame) {
+                    const referenceSpace = renderer.xr.getReferenceSpace();
+                    const session = renderer.xr.getSession();
 
-                if (hitTestSourceRequested === false) { /* ... */ }
+                    if (hitTestSourceRequested === false) {
+                        session.requestReferenceSpace('viewer').then((referenceSpace) => {
+                            session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+                                hitTestSource = source;
+                            });
+                        });
+                        session.addEventListener('end', () => {
+                            hitTestSourceRequested = false; hitTestSource = null;
+                        });
+                        hitTestSourceRequested = true;
+                    }
 
-                if (hitTestSource) {
-                    const hitTestResults = frame.getHitTestResults(hitTestSource);
-                    if (hitTestResults.length) {
-                        const hit = hitTestResults[0];
-                        reticle.visible = true;
-                        reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
-                        if (previewObject) {
-                            previewObject.visible = true;
-                            previewObject.position.setFromMatrixPosition(reticle.matrix);
+                    if (hitTestSource) {
+                        const hitTestResults = frame.getHitTestResults(hitTestSource);
+                        if (hitTestResults.length > 0) {
+                            const hit = hitTestResults[0];
+                            if(reticle) reticle.visible = true;
+                            if(reticle) reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+                        } else {
+                            if(reticle) reticle.visible = false;
                         }
+                    }
+                } else {
+                     if(reticle) reticle.visible = false;
+                }
+
+                 if (previewObject) {
+                    if (!selectedObject && reticle && reticle.visible) {
+                        previewObject.visible = true;
+                        previewObject.position.setFromMatrixPosition(reticle.matrix);
                     } else {
-                        reticle.visible = false;
-                        if (previewObject) previewObject.visible = false;
+                        previewObject.visible = false;
                     }
                 }
             }
             renderer.render(scene, camera);
         }
-        function handleInteractions() { /* ...変更なし... */ }
-        function animate() { /* ...変更なし... */ }
-        function render(timestamp, frame) { /* ...変更なし... */ }
     </script>
 </body>
 </html>
