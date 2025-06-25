@@ -111,14 +111,12 @@
             justify-content: center;
             align-items: center;
         }
-        #place-button-container {
-             display: block;
-        }
+        
         #action-controls {
             width: 100%;
-            max-width: 300px; /* ボタンが広がりすぎないように */
+            max-width: 300px;
             display: flex;
-            justify-content: space-around; /* ボタンを均等に配置 */
+            justify-content: space-around;
             align-items: center;
             display: none; 
         }
@@ -140,17 +138,6 @@
         .circle-button:active {
             transform: scale(0.9);
         }
-        #place-button {
-            padding: 14px 28px;
-            background-color: #007AFF;
-            color: white;
-            border: none;
-            border-radius: 9999px;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-        }
 
     </style>
 </head>
@@ -164,9 +151,7 @@
             <!-- 家具選択ボタンがここに動的に追加される -->
         </div>
         <div id="bottom-bar">
-            <div id="place-button-container">
-                <button id="place-button">ここに置く</button>
-            </div>
+            <!-- ▼▼▼ 変更点：「ここに置く」ボタンを削除し、アクションボタンに統一 ▼▼▼ -->
             <div id="action-controls">
                 <button id="delete-button" class="circle-button">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
@@ -237,7 +222,6 @@
             renderer.xr.enabled = true;
             document.body.appendChild(renderer.domElement);
            
-            // ▼▼▼ 変更点1：コントローラー（タップ入力）の準備 ▼▼▼
             controller = renderer.xr.getController(0);
             controller.addEventListener('select', onSelect);
             scene.add(controller);
@@ -313,8 +297,6 @@
                 palette.appendChild(button);
             });
            
-            // ▼▼▼ 変更点2：「ここに置く」ボタンのタップイベントを削除 ▼▼▼
-            // document.getElementById('place-button').addEventListener('click', onConfirmPlacement);
             document.getElementById('rotate-button').addEventListener('click', onRotate);
             document.getElementById('delete-button').addEventListener('click', onDelete);
             document.getElementById('confirm-button').addEventListener('click', onConfirmMove);
@@ -330,7 +312,7 @@
                 updateUI();
             } 
             else if (!selectedObject && reticle.visible) {
-                onConfirmPlacement();
+                placeNewObject();
             }
         }
 
@@ -383,8 +365,9 @@
                 console.error(`プレビューモデル(${currentFurniture.file})の読み込みに失敗:`, error);
             });
         }
-
-        function onConfirmPlacement() { 
+        
+        // ▼▼▼ 変更点：onConfirmPlacement を placeNewObject に改名し、内容を修正 ▼▼▼
+        function placeNewObject() { 
             if (reticle.visible) {
                 loader.load(currentFurniture.file, (gltf) => {
                     const solidObject = gltf.scene;
@@ -404,6 +387,12 @@
                    
                     scene.add(solidObject);
                     placedObjects.push(solidObject);
+
+                    // ★★★ ここからが新しい処理 ★★★
+                    // 置いたオブジェクトをすぐに選択状態にする
+                    selectedObject = solidObject;
+                    highlightObject(selectedObject);
+                    updateUI(); // UIをアクションボタンに切り替え
                 }, undefined, (error) => {
                     console.error(`配置モデル(${currentFurniture.file})の読み込みに失敗:`, error);
                 });
@@ -428,14 +417,12 @@
             });
         }
 
+        // ▼▼▼ 変更点：UI更新ロジックをシンプル化 ▼▼▼
         function updateUI() {
-            const placeControl = document.getElementById('place-button-container');
             const actionControls = document.getElementById('action-controls');
             if (selectedObject) {
-                placeControl.style.display = 'none';
                 actionControls.style.display = 'flex';
             } else {
-                placeControl.style.display = 'block';
                 actionControls.style.display = 'none';
             }
         }
