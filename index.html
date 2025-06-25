@@ -32,7 +32,6 @@
             text-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
 
-        /* ▼▼▼ 変更点：「AR開始」ボタンのスタイルを統一 ▼▼▼ */
         #ARButton {
             color: white !important;
             background-color: rgba(255, 255, 255, 0.2) !important;
@@ -138,7 +137,6 @@
             transform: scale(0.9);
         }
 
-        /* ▼▼▼ 変更点：「＋」ボタンの背景色指定を削除し、.circle-buttonを継承 ▼▼▼ */
         #add-button {
             display: none; /* 初期状態は非表示 */
         }
@@ -216,7 +214,8 @@
         
         let appState = 'IDLE'; // 'IDLE', 'CHOOSING', 'PLACING', 'EDITING'
         
-        const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0x007AFF, transparent: true, opacity: 0.6, emissive: 0x007AFF, emissiveIntensity: 0.3 });
+        // ▼▼▼ 変更点：ハイライトの色を白に変更 ▼▼▼
+        const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0xFFFFFF, transparent: true, opacity: 0.5, emissive: 0xFFFFFF, emissiveIntensity: 0.2 });
        
         init();
 
