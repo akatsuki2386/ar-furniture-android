@@ -5,22 +5,25 @@
     <title>【再構築】平面認識AR</title>
     <meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <!-- ▼▼▼ 変更点1：必要なライブラリを追加！ ▼▼▼ -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <!-- aframe-extrasは、多くの便利な機能を提供し、他のライブラリが依存することがあります -->
     <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.2.0/dist/aframe-extras.min.js"></script>
-    <!-- これが床認識(Hit-Test)のための新しいライブラリです -->
     <script src="https://cdn.jsdelivr.net/npm/aframe-xr-hit-test-component@0.3.0/dist/aframe-xr-hit-test-component.min.js"></script>
 
 
     <style>
       body { margin: 0; }
-      /* ARのボタンを押しやすく、見やすくする */
-      .a-enter-ar-button {
+      /* ▼▼▼ 変更点1：自作ボタンのためのUIコンテナを追加 ▼▼▼ */
+      #ui-container {
         position: fixed;
-        bottom: 20px;
-        left: 50%;
-        transform: translateX(-50%);
+        bottom: 0;
+        left: 0;
+        width: 100%;
+        padding: 20px;
+        box-sizing: border-box;
+        text-align: center;
+        z-index: 10000;
+      }
+      #my-ar-button {
         padding: 12px 24px;
         background-color: #007AFF;
         color: white;
@@ -30,30 +33,84 @@
         font-weight: bold;
         cursor: pointer;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        z-index: 10000;
+      }
+      /* A-Frameが作るデフォルトのボタンは隠しておく */
+      .a-enter-ar-button {
+        display: none;
       }
     </style>
   </head>
 
   <body>
-    <!-- ▼▼▼ 変更点2：ARの魔法をかけるための設定を追加！ ▼▼▼ -->
+    <!-- ▼▼▼ 変更点2：自作の「AR開始ボタン」をHTMLに直接書く！ ▼▼▼ -->
+    <div id="ui-container">
+        <button id="my-ar-button">ARを開始する</button>
+    </div>
+
     <a-scene 
+      id="ar-scene"
       webxr="requiredFeatures: hit-test, local-floor"
       xr-hit-test>
 
-      <!-- ライトとカメラ -->
       <a-light type="ambient" color="#FFF" intensity="0.5"></a-light>
       <a-light type="directional" color="#FFF" intensity="1" position="-1 2 1"></a-light>
       <a-camera></a-camera>
       
-      <!-- ▼▼▼ 変更点3：床に置ける場所を示す「カーソル」を追加 ▼▼▼ -->
-      <!-- xr-hit-test-target属性が、このエンティティを床認識カーソルとして機能させます -->
       <a-entity
         id="reticle"
         xr-hit-test-target>
         <a-ring color="#007AFF" radius-inner="0.10" radius-outer="0.15" rotation="-90 0 0"></a-ring>
       </a-entity>
-
     </a-scene>
+
+    <!-- ▼▼▼ 変更点3：自作ボタンでARを開始させるJavaScript！ ▼▼▼ -->
+    <script>
+        window.addEventListener('load', () => {
+            const sceneEl = document.querySelector('#ar-scene');
+            const startButton = document.querySelector('#my-ar-button');
+
+            // 自作ボタンがクリックされた時の処理
+            startButton.addEventListener('click', () => {
+                console.log('自作ボタンがクリックされました。ARセッションを開始します！');
+                
+                // enterVR()で、ARモードを開始する
+                sceneEl.enterVR();
+            });
+
+            // ARモードに入ったかどうかの確認
+            sceneEl.addEventListener('enter-vr', () => {
+                if (sceneEl.is('ar-mode')) {
+                    console.log('ARモードに正常に入りました！');
+                    // ARモードに入ったら、ボタンは不要なので隠す
+                    startButton.style.display = 'none';
+                }
+            });
+
+             // ARモードを終了した時の確認
+            sceneEl.addEventListener('exit-vr', () => {
+                console.log('ARモードを終了しました。');
+                // ARモードを抜けたら、またボタンを表示する
+                startButton.style.display = 'block';
+            });
+        });
+    </script>
   </body>
 </html>
+```
+
+### どこを変えたか
+
+1.  **自作の「ARを開始する」ボタンを追加**
+    * A-Frameに頼るのをやめて、俺たち自身でHTMLにボタンを設置した。
+
+2.  **自作ボタンでARを開始させる**
+    * JavaScriptで、自作ボタンが押されたら`sceneEl.enterVR()`っていう命令で、強制的にARモードを開始させるようにした。
+
+### これでどうなるはずか？
+
+1.  ページを開くと、画面下に俺たちが作った「**ARを開始する**」ボタンが表示されるはずだ。
+2.  これを押したら、今度こそ**カメラの許可画面**が出て、ARモードに入れるはず！
+3.  ARモードに入ったら、床に青いリングが見える。
+
+これが、本当の再スタートだ！
+もう一度だけ、このコードでGitHubを更新して試してみて
