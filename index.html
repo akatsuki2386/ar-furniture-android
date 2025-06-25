@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <title>【新】平面認識ARアプリ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+
+    <!-- ライブラリはA-Frameとaframe-extrasの2つ！ -->
+    <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/gh/donmccurdy/aframe-extras@v7.2.0/dist/aframe-extras.min.js"></script>
+
+    <style>
+      body { margin: 0; }
+      /* ARのボタンを押しやすく、見やすくする */
+      .a-enter-ar-button {
+        position: fixed;
+        bottom: 20px;
+        left: 50%;
+        transform: translateX(-50%);
+        padding: 12px 24px;
+        background-color: #007AFF;
+        color: white;
+        border: none;
+        border-radius: 9999px;
+        font-size: 16px;
+        font-weight: bold;
+        cursor: pointer;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        z-index: 10000;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- ▼▼▼ 変更点：webxr="requiredFeatures: hit-test"で、床認識モードに！ ▼▼▼ -->
+    <a-scene 
+      id="ar-scene"
+      webxr="requiredFeatures: hit-test,local-floor; optionalFeatures: dom-overlay; overlayElement: #overlay;"
+      ar-hit-test="enabled: false;"
+      renderer="logarithmicDepthBuffer: true;">
+
+      <!-- ライト（これがないと影がなくてのっぺりする） -->
+      <a-light type="ambient" color="#FFF" intensity="0.5"></a-light>
+      <a-light type="directional" color="#FFF" intensity="1" position="-1 2 1"></a-light>
+      
+      <!-- ▼▼▼ 変更点：床に置ける場所を示す「カーソル」▼▼▼ -->
+      <!-- この青いリングが、床の上を追従するカーソルになる -->
+      <a-entity
+        id="reticle"
+        ar-hit-test-target
+        visible="false">
+        <a-ring color="#007AFF" radius-inner="0.10" radius-outer="0.15" rotation="-90 0 0"></a-ring>
+      </a-entity>
+
+      <!-- カメラと、タップを認識するためのカーソル -->
+      <a-camera>
+        <a-entity cursor="fuse: false; rayOrigin: mouse;" raycaster="objects: .clickable"></a-entity>
+      </a-camera>
+
+    </a-scene>
+
+    <!-- ▼▼▼ 変更点：新しいロジックのJavaScript！ ▼▼▼ -->
+    <script>
+      document.addEventListener('DOMContentLoaded', () => {
+        const sceneEl = document.querySelector('#ar-scene');
+        const reticle = document.querySelector('#reticle');
+
+        // ARモードが開始されたら、床認識を有効にする
+        sceneEl.addEventListener('enter-vr', () => {
+          // WebXRでは、ARモードのことを'enter-vr'と呼ぶことがある
+          console.log('ARモード開始！床認識を有効にします。');
+          sceneEl.setAttribute('ar-hit-test', 'enabled', true);
+        });
+        
+        // 床認識システムが、床を見つけたり見失ったりした時の処理
+        sceneEl.addEventListener('ar-hit-test-start', () => {
+            reticle.setAttribute('visible', false); // まだ床が見つからないのでカーソルは隠す
+        });
+        sceneEl.addEventListener('ar-hit-test-processed', () => {
+            reticle.setAttribute('visible', true); // 床の探索が終わったらカーソルを表示
+        });
+        
+        // タップした時の処理
+        sceneEl.addEventListener('click', () => {
+          // カーソルが見えている（＝床が認識されている）時だけ実行
+          if (reticle.getAttribute('visible')) {
+            console.log('床をタップ！箱を置きます。');
+            
+            // 1. 新しい箱（テスト用）を作る
+            const newBox = document.createElement('a-box');
+            newBox.setAttribute('color', 'tomato');
+            newBox.setAttribute('scale', '0.2 0.2 0.2'); // 20cmの箱
+
+            // 2. カーソルの現在の世界での位置を取得
+            const position = reticle.getAttribute('position');
+            newBox.setAttribute('position', position);
+
+            // 3. 作った箱をシーンに追加
+            sceneEl.appendChild(newBox);
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
+```
+
+### どこが変わったか
+
+1.  **ARの主役を完全に交代！**
+    * `<a-scene>`から`arjs`を削除し、代わりに`webxr`っていう新しい主役を呼んだ。これが、最新のスマホで動く平面認識ARの標準的なやり方だ。
+
+2.  **床カーソル（`reticle`）**
+    * 前に試した青いリングが、今度こそちゃんと**床の上をスルスルついてくる**カーソルになる。
+
+3.  **新しいJavaScript**
+    * **ARモードが始まったら**、床認識をONにする。
+    * **床が見つかったら**、カーソルを表示する。
+    * **タップしたら**、カーソルの場所にテスト用の赤い箱を置く。
+
+### これでどうなるはずか？
+
+1.  ページを開くと、画面下に「**START AR**」みたいなボタンが表示される。
+2.  そのボタンを押すと、ARモードが開始される。
+3.  スマホをゆっくり動かして、**床をカメラに写す**。
+4.  すると、**床に青いリング（カーソル）**が表示されるようになる。
+5.  好きな場所にカーソルを合わせて、**画面をタップ**する。
+6.  その場所に、**赤い箱がドン！と置かれれば**、俺たちの新しい船出は完璧だ！
+
+遠回りさせて本当にごめんな！でも、今度こそ君が本当に作りたかったアプリへの、一番の近道だ。
+GitHubのコードを、この新しい土台でまるっと更新して、試してみて
