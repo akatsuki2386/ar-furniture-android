@@ -49,6 +49,8 @@
             left: 50% !important;
             transform: translateX(-50%) !important;
             z-index: 100 !important;
+            /* ▼▼▼ 変更点：文字が改行されないように設定 ▼▼▼ */
+            white-space: nowrap !important;
         }
 
         #overlay {
@@ -218,12 +220,11 @@
         
         let appState = 'IDLE'; // 'IDLE', 'CHOOSING', 'PLACING', 'EDITING'
         
-        // ▼▼▼ 変更点1：ハイライト用マテリアルの定義を修正 ▼▼▼
         const highlightMaterial = new THREE.MeshStandardMaterial({
             color: 0xFFFFFF,
             transparent: true,
             opacity: 0.4,
-            depthWrite: false // 奥にあるオブジェクトと色が混ざらないようにする
+            depthWrite: false
         });
        
         init();
@@ -348,7 +349,7 @@
                 previewObject = null;
             } else if (appState === 'EDITING') {
                 if(selectedObject) {
-                    unhighlightObject(selectedObject); // ゴーストを消す
+                    unhighlightObject(selectedObject);
                     scene.remove(selectedObject);
                     const index = placedObjects.indexOf(selectedObject);
                     if (index > -1) placedObjects.splice(index, 1);
@@ -384,7 +385,6 @@
             });
         }
         
-        // ▼▼▼ 変更点2：「元の色」の保存処理を削除し、ロジックを簡潔に ▼▼▼
         function placeNewObject() { 
             if (!previewObject) return;
             
@@ -411,7 +411,6 @@
             updateUI();
         }
        
-        // ▼▼▼ 変更点3：ハイライトを「重ねる」方式に変更 ▼▼▼
         function unhighlightObject(object) {
             if (!object || !object.userData.highlightGhost) return;
             scene.remove(object.userData.highlightGhost);
@@ -459,7 +458,6 @@
         }
 
         function handleHover() {
-            // ハイライト状態の同期
             const currentHighlightTarget = appState === 'EDITING' ? selectedObject : hoveredObject;
             scene.children.forEach(child => {
                 if (child.userData.isHighlightGhost) {
@@ -541,7 +539,6 @@
                 target.position.setFromMatrixPosition(reticle.matrix);
             }
             
-            // ハイライト用ゴーストの位置を常に本体と同期させる
             placedObjects.forEach(obj => {
                 if (obj.userData.highlightGhost) {
                     obj.userData.highlightGhost.position.copy(obj.position);
@@ -557,7 +554,6 @@
                 previewObject.visible = appState === 'PLACING';
             }
 
-            // Hit-test sourceの初期化
             if (!hitTestSourceRequested && renderer.xr.getSession()) {
                 const session = renderer.xr.getSession();
                 session.requestReferenceSpace('viewer').then((referenceSpace) => {
