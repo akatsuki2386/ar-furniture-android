@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>【機能改善】AR家具配置アプリ</title>
+    <title>【機能追加】AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
         body { margin: 0; }
@@ -56,9 +56,14 @@
             border-color: #FFF;
             transform: scale(1.1);
         }
-        /* 削除ボタンが選択された時のスタイル */
         #delete-button.selected {
-            background-color: #EF4444; /* 赤色にする */
+            background-color: #EF4444; /* 赤色 */
+            border-color: #FFF;
+            transform: scale(1.1);
+        }
+        /* ▼▼▼ 変更点1：回転ボタンのスタイルを追加 ▼▼▼ */
+        #rotate-button.selected {
+            background-color: #34D399; /* 緑色 */
             border-color: #FFF;
             transform: scale(1.1);
         }
@@ -85,6 +90,13 @@
     <div id="overlay">
         <div id="side-palette">
             <!-- 家具選択ボタンがここに動的に追加される -->
+            <!-- ▼▼▼ 変更点2：回転ボタンを追加 ▼▼▼ -->
+            <button id="rotate-button" class="palette-button">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 30px; height: 30px;">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25L12 21m0 0l-3.75-3.75M12 21V3" />
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12a7.5 7.5 0 1 1-15 0 7.5 7.5 0 0 1 15 0Z" />
+                </svg>
+            </button>
             <button id="delete-button" class="palette-button">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 30px; height: 30px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 0 0-2.09 2.134v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
@@ -125,13 +137,18 @@
         
         let previewObject = null;
         const placedObjects = [];
-
-        let isDeleteMode = false;
         let controller;
-        let selectedForDeletion = null;
-        // ▼▼▼ 変更点1：レイキャスターとハイライト用のマテリアルをここで定義 ▼▼▼
         const raycaster = new THREE.Raycaster();
-        const highlightMaterial = new THREE.MeshStandardMaterial({ color: 0xff0000, transparent: true, opacity: 0.6 });
+
+        // ▼▼▼ 変更点3：モード管理の仕組みを改良 ▼▼▼
+        let currentMode = 'place'; // 'place', 'rotate', 'delete'
+        let selectedObject = null; // 現在選択中のオブジェクト
+
+        // 各モード用のハイライト色
+        const highlightMaterials = {
+            delete: new THREE.MeshStandardMaterial({ color: 0xff0000, transparent: true, opacity: 0.6 }),
+            rotate: new THREE.MeshStandardMaterial({ color: 0x34D399, transparent: true, opacity: 0.6 })
+        };
 
         init();
         animate();
@@ -169,71 +186,66 @@
             reticle.visible = false;
             scene.add(reticle);
 
+            // ▼▼▼ 変更点4：UIボタンのイベントリスナーを整理 ▼▼▼
             const palette = document.getElementById('side-palette');
-            const furnitureButtons = [];
             furnitureData.forEach((item, index) => {
                 const button = document.createElement('button');
                 button.className = 'palette-button furniture-button';
                 button.textContent = item.name;
+                button.dataset.mode = 'place';
                 if (index === 0) button.classList.add('selected');
                 
                 button.addEventListener('click', () => {
-                    // 削除モードだったら解除する
-                    if (isDeleteMode) toggleDeleteMode(false);
-                    
-                    furnitureButtons.forEach(btn => btn.classList.remove('selected'));
-                    button.classList.add('selected');
+                    setMode('place', button);
                     currentFurniture = item;
                     updatePreviewObject();
                 });
-                palette.appendChild(button);
-                furnitureButtons.push(button);
+                palette.insertBefore(button, document.getElementById('rotate-button'));
             });
             
-            const deleteButton = document.getElementById('delete-button');
-            deleteButton.addEventListener('click', () => toggleDeleteMode());
-
+            document.getElementById('rotate-button').addEventListener('click', (e) => setMode('rotate', e.currentTarget));
+            document.getElementById('delete-button').addEventListener('click', (e) => setMode('delete', e.currentTarget));
             document.getElementById('place-button').addEventListener('click', onConfirmPlacement);
+            
             updatePreviewObject();
         }
 
-        // ▼▼▼ 変更点2：削除モードの切り替えロジックを修正 ▼▼▼
-        function toggleDeleteMode(forceState = null) {
-            isDeleteMode = forceState !== null ? forceState : !isDeleteMode;
-            const deleteButton = document.getElementById('delete-button');
-            const placeButton = document.getElementById('place-button');
-            const furnitureButtons = document.querySelectorAll('.furniture-button');
+        // ▼▼▼ 変更点5：モードを切り替えるための新しい関数 ▼▼▼
+        function setMode(mode, clickedButton) {
+            currentMode = mode;
+            console.log(`モード変更: ${mode}`);
 
-            if (isDeleteMode) {
-                console.log("削除モードON");
-                // 他の家具ボタンの選択を解除
-                furnitureButtons.forEach(btn => btn.classList.remove('selected'));
-                deleteButton.classList.add('selected');
-                placeButton.style.display = 'none';
-                if(previewObject) previewObject.visible = false;
-                reticle.visible = false;
-            } else {
-                console.log("削除モードOFF");
-                // 削除対象のハイライトを解除
-                unhighlightSelected();
-                deleteButton.classList.remove('selected');
+            // 全てのパレットボタンの選択を解除
+            document.querySelectorAll('.palette-button').forEach(btn => btn.classList.remove('selected'));
+            // クリックされたボタンだけを選択
+            if (clickedButton) clickedButton.classList.add('selected');
+            
+            // 以前選択されていたオブジェクトのハイライトを解除
+            unhighlightSelected();
+
+            const placeButton = document.getElementById('place-button');
+            if (mode === 'place') {
                 placeButton.style.display = 'block';
-                // 最初の家具ボタンを選択状態に戻す
-                if(furnitureButtons.length > 0) furnitureButtons[0].classList.add('selected');
+            } else {
+                placeButton.style.display = 'none';
+                if (previewObject) previewObject.visible = false;
+                reticle.visible = false;
             }
         }
         
         function onSelect() {
-            if (isDeleteMode && selectedForDeletion) {
-                const objectToRemove = selectedForDeletion;
-                scene.remove(objectToRemove);
-                
-                const index = placedObjects.indexOf(objectToRemove);
-                if (index > -1) {
-                    placedObjects.splice(index, 1);
-                }
+            if (!selectedObject) return;
+
+            if (currentMode === 'delete') {
+                scene.remove(selectedObject);
+                const index = placedObjects.indexOf(selectedObject);
+                if (index > -1) placedObjects.splice(index, 1);
                 console.log('オブジェクトを削除しました。');
-                selectedForDeletion = null; // 削除後は選択を解除
+                selectedObject = null;
+            } else if (currentMode === 'rotate') {
+                // Y軸を中心に45度回転させる (π/4 ラジアン)
+                selectedObject.rotation.y += Math.PI / 4;
+                console.log('オブジェクトを回転しました。');
             }
         }
 
@@ -280,28 +292,25 @@
             }
         }
         
-        // ▼▼▼ 変更点3：ハイライトを解除する関数を分離 ▼▼▼
         function unhighlightSelected() {
-            if (selectedForDeletion) {
-                selectedForDeletion.traverse(child => {
-                    if (child.isMesh && selectedForDeletion.userData.originalMaterials.has(child.uuid)) {
-                       child.material = selectedForDeletion.userData.originalMaterials.get(child.uuid);
+            if (selectedObject) {
+                selectedObject.traverse(child => {
+                    if (child.isMesh && selectedObject.userData.originalMaterials.has(child.uuid)) {
+                       child.material = selectedObject.userData.originalMaterials.get(child.uuid);
                     }
                 });
-                selectedForDeletion = null;
+                selectedObject = null;
             }
         }
         
-        // ▼▼▼ 変更点4：削除モードの時のハイライト処理を、より確実な方法に修正 ▼▼▼
-        function handleDeletionMode() {
+        // ▼▼▼ 変更点6：オブジェクト選択処理を一つの関数にまとめる ▼▼▼
+        function handleObjectSelection() {
             raycaster.setFromCamera({x: 0, y: 0}, camera);
             const intersects = raycaster.intersectObjects(placedObjects, true);
 
-            // まず、現在選択されているもののハイライトを解除
             unhighlightSelected();
             
             if (intersects.length > 0) {
-                // 交差した一番手前のオブジェクトのルートを探す
                 let intersectedRoot = null;
                 const intersectedObject = intersects[0].object;
                 
@@ -315,13 +324,13 @@
                 }
 
                 if (intersectedRoot) {
-                    selectedForDeletion = intersectedRoot;
-                    // 見つかったオブジェクトをハイライトする
-                    selectedForDeletion.traverse(child => {
-                        if (child.isMesh) {
-                            child.material = highlightMaterial;
-                        }
-                    });
+                    selectedObject = intersectedRoot;
+                    const highlightMaterial = highlightMaterials[currentMode];
+                    if (highlightMaterial) {
+                        selectedObject.traverse(child => {
+                            if (child.isMesh) child.material = highlightMaterial;
+                        });
+                    }
                 }
             }
         }
@@ -331,9 +340,8 @@
         }
 
         function render(timestamp, frame) {
-            if (isDeleteMode) {
-                handleDeletionMode();
-            } else {
+            // ▼▼▼ 変更点7：renderループのロジックをモードに応じて切り替え ▼▼▼
+            if (currentMode === 'place') {
                  if (frame) {
                     const referenceSpace = renderer.xr.getReferenceSpace();
                     const session = renderer.xr.getSession();
@@ -367,9 +375,12 @@
                         }
                     }
                 }
+            } else { // 'rotate' または 'delete' モードの時
+                handleObjectSelection();
             }
             renderer.render(scene, camera);
         }
     </script>
 </body>
 </html>
+
