@@ -167,14 +167,13 @@
             display: none; /* 初期状態は非表示 */
         }
         
-        /* ★★★ 変更点: スライダーの幅を調整 ★★★ */
         #scale-slider-container {
             position: absolute;
             bottom: 170px;
             left: 50%;
             transform: translateX(-50%);
-            width: 60%; /* 親指で届く範囲に */
-            max-width: 200px; /* 削除ボタンと回転ボタンの中心間の幅に合わせる */
+            width: 60%;
+            max-width: 200px;
             height: 40px;
             display: none;
             align-items: center;
@@ -228,10 +227,14 @@
             color: #888;
             cursor: not-allowed;
         }
+        
+        /* ★★★ 変更点: 編集モードボタンがアクティブな時のスタイル ★★★ */
+        .circle-button.active-mode {
+            background-color: rgba(0, 122, 255, 0.5); /* 青色でアクティブ状態を示す */
+            border-color: rgba(0, 122, 255, 0.8);
+        }
 
-
-        /* === 追加・編集ボタンの初期表示設定 === */
-        #add-button, #edit-button {
+        #add-button {
             display: none; /* 初期状態では非表示 */
         }
     </style>
@@ -248,7 +251,13 @@
     </div>
 
     <div id="overlay">
-        <div id="top-right-controls" style="position: absolute; top: 20px; right: 20px; pointer-events: auto;">
+        <div id="top-right-controls" style="position: absolute; top: 20px; right: 20px; pointer-events: auto; display: flex; gap: 10px;">
+             <!-- ★★★ 変更点: 編集モード切り替えボタンを追加 ★★★ -->
+             <button id="toggle-edit-mode-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                </svg>
+             </button>
              <button id="exit-ar-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3-3-3m0 0 3-3m-3 3h12" />
@@ -266,11 +275,6 @@
             <button id="add-button" class="circle-button">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                </svg>
-            </button>
-            <button id="edit-button" class="circle-button">
-                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
                 </svg>
             </button>
             
@@ -370,7 +374,10 @@
             const raycaster = new THREE.Raycaster();
             let selectedObject = null;
             let hoveredObject = null;
-            let appState = 'IDLE'; 
+            // ★★★ 変更点: 新しい状態変数を追加 ★★★
+            let appState = 'IDLE'; // IDLE, CHOOSING, PLACING, EDITING
+            let isEditMode = false; // true: 編集モード, false: 鑑賞モード
+
             const highlightMaterial = new THREE.MeshStandardMaterial({
                 color: 0xFFFFFF,
                 transparent: true,
@@ -455,6 +462,7 @@
                     document.getElementById('title-container').style.display = 'none';
                     document.getElementById('exit-ar-button').style.display = 'flex';
                     appState = 'IDLE';
+                    isEditMode = false;
                     updateUI();
                     initializeARExperience();
                     preloadModels();
@@ -463,8 +471,8 @@
                 renderer.xr.addEventListener('sessionend', () => {
                     document.getElementById('title-container').style.display = 'block';
                     document.getElementById('exit-ar-button').style.display = 'none';
+                    document.getElementById('toggle-edit-mode-button').style.display = 'none';
                     document.getElementById('add-button').style.display = 'none';
-                    document.getElementById('edit-button').style.display = 'none';
                     document.getElementById('choosing-controls').style.display = 'none';
                     document.getElementById('action-controls').style.display = 'none';
                     document.getElementById('scale-slider-container').style.display = 'none';
@@ -492,12 +500,23 @@
                 setupUI();
             }
             
+            // ★★★ 変更点: UIセットアップのロジックを更新 ★★★
             function setupUI() {
                 document.getElementById('exit-ar-button').addEventListener('click', () => {
                     const currentSession = renderer.xr.getSession();
                     if (currentSession) {
                         currentSession.end();
                     }
+                });
+                
+                document.getElementById('toggle-edit-mode-button').addEventListener('click', () => {
+                    isEditMode = !isEditMode;
+                    // 編集モードをオフにしたら、選択中のオブジェクトも解除する
+                    if (!isEditMode && selectedObject) {
+                        unhighlightObject(selectedObject);
+                        selectedObject = null;
+                    }
+                    updateUI();
                 });
 
                 document.getElementById('add-button').addEventListener('click', () => {
@@ -506,21 +525,14 @@
                         updateUI();
                     }
                 });
-                document.getElementById('edit-button').addEventListener('click', () => {
-                    if (appState === 'IDLE' && hoveredObject) {
-                        selectedObject = hoveredObject;
-                        hoveredObject = null; 
-                        appState = 'EDITING';
-                        updateUI();
-                        updateSliderForObject(selectedObject); 
-                    }
-                });
+                
                 document.getElementById('back-button').addEventListener('click', () => {
                     if (appState === 'CHOOSING') {
                         appState = 'IDLE';
                         updateUI();
                     }
                 });
+
                 const palette = document.getElementById('furniture-palette');
                 palette.innerHTML = '';
                 furnitureData.forEach((item) => {
@@ -630,8 +642,9 @@
                 updateSliderForObject(previewObject);
             }
             
+            // ★★★ 変更点: onSelectは編集モードの時だけ機能する ★★★
             function onSelect() {
-                if (appState === 'IDLE' && hoveredObject) {
+                if (isEditMode && appState === 'IDLE' && hoveredObject) {
                     selectedObject = hoveredObject;
                     hoveredObject = null;
                     appState = 'EDITING';
@@ -717,25 +730,29 @@
                 scene.add(highlightGhost);
             }
 
+            // ★★★ 変更点: UI表示ロジックを全面的に見直し ★★★
             function updateUI() {
                 const addButton = document.getElementById('add-button');
-                const editButton = document.getElementById('edit-button');
                 const choosingControls = document.getElementById('choosing-controls');
                 const actionControls = document.getElementById('action-controls');
                 const scaleSlider = document.getElementById('scale-slider-container');
-                
+                const toggleEditModeButton = document.getElementById('toggle-edit-mode-button');
+
+                // 全てのUIを一度非表示にする
                 addButton.style.display = 'none';
-                editButton.style.display = 'none';
                 choosingControls.style.display = 'none';
                 actionControls.style.display = 'none';
                 scaleSlider.style.display = 'none';
+                toggleEditModeButton.style.display = 'none';
 
+                // 右上のボタンはAR中常に表示
+                document.getElementById('exit-ar-button').style.display = 'flex';
+                
+                // appStateに応じて表示を決定
                 switch (appState) {
                     case 'IDLE':
+                        toggleEditModeButton.style.display = 'flex';
                         addButton.style.display = 'flex';
-                        if (hoveredObject) {
-                            editButton.style.display = 'flex';
-                        }
                         break;
                     case 'CHOOSING':
                         choosingControls.style.display = 'flex';
@@ -746,9 +763,25 @@
                         scaleSlider.style.display = 'flex';
                         break;
                 }
+
+                // 編集モードボタンのアクティブ状態を更新
+                if (isEditMode) {
+                    toggleEditModeButton.classList.add('active-mode');
+                } else {
+                    toggleEditModeButton.classList.remove('active-mode');
+                }
             }
 
+            // ★★★ 変更点: handleHoverは編集モードの時だけ機能する ★★★
             function handleHover() {
+                if (!isEditMode) {
+                    if(hoveredObject) {
+                        unhighlightObject(hoveredObject);
+                        hoveredObject = null;
+                    }
+                    return;
+                }
+
                 if (appState === 'EDITING' && selectedObject && !selectedObject.userData.highlightGhost) {
                      highlightObject(selectedObject);
                 }
@@ -759,10 +792,10 @@
                     if(hoveredObject) {
                         unhighlightObject(hoveredObject);
                         hoveredObject = null;
-                        updateUI();
                     }
                     return;
                 };
+
                 raycaster.setFromCamera({ x: 0, y: 0 }, camera);
                 const intersects = raycaster.intersectObjects(placedObjects, true);
                 let intersectedRoot = null;
@@ -784,7 +817,6 @@
                     if (hoveredObject) {
                         highlightObject(hoveredObject);
                     }
-                    updateUI();
                 }
             }
 
