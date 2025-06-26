@@ -264,7 +264,6 @@
     </div>
 
     <div id="overlay">
-        <!-- ★★★ 変更点: 上部UIの位置と構造 ★★★ -->
         <div id="top-bar" style="position: absolute; top: 40px; width:100%; display: flex; justify-content: center; pointer-events: auto;">
              <button id="mode-switch-button" style="display: none;">鑑賞モード</button>
         </div>
@@ -283,8 +282,12 @@
         </div>
 
         <div id="bottom-bar">
-            <!-- ★★★ 変更点: 編集ボタンをここに戻す ★★★ -->
-            <button id="add-button" class="circle-button"></button>
+            <!-- ★★★ 変更点: +ボタンのSVGを復活 ★★★ -->
+            <button id="add-button" class="circle-button">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                </svg>
+            </button>
             <button id="edit-button" class="circle-button">
                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
@@ -390,12 +393,7 @@
             let appState = 'IDLE';
             let isEditMode = false; 
 
-            const highlightMaterial = new THREE.MeshStandardMaterial({
-                color: 0xFFFFFF,
-                transparent: true,
-                opacity: 0.4,
-                depthWrite: false
-            });
+            // ★★★ 変更点: ハイライト用のマテリアルを削除 ★★★
             
             init();
             
@@ -473,7 +471,6 @@
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
                     appState = 'IDLE';
-                    // ★★★ 変更点: デフォルトで編集モードにする ★★★
                     isEditMode = true; 
                     updateUI();
                     initializeARExperience();
@@ -522,8 +519,8 @@
                     isEditMode = !isEditMode;
                     if (!isEditMode) {
                         appState = 'IDLE';
-                        if (selectedObject) unhighlightObject(selectedObject);
-                        if (hoveredObject) unhighlightObject(hoveredObject);
+                        if (selectedObject) setObjectTransparency(selectedObject, false); // 編集中のオブジェクトを元に戻す
+                        if (hoveredObject) setObjectTransparency(hoveredObject, false); // ホバー中も元に戻す
                         selectedObject = null;
                         hoveredObject = null;
                     }
@@ -537,14 +534,9 @@
                     }
                 });
 
-                // ★★★ 変更点: 下の編集ボタンのイベントリスナーを追加 ★★★
                 document.getElementById('edit-button').addEventListener('click', () => {
                     if (isEditMode && appState === 'IDLE' && hoveredObject) {
-                        selectedObject = hoveredObject;
-                        hoveredObject = null;
-                        appState = 'EDITING';
-                        updateUI();
-                        updateSliderForObject(selectedObject);
+                        onSelect(); // 選択処理を呼び出す
                     }
                 });
                 
@@ -671,6 +663,7 @@
                 if (isEditMode && appState === 'IDLE' && hoveredObject) {
                     selectedObject = hoveredObject;
                     hoveredObject = null;
+                    setObjectTransparency(selectedObject, true); // ★★★ 変更点 ★★★
                     appState = 'EDITING';
                     updateUI();
                     updateSliderForObject(selectedObject);
@@ -681,7 +674,7 @@
                 if (appState === 'PLACING') {
                     placeNewObject();
                 } else if (appState === 'EDITING') {
-                    unhighlightObject(selectedObject);
+                    setObjectTransparency(selectedObject, false); // ★★★ 変更点 ★★★
                     selectedObject = null;
                     appState = 'IDLE';
                     updateUI();
@@ -702,8 +695,7 @@
                     appState = 'CHOOSING';
                 } else if (appState === 'EDITING') {
                     if(selectedObject) {
-                        unhighlightObject(selectedObject);
-                        scene.remove(selectedObject);
+                        scene.remove(selectedObject); // ★★★ 変更点: ハイライト解除は不要 ★★★
                         const index = placedObjects.indexOf(selectedObject);
                         if (index > -1) placedObjects.splice(index, 1);
                         selectedObject = null;
@@ -736,25 +728,27 @@
                 updateUI();
             }
             
-            function unhighlightObject(object) {
-                if (!object || !object.userData.highlightGhost) return;
-                scene.remove(object.userData.highlightGhost);
-                object.userData.highlightGhost = null;
-            }
-
-            function highlightObject(object) {
-                if (!object || object.userData.highlightGhost) return;
-                const highlightGhost = object.clone();
-                highlightGhost.traverse(child => {
+            // ★★★ 変更点: ハイライト用の関数群を削除し、透明度を切り替える関数を追加 ★★★
+            function setObjectTransparency(object, isTransparent) {
+                if (!object) return;
+                object.traverse(child => {
                     if (child.isMesh) {
-                        child.material = highlightMaterial;
+                        if (isTransparent) {
+                            if (!child.material.userData) child.material.userData = {};
+                            child.material.userData.originalOpacity = child.material.opacity;
+                            child.material.userData.originalTransparent = child.material.transparent;
+                            child.material.transparent = true;
+                            child.material.opacity = 0.7;
+                        } else {
+                            if (child.material.userData && child.material.userData.originalOpacity !== undefined) {
+                                child.material.opacity = child.material.userData.originalOpacity;
+                                child.material.transparent = child.material.userData.originalTransparent;
+                            }
+                        }
                     }
                 });
-                object.userData.highlightGhost = highlightGhost;
-                scene.add(highlightGhost);
             }
 
-            // ★★★ 変更点: UI表示ロジックを全面的に見直し ★★★
             function updateUI() {
                 const bottomBar = document.getElementById('bottom-bar');
                 const addButton = document.getElementById('add-button');
@@ -802,45 +796,32 @@
                 }
             }
 
+            // ★★★ 変更点: handleHoverからハイライト処理を削除 ★★★
             function handleHover() {
-                if (!isEditMode) {
-                    if(hoveredObject) {
-                        unhighlightObject(hoveredObject);
+                if (!isEditMode || appState !== 'IDLE') {
+                    if (hoveredObject) {
                         hoveredObject = null;
+                        updateUI();
                     }
                     return;
                 }
                 
-                if (appState !== 'IDLE') {
-                     if(hoveredObject) {
-                        unhighlightObject(hoveredObject);
-                        hoveredObject = null;
-                    }
-                    return;
-                };
-
                 raycaster.setFromCamera({ x: 0, y: 0 }, camera);
                 const intersects = raycaster.intersectObjects(placedObjects, true);
-                let intersectedRoot = null;
+                let newHoveredObject = null;
                 if (intersects.length > 0) {
                     let currentObject = intersects[0].object;
                     while (currentObject) {
                         if (placedObjects.includes(currentObject)) {
-                            intersectedRoot = currentObject;
+                            newHoveredObject = currentObject;
                             break; 
                         }
                         currentObject = currentObject.parent;
                     }
                 }
-                if (intersectedRoot !== hoveredObject) {
-                    if (hoveredObject) {
-                        unhighlightObject(hoveredObject);
-                    }
-                    hoveredObject = intersectedRoot;
-                    if (hoveredObject) {
-                        highlightObject(hoveredObject);
-                    }
-                    // ★★★ 変更点: UI更新を呼び出す ★★★
+                
+                if (newHoveredObject !== hoveredObject) {
+                    hoveredObject = newHoveredObject;
                     updateUI();
                 }
             }
@@ -909,17 +890,6 @@
                     confirmButton.disabled = !isPlaceable;
                 }
                 
-                placedObjects.forEach(obj => {
-                    if (obj.userData.highlightGhost) {
-                        obj.userData.highlightGhost.position.copy(obj.position);
-                        obj.userData.highlightGhost.quaternion.copy(obj.quaternion);
-                    }
-                });
-                 if (selectedObject && selectedObject.userData.highlightGhost) {
-                    selectedObject.userData.highlightGhost.position.copy(selectedObject.position);
-                    selectedObject.userData.highlightGhost.quaternion.copy(selectedObject.quaternion);
-                 }
-
                 if (!hitTestSourceRequested && renderer.xr.getSession()) {
                     const session = renderer.xr.getSession();
                     session.requestReferenceSpace('viewer').then((referenceSpace) => {
