@@ -463,11 +463,6 @@
                 renderer.xr.enabled = true;
                 document.body.appendChild(renderer.domElement);
                 
-                // ★★★ 変更点: コントローラーのタップイベントをジェスチャー処理に統合 ★★★
-                // controller = renderer.xr.getController(0);
-                // controller.addEventListener('select', onSelect);
-                // scene.add(controller);
-
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
                     appState = 'IDLE';
@@ -591,6 +586,7 @@
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
                 
+                // ★★★ 変更点: ジェスチャーリスナーをrenderer.domElementに統一 ★★★
                 renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
                 renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
                 renderer.domElement.addEventListener('touchend', onTouchEnd);
