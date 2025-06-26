@@ -463,6 +463,11 @@
                 renderer.xr.enabled = true;
                 document.body.appendChild(renderer.domElement);
                 
+                // ★★★ 変更点: コントローラーのタップイベントをジェスチャー処理に統合 ★★★
+                // controller = renderer.xr.getController(0);
+                // controller.addEventListener('select', onSelect);
+                // scene.add(controller);
+
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
                     appState = 'IDLE';
@@ -586,7 +591,6 @@
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
                 
-                // ★★★ 変更点: ジェスチャーリスナーを再設定 ★★★
                 renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
                 renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
                 renderer.domElement.addEventListener('touchend', onTouchEnd);
@@ -807,10 +811,8 @@
             // ★★★ 変更点: ジェスチャー関連の関数を再構築 ★★★
             function onTouchStart(event) {
                 // UI要素上のタッチは、ジェスチャーとして扱わない
-                if (event.target.closest('[style*="pointer-events: auto"]')) {
-                    isSwiping = false;
-                    return;
-                }
+                if (event.target !== renderer.domElement) return;
+                
                 // ジェスチャー操作の対象外のモードなら何もしない
                 if (!isEditMode || (appState !== 'PLACING' && appState !== 'EDITING')) return;
                 
@@ -821,12 +823,14 @@
             }
 
             function onTouchMove(event) {
+                if (event.target !== renderer.domElement) return;
+
                 if (!isSwiping || event.touches.length !== 1) return;
                 
                 const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
                 if (!activeObject) return;
                 
-                event.preventDefault(); // 画面全体のスクロールを防ぐ
+                event.preventDefault(); 
                 const currentX = event.touches[0].clientX;
                 const deltaX = currentX - lastTouchX;
                 
@@ -835,8 +839,9 @@
             }
 
             function onTouchEnd(event) {
-                // 画面から指が離れたら、必ずスワイプ状態をリセット
-                isSwiping = false;
+                if (isSwiping && event.touches.length === 0) {
+                    isSwiping = false;
+                }
             }
 
             function animate() {
@@ -869,7 +874,7 @@
                             reticle.matrix.fromArray(hitPose.transform.matrix);
                             
                             if (isEditMode) {
-                                if (activeObject && !isSwiping) { // スワイプ中はレティクルに追従させない
+                                if (activeObject && !isSwiping) { 
                                     activeObject.position.setFromMatrixPosition(reticle.matrix);
                                 }
                                 if(activeObject) activeObject.visible = true;
