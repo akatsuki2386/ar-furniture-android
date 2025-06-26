@@ -331,48 +331,46 @@
             
             init();
             
-            // ★★★ 変更点: 「✕」マークの生成方法をシンプルに修正 ★★★
+            // ★★★ 変更点: 「✕」マークを一枚の画像(テクスチャ)として生成 ★★★
             function createCrossMark() {
-                const crossGroup = new THREE.Group();
+                const canvas = document.createElement('canvas');
+                const size = 256; // テクスチャの解像度
+                canvas.width = size;
+                canvas.height = size;
+                const context = canvas.getContext('2d');
+
+                // 赤い円を描画
+                context.fillStyle = 'rgba(204, 0, 0, 0.8)';
+                context.beginPath();
+                context.arc(size / 2, size / 2, size / 2, 0, 2 * Math.PI);
+                context.fill();
                 
-                // 赤い円形の背景
-                const circleMaterial = new THREE.MeshBasicMaterial({
-                    color: 0xcc0000,
+                // 白い✕を描画
+                context.strokeStyle = 'white';
+                context.lineWidth = size * 0.1; // 線の太さ
+                context.lineCap = 'round';
+                
+                context.beginPath();
+                const margin = size * 0.25;
+                context.moveTo(margin, margin);
+                context.lineTo(size - margin, size - margin);
+                context.moveTo(size - margin, margin);
+                context.lineTo(margin, size - margin);
+                context.stroke();
+                
+                const texture = new THREE.CanvasTexture(canvas);
+                const material = new THREE.MeshBasicMaterial({ 
+                    map: texture, 
                     transparent: true,
-                    opacity: 0.8,
-                    depthTest: false // 他のオブジェクトに隠れても見たいので深度テストはオフ
+                    depthTest: false 
                 });
-                const circleGeometry = new THREE.CircleGeometry(0.5, 32);
-                const circleBackground = new THREE.Mesh(circleGeometry, circleMaterial);
-                crossGroup.add(circleBackground);
-
-                // 白い「✕」の線の太さなどを定義
-                const lineWidth = 0.7; // 線の長さ
-                const lineHeight = 0.15; // 線の太さ
-
-                // 白い本体の線
-                const lineMaterial = new THREE.MeshBasicMaterial({
-                    color: 0xFFFFFF,
-                    depthTest: false // 赤い円に隠れても見たいので深度テストはオフ
-                });
-                const lineGeometry = new THREE.PlaneGeometry(lineWidth, lineHeight);
-
-                const bar1 = new THREE.Mesh(lineGeometry, lineMaterial);
-                bar1.rotation.z = Math.PI / 4;
-                // 赤い円より少しだけ手前に配置して、描画が重なるのを防ぐ
-                bar1.position.z = 0.01; 
-
-                const bar2 = new THREE.Mesh(lineGeometry, lineMaterial);
-                bar2.rotation.z = -Math.PI / 4;
-                // 赤い円より少しだけ手前に配置して、描画が重なるのを防ぐ
-                bar2.position.z = 0.01;
-
-                crossGroup.add(bar1, bar2);
                 
-                // グループ全体を一番手前に描画するよう設定
-                crossGroup.renderOrder = 999;
-                crossGroup.visible = false;
-                return crossGroup;
+                const geometry = new THREE.PlaneGeometry(1, 1);
+                const plane = new THREE.Mesh(geometry, material);
+                
+                plane.renderOrder = 999;
+                plane.visible = false;
+                return plane;
             }
 
             function preloadModels() {
