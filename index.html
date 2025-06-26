@@ -101,6 +101,24 @@
             z-index: 10;
         }
         
+        /* ★★★ 変更点: 案内文のスタイルを追加 ★★★ */
+        #instruction-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-size: 18px;
+            font-weight: bold;
+            text-align: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            padding: 15px 25px;
+            border-radius: 10px;
+            line-height: 1.5;
+            display: none; /* 初期状態は非表示 */
+            pointer-events: none; /* タップ操作を妨げないように */
+        }
+        
         /* === 家具選択パレットのスタイル === */
         #furniture-palette {
             display: flex; /* ボタンを横並びにする */
@@ -264,6 +282,11 @@
     </div>
 
     <div id="overlay">
+        <!-- ★★★ 変更点: 案内文のHTMLを追加 ★★★ -->
+        <div id="instruction-text">
+            床を認識しています...<br>カメラをゆっくりと床に向けて動かしてください
+        </div>
+
         <div id="top-bar" style="position: absolute; top: 40px; width:100%; display: flex; justify-content: center; pointer-events: auto;">
              <button id="mode-switch-button" style="display: none;">鑑賞モード</button>
         </div>
@@ -462,7 +485,6 @@
                 renderer.xr.enabled = true;
                 document.body.appendChild(renderer.domElement);
                 
-                // ★★★ 変更点: コントローラーのタップイベントを復活 ★★★
                 controller = renderer.xr.getController(0);
                 controller.addEventListener('select', onSelect);
                 scene.add(controller);
@@ -810,6 +832,7 @@
                 handleHover();
                 
                 const confirmButton = document.getElementById('confirm-button');
+                const instructionText = document.getElementById('instruction-text');
                 let isPlaceable = false;
                 const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
 
@@ -830,6 +853,10 @@
                             
                             reticle.matrix.fromArray(hitPose.transform.matrix);
                             
+                            // ★★★ 変更点: レティクルの表示で案内文を制御 ★★★
+                            reticle.visible = true;
+                            instructionText.style.display = 'none';
+
                             if (isEditMode) {
                                 if (activeObject) { 
                                     activeObject.position.setFromMatrixPosition(reticle.matrix);
@@ -858,6 +885,8 @@
                            reticle.visible = false;
                            crossMark.visible = false;
                            if (activeObject) activeObject.visible = false;
+                           // ★★★ 変更点: 平面が見つからない場合に案内文を表示 ★★★
+                           instructionText.style.display = 'block';
                         }
                     }
                 }
