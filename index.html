@@ -376,7 +376,11 @@
             let floorY = null;
             let crossMark;
             let scaleSliderContainer, sliderTrack, sliderHandle;
-            let isDragging = false;
+            
+            // ★★★ 変更点: ジェスチャー操作用の変数を追加 ★★★
+            let isDragging = false; // スライダー操作用
+            let touchStartX = 0, lastTouchX = 0, isSwiping = false; // スワイプ回転用
+            let initialPinchDistance = 0, isPinching = false; // ピンチ拡縮用
             
             const furnitureData = [
                 { name: 'イス', file: 'chair.glb', height: 0.79 },
@@ -568,13 +572,12 @@
                 sliderTrack = document.getElementById('slider-track');
                 sliderHandle = document.getElementById('slider-handle');
 
-                const onDragStart = (e) => {
+                const onSliderDragStart = (e) => {
                     e.stopPropagation();
                     isDragging = true;
                 };
-                const onDragEnd = () => isDragging = false;
-
-                const onDragMove = (event) => {
+                const onSliderDragEnd = () => isDragging = false;
+                const onSliderDragMove = (event) => {
                     if (!isDragging) return;
                     event.preventDefault();
                     
@@ -586,13 +589,17 @@
                     updateScaleFromSlider(percent);
                 };
                 
-                sliderHandle.addEventListener('mousedown', onDragStart);
-                document.addEventListener('mousemove', onDragMove);
-                document.addEventListener('mouseup', onDragEnd);
+                sliderHandle.addEventListener('mousedown', onSliderDragStart);
+                document.addEventListener('mousemove', onSliderDragMove);
+                document.addEventListener('mouseup', onSliderDragEnd);
+                sliderHandle.addEventListener('touchstart', onSliderDragStart, { passive: false });
+                document.addEventListener('touchmove', onSliderDragMove, { passive: false });
+                document.addEventListener('touchend', onSliderDragEnd);
                 
-                sliderHandle.addEventListener('touchstart', onDragStart, { passive: false });
-                document.addEventListener('touchmove', onDragMove, { passive: false });
-                document.addEventListener('touchend', onDragEnd);
+                // ★★★ 変更点: ジェスチャー用のイベントリスナーを追加 ★★★
+                renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
+                renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
+                renderer.domElement.addEventListener('touchend', onTouchEnd);
             }
             
             function updateSliderForObject(object) {
@@ -630,7 +637,6 @@
                 if (!gltf) return;
                 
                 previewObject = gltf.scene.clone();
-                // 新規プレビューは常に半透明
                 setObjectTransparency(previewObject, true);
 
                 const initialBox = new THREE.Box3().setFromObject(previewObject);
@@ -676,7 +682,7 @@
             }
             
             function onRotate() {
-                const target = appState === 'PLACING' ? previewObject : selectedObject;
+                const target = (appState === 'PLACING') ? previewObject : selectedObject;
                 if (target) {
                     target.rotation.y += Math.PI / 4;
                 }
@@ -766,7 +772,7 @@
                             scaleSlider.style.display = 'flex';
                             break;
                     }
-                } else { // 鑑賞モード
+                } else { 
                     modeSwitchButton.textContent = '鑑賞モード';
                     modeSwitchButton.classList.remove('active-mode');
                     bottomBar.style.display = 'none';
@@ -804,6 +810,59 @@
                     hoveredObject = newHoveredObject;
                     updateUI();
                 }
+            }
+            
+            // ★★★ 変更点: ジェスチャー関連の関数を追加 ★★★
+            function getPinchDistance(touches) {
+                const touch1 = touches[0];
+                const touch2 = touches[1];
+                return Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
+            }
+
+            function onTouchStart(event) {
+                if (!isEditMode || (appState !== 'PLACING' && appState !== 'EDITING')) return;
+                
+                if (event.touches.length === 1) {
+                    isSwiping = true;
+                    lastTouchX = event.touches[0].clientX;
+                } else if (event.touches.length === 2) {
+                    isSwiping = false;
+                    isPinching = true;
+                    initialPinchDistance = getPinchDistance(event.touches);
+                    const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
+                    if (activeObject) {
+                        activeObject.userData.baseScaleMultiplier = activeObject.userData.scaleMultiplier || 1.0;
+                    }
+                }
+            }
+
+            function onTouchMove(event) {
+                if (!isEditMode) return;
+                event.preventDefault();
+
+                const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
+                if (!activeObject) return;
+
+                if (isSwiping && event.touches.length === 1) {
+                    const currentX = event.touches[0].clientX;
+                    const deltaX = currentX - lastTouchX;
+                    activeObject.rotation.y -= deltaX * 0.01;
+                    lastTouchX = currentX;
+                } else if (isPinching && event.touches.length === 2) {
+                    const currentPinchDistance = getPinchDistance(event.touches);
+                    const scaleRatio = currentPinchDistance / initialPinchDistance;
+                    const baseMultiplier = activeObject.userData.baseScaleMultiplier || 1.0;
+                    let newMultiplier = baseMultiplier * scaleRatio;
+                    newMultiplier = Math.max(0.5, Math.min(2.0, newMultiplier)); // 0.5倍から2倍の範囲に制限
+                    
+                    const percent = (newMultiplier - 0.5) / 1.5;
+                    updateScaleFromSlider(percent);
+                }
+            }
+
+            function onTouchEnd(event) {
+                isSwiping = false;
+                isPinching = false;
             }
 
             function animate() {
