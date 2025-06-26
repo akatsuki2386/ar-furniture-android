@@ -407,8 +407,8 @@
             let scaleSliderContainer, sliderTrack, sliderHandle;
             
             let isDraggingSlider = false; 
+            let lastTouchX = 0, isSwiping = false, swipeMoved = false; 
             let dotAnimationTimer = null;
-            // ★★★ 変更点: 撮影フラグを追加 ★★★
             let shouldTakeScreenshot = false;
             
             const furnitureData = [
@@ -488,7 +488,6 @@
                 crossMark = createCrossMark();
                 scene.add(crossMark);
                 
-                // ★★★ 変更点: レンダラーの初期化オプションに preserveDrawingBuffer を追加 ★★★
                 renderer = new THREE.WebGLRenderer({ 
                     antialias: true, 
                     alpha: true, 
@@ -499,9 +498,10 @@
                 renderer.xr.enabled = true;
                 document.body.appendChild(renderer.domElement);
                 
-                controller = renderer.xr.getController(0);
-                controller.addEventListener('select', onSelect);
-                scene.add(controller);
+                // ★★★ 変更点: コントローラーのタップイベントを削除し、ジェスチャー処理に統一 ★★★
+                // controller = renderer.xr.getController(0);
+                // controller.addEventListener('select', onSelect);
+                // scene.add(controller);
 
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
@@ -626,6 +626,10 @@
                 sliderHandle.addEventListener('touchstart', onSliderDragStart, { passive: false });
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
+                
+                renderer.domElement.addEventListener('touchstart', onTouchStart);
+                renderer.domElement.addEventListener('touchmove', onTouchMove);
+                renderer.domElement.addEventListener('touchend', onTouchEnd);
                 
                 document.getElementById('photo-button').addEventListener('click', () => {
                     const topBar = document.getElementById('top-bar');
@@ -815,7 +819,7 @@
                 } else { 
                     modeSwitchButton.textContent = '鑑賞モード';
                     modeSwitchButton.classList.remove('active-mode');
-                    bottomBar.style.display = 'flex';
+                    bottomBar.style.display = 'flex'; // 鑑賞モードでも下部バーは表示
                     photoButton.style.display = 'flex';
                     addButton.style.display = 'none';
                     editButton.style.display = 'none';
@@ -857,6 +861,37 @@
                 }
             }
             
+            // ★★★ 変更点: ジェスチャー関連の関数を再構築 ★★★
+            function onTouchStart(event) {
+                // UI要素上のタッチは、ジェスチャーとして扱わない
+                if (event.target !== renderer.domElement) return;
+                // ジェスチャー操作の対象外のモードなら何もしない
+                if (!isEditMode || (appState !== 'PLACING' && appState !== 'EDITING')) return;
+                
+                if (event.touches.length === 1) {
+                    isSwiping = true;
+                    lastTouchX = event.touches[0].clientX;
+                }
+            }
+
+            function onTouchMove(event) {
+                if (!isSwiping || event.touches.length !== 1) return;
+                
+                const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
+                if (!activeObject) return;
+                
+                event.preventDefault(); 
+                const currentX = event.touches[0].clientX;
+                const deltaX = currentX - lastTouchX;
+                
+                activeObject.rotation.y += deltaX * 0.02;
+                lastTouchX = currentX;
+            }
+
+            function onTouchEnd(event) {
+                isSwiping = false;
+            }
+
             function startDotAnimation() {
                 if (dotAnimationTimer) return; 
                 const dotsElement = document.getElementById('loading-dots');
@@ -914,7 +949,7 @@
                             }
 
                             if (isEditMode) {
-                                if (activeObject) { 
+                                if (activeObject && !isSwiping) { 
                                     activeObject.position.setFromMatrixPosition(reticle.matrix);
                                 }
                                 if(activeObject) activeObject.visible = true;
@@ -966,7 +1001,6 @@
                     hitTestSourceRequested = true;
                 }
                 
-                // ★★★ 変更点: renderの最後にスクリーンショット処理を追加 ★★★
                 renderer.render(scene, camera);
 
                 if (shouldTakeScreenshot) {
