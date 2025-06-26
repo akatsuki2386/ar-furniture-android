@@ -167,14 +167,14 @@
             display: none; /* 初期状態は非表示 */
         }
         
-        /* ★★★ 変更点: 拡大縮小スライダーのコンテナ ★★★ */
+        /* ★★★ 変更点: スライダーの幅を調整 ★★★ */
         #scale-slider-container {
             position: absolute;
             bottom: 170px;
             left: 50%;
             transform: translateX(-50%);
-            width: 80%;
-            max-width: 320px;
+            width: 60%; /* 親指で届く範囲に */
+            max-width: 200px; /* 削除ボタンと回転ボタンの中心間の幅に合わせる */
             height: 40px;
             display: none;
             align-items: center;
@@ -256,7 +256,6 @@
             </button>
         </div>
         
-        <!-- ★★★ 変更点: スライダーのHTMLを追加 ★★★ -->
         <div id="scale-slider-container">
             <div id="slider-track">
                 <div id="slider-handle"></div>
@@ -357,7 +356,9 @@
             const preloadedModels = new Map();
             let floorY = null;
             let crossMark;
-
+            let scaleSliderContainer, sliderTrack, sliderHandle;
+            let isDragging = false;
+            
             const furnitureData = [
                 { name: 'イス', file: 'chair.glb', height: 0.79 },
                 { name: '本棚', file: 'bookshelf.glb', height: 1.8 }, 
@@ -376,10 +377,6 @@
                 opacity: 0.4,
                 depthWrite: false
             });
-            
-            // ★★★ 変更点: スライダー関連の変数を追加 ★★★
-            let scaleSliderContainer, sliderTrack, sliderHandle;
-            let isDragging = false;
             
             init();
             
@@ -495,7 +492,6 @@
                 setupUI();
             }
             
-            // ★★★ 変更点: スライダーのセットアップとイベント処理を追加 ★★★
             function setupUI() {
                 document.getElementById('exit-ar-button').addEventListener('click', () => {
                     const currentSession = renderer.xr.getSession();
@@ -513,10 +509,10 @@
                 document.getElementById('edit-button').addEventListener('click', () => {
                     if (appState === 'IDLE' && hoveredObject) {
                         selectedObject = hoveredObject;
-                        hoveredObject = null; // ハイライトを消すため
+                        hoveredObject = null; 
                         appState = 'EDITING';
                         updateUI();
-                        updateSliderForObject(selectedObject); // 編集対象のスケールをスライダーに反映
+                        updateSliderForObject(selectedObject); 
                     }
                 });
                 document.getElementById('back-button').addEventListener('click', () => {
@@ -545,7 +541,6 @@
                 document.getElementById('delete-button').addEventListener('click', onDelete);
                 document.getElementById('confirm-button').addEventListener('click', onConfirm);
                 
-                // スライダーのセットアップ
                 scaleSliderContainer = document.getElementById('scale-slider-container');
                 sliderTrack = document.getElementById('slider-track');
                 sliderHandle = document.getElementById('slider-handle');
@@ -560,7 +555,7 @@
                     const clientX = event.clientX || event.touches[0].clientX;
                     const rect = sliderTrack.getBoundingClientRect();
                     let percent = (clientX - rect.left) / rect.width;
-                    percent = Math.max(0, Math.min(1, percent)); // 0-1の範囲にクランプ
+                    percent = Math.max(0, Math.min(1, percent));
                     
                     updateScaleFromSlider(percent);
                 };
@@ -577,7 +572,6 @@
             function updateSliderForObject(object) {
                 if (!object) return;
                 const multiplier = object.userData.scaleMultiplier || 1.0;
-                // multiplier (0.5 to 2.0) を percent (0 to 1) に変換
                 const percent = (multiplier - 0.5) / 1.5;
                 updateSliderHandlePosition(percent);
             }
@@ -592,7 +586,6 @@
                 const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
                 if (!activeObject) return;
                 
-                // percent (0 to 1) を multiplier (0.5 to 2.0) に変換
                 const multiplier = 0.5 + percent * 1.5;
                 activeObject.userData.scaleMultiplier = multiplier;
                 
@@ -696,11 +689,7 @@
                 solidObject.position.copy(previewObject.position);
                 solidObject.rotation.copy(previewObject.rotation);
                 solidObject.scale.copy(previewObject.scale);
-                // userDataもコピーしておく
-                solidObject.userData.initialScale = previewObject.userData.initialScale.clone();
-                solidObject.userData.scaleMultiplier = previewObject.userData.scaleMultiplier;
-                solidObject.userData.centerOffset = previewObject.userData.centerOffset.clone();
-                solidObject.userData.crossMarkScale = previewObject.userData.crossMarkScale;
+                solidObject.userData = JSON.parse(JSON.stringify(previewObject.userData));
 
                 scene.add(solidObject);
                 placedObjects.push(solidObject);
@@ -842,7 +831,7 @@
                                     crossMark.scale.set(scale, scale, scale);
                                     crossMark.quaternion.copy(camera.quaternion);
                                 }
-                            } else { // IDLE mode
+                            } else { 
                                 reticle.visible = true;
                                 crossMark.visible = false;
                             }
