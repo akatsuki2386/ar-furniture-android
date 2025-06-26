@@ -377,9 +377,10 @@
             let crossMark;
             let scaleSliderContainer, sliderTrack, sliderHandle;
             
-            let isDragging = false; 
+            let isDraggingSlider = false; 
             let touchStartX = 0, lastTouchX = 0, isSwiping = false; 
-            let initialPinchDistance = 0, isPinching = false; 
+            let initialPinchDistance = 0, isPinching = false;
+            let gestureJustEnded = false;
             
             const furnitureData = [
                 { name: 'イス', file: 'chair.glb', height: 0.79 },
@@ -573,11 +574,11 @@
 
                 const onSliderDragStart = (e) => {
                     e.stopPropagation();
-                    isDragging = true;
+                    isDraggingSlider = true;
                 };
-                const onSliderDragEnd = () => isDragging = false;
+                const onSliderDragEnd = () => isDraggingSlider = false;
                 const onSliderDragMove = (event) => {
-                    if (!isDragging) return;
+                    if (!isDraggingSlider) return;
                     event.preventDefault();
                     
                     const clientX = event.clientX || event.touches[0].clientX;
@@ -657,21 +658,18 @@
             }
             
             function onSelect() {
-                // タッチジェスチャーの開始と競合しないように少し遅延させる
-                setTimeout(() => {
-                    if (isSwiping || isPinching) return;
+                if (gestureJustEnded) return;
 
-                    if (isEditMode && appState === 'IDLE' && hoveredObject) {
-                        if (selectedObject) setObjectTransparency(selectedObject, false);
+                if (isEditMode && appState === 'IDLE' && hoveredObject) {
+                    if (selectedObject) setObjectTransparency(selectedObject, false);
 
-                        selectedObject = hoveredObject;
-                        hoveredObject = null;
-                        setObjectTransparency(selectedObject, true);
-                        appState = 'EDITING';
-                        updateUI();
-                        updateSliderForObject(selectedObject);
-                    }
-                }, 100);
+                    selectedObject = hoveredObject;
+                    hoveredObject = null;
+                    setObjectTransparency(selectedObject, true);
+                    appState = 'EDITING';
+                    updateUI();
+                    updateSliderForObject(selectedObject);
+                }
             }
 
             function onConfirm() {
@@ -853,7 +851,6 @@
                     event.preventDefault();
                     const currentX = event.touches[0].clientX;
                     const deltaX = currentX - lastTouchX;
-                    // ★★★ 変更点: 回転方向を反転 ★★★
                     activeObject.rotation.y += deltaX * 0.02; 
                     lastTouchX = currentX;
                 } else if (isPinching && event.touches.length === 2) {
@@ -870,6 +867,10 @@
             }
 
             function onTouchEnd(event) {
+                if (isSwiping || isPinching) {
+                    gestureJustEnded = true;
+                    setTimeout(() => { gestureJustEnded = false; }, 100);
+                }
                 isSwiping = false;
                 isPinching = false;
             }
