@@ -101,22 +101,21 @@
             z-index: 10;
         }
         
-        /* ★★★ 変更点: 案内文のスタイルを追加 ★★★ */
+        /* ★★★ 変更点: 案内文のスタイルを調整 ★★★ */
         #instruction-text {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
             color: white;
-            font-size: 18px;
-            font-weight: bold;
+            font-size: 16px;
             text-align: center;
-            background-color: rgba(0, 0, 0, 0.5);
-            padding: 15px 25px;
-            border-radius: 10px;
-            line-height: 1.5;
-            display: none; /* 初期状態は非表示 */
-            pointer-events: none; /* タップ操作を妨げないように */
+            background-color: rgba(0, 0, 0, 0.6);
+            padding: 20px 30px;
+            border-radius: 15px;
+            line-height: 1.7;
+            display: none;
+            pointer-events: none;
         }
         
         /* === 家具選択パレットのスタイル === */
@@ -282,9 +281,10 @@
     </div>
 
     <div id="overlay">
-        <!-- ★★★ 変更点: 案内文のHTMLを追加 ★★★ -->
         <div id="instruction-text">
-            床を認識しています...<br>カメラをゆっくりと床に向けて動かしてください
+            <!-- ★★★ 変更点: 案内文の改行とスタイルを更新 ★★★ -->
+            <span style="font-size: 1.25em; font-weight: bold;">床を認識中…</span><br><br>
+            カメラをゆっくりと<br>床に向けて<br>動かしてください
         </div>
 
         <div id="top-bar" style="position: absolute; top: 40px; width:100%; display: flex; justify-content: center; pointer-events: auto;">
@@ -853,8 +853,6 @@
                             
                             reticle.matrix.fromArray(hitPose.transform.matrix);
                             
-                            // ★★★ 変更点: レティクルの表示で案内文を制御 ★★★
-                            reticle.visible = true;
                             instructionText.style.display = 'none';
 
                             if (isEditMode) {
@@ -885,7 +883,6 @@
                            reticle.visible = false;
                            crossMark.visible = false;
                            if (activeObject) activeObject.visible = false;
-                           // ★★★ 変更点: 平面が見つからない場合に案内文を表示 ★★★
                            instructionText.style.display = 'block';
                         }
                     }
