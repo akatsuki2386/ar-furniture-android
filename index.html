@@ -228,10 +228,24 @@
             cursor: not-allowed;
         }
         
-        /* ★★★ 変更点: 編集モードボタンがアクティブな時のスタイル ★★★ */
-        .circle-button.active-mode {
-            background-color: rgba(0, 122, 255, 0.5); /* 青色でアクティブ状態を示す */
-            border-color: rgba(0, 122, 255, 0.8);
+        /* ★★★ 変更点: モード切替ボタンのスタイル ★★★ */
+        #mode-switch-button {
+            background-color: rgba(0, 0, 0, 0.5);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 9999px;
+            padding: 10px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            min-width: 120px; /* ボタンの最小幅 */
+            text-align: center;
+        }
+        #mode-switch-button.active-mode {
+             background-color: rgba(0, 122, 255, 0.7); /* アクティブな時は青色に */
+             border-color: rgba(0, 122, 255, 1);
         }
 
         #add-button {
@@ -251,13 +265,11 @@
     </div>
 
     <div id="overlay">
-        <div id="top-right-controls" style="position: absolute; top: 20px; right: 20px; pointer-events: auto; display: flex; gap: 10px;">
-             <!-- ★★★ 変更点: 編集モード切り替えボタンを追加 ★★★ -->
-             <button id="toggle-edit-mode-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
-                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
-                </svg>
-             </button>
+        <!-- ★★★ 変更点: UIの構造を変更 ★★★ -->
+        <div id="top-bar" style="position: absolute; top: 20px; width:100%; display: flex; justify-content: center; pointer-events: auto;">
+             <button id="mode-switch-button" style="display: none;">鑑賞モード</button>
+        </div>
+        <div id="top-right-controls" style="position: absolute; top: 20px; right: 20px; pointer-events: auto;">
              <button id="exit-ar-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3-3-3m0 0 3-3m-3 3h12" />
@@ -374,9 +386,8 @@
             const raycaster = new THREE.Raycaster();
             let selectedObject = null;
             let hoveredObject = null;
-            // ★★★ 変更点: 新しい状態変数を追加 ★★★
-            let appState = 'IDLE'; // IDLE, CHOOSING, PLACING, EDITING
-            let isEditMode = false; // true: 編集モード, false: 鑑賞モード
+            let appState = 'IDLE';
+            let isEditMode = false; 
 
             const highlightMaterial = new THREE.MeshStandardMaterial({
                 color: 0xFFFFFF,
@@ -460,7 +471,6 @@
 
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
-                    document.getElementById('exit-ar-button').style.display = 'flex';
                     appState = 'IDLE';
                     isEditMode = false;
                     updateUI();
@@ -471,10 +481,8 @@
                 renderer.xr.addEventListener('sessionend', () => {
                     document.getElementById('title-container').style.display = 'block';
                     document.getElementById('exit-ar-button').style.display = 'none';
-                    document.getElementById('toggle-edit-mode-button').style.display = 'none';
-                    document.getElementById('add-button').style.display = 'none';
-                    document.getElementById('choosing-controls').style.display = 'none';
-                    document.getElementById('action-controls').style.display = 'none';
+                    document.getElementById('mode-switch-button').style.display = 'none';
+                    document.getElementById('bottom-bar').style.display = 'none';
                     document.getElementById('scale-slider-container').style.display = 'none';
                     floorY = null; 
                 });
@@ -500,7 +508,6 @@
                 setupUI();
             }
             
-            // ★★★ 変更点: UIセットアップのロジックを更新 ★★★
             function setupUI() {
                 document.getElementById('exit-ar-button').addEventListener('click', () => {
                     const currentSession = renderer.xr.getSession();
@@ -509,12 +516,14 @@
                     }
                 });
                 
-                document.getElementById('toggle-edit-mode-button').addEventListener('click', () => {
+                document.getElementById('mode-switch-button').addEventListener('click', () => {
                     isEditMode = !isEditMode;
-                    // 編集モードをオフにしたら、選択中のオブジェクトも解除する
-                    if (!isEditMode && selectedObject) {
-                        unhighlightObject(selectedObject);
+                    if (!isEditMode) {
+                        appState = 'IDLE';
+                        if (selectedObject) unhighlightObject(selectedObject);
+                        if (hoveredObject) unhighlightObject(hoveredObject);
                         selectedObject = null;
+                        hoveredObject = null;
                     }
                     updateUI();
                 });
@@ -557,7 +566,10 @@
                 sliderTrack = document.getElementById('slider-track');
                 sliderHandle = document.getElementById('slider-handle');
 
-                const onDragStart = () => isDragging = true;
+                const onDragStart = (e) => {
+                    e.stopPropagation(); // prevent AR session from handling this event
+                    isDragging = true;
+                };
                 const onDragEnd = () => isDragging = false;
 
                 const onDragMove = (event) => {
@@ -576,7 +588,7 @@
                 document.addEventListener('mousemove', onDragMove);
                 document.addEventListener('mouseup', onDragEnd);
                 
-                sliderHandle.addEventListener('touchstart', onDragStart);
+                sliderHandle.addEventListener('touchstart', onDragStart, { passive: false });
                 document.addEventListener('touchmove', onDragMove, { passive: false });
                 document.addEventListener('touchend', onDragEnd);
             }
@@ -642,7 +654,6 @@
                 updateSliderForObject(previewObject);
             }
             
-            // ★★★ 変更点: onSelectは編集モードの時だけ機能する ★★★
             function onSelect() {
                 if (isEditMode && appState === 'IDLE' && hoveredObject) {
                     selectedObject = hoveredObject;
@@ -732,47 +743,47 @@
 
             // ★★★ 変更点: UI表示ロジックを全面的に見直し ★★★
             function updateUI() {
+                const bottomBar = document.getElementById('bottom-bar');
                 const addButton = document.getElementById('add-button');
                 const choosingControls = document.getElementById('choosing-controls');
                 const actionControls = document.getElementById('action-controls');
                 const scaleSlider = document.getElementById('scale-slider-container');
-                const toggleEditModeButton = document.getElementById('toggle-edit-mode-button');
-
-                // 全てのUIを一度非表示にする
-                addButton.style.display = 'none';
-                choosingControls.style.display = 'none';
-                actionControls.style.display = 'none';
-                scaleSlider.style.display = 'none';
-                toggleEditModeButton.style.display = 'none';
-
-                // 右上のボタンはAR中常に表示
-                document.getElementById('exit-ar-button').style.display = 'flex';
+                const modeSwitchButton = document.getElementById('mode-switch-button');
                 
-                // appStateに応じて表示を決定
-                switch (appState) {
-                    case 'IDLE':
-                        toggleEditModeButton.style.display = 'flex';
-                        addButton.style.display = 'flex';
-                        break;
-                    case 'CHOOSING':
-                        choosingControls.style.display = 'flex';
-                        break;
-                    case 'PLACING':
-                    case 'EDITING':
-                        actionControls.style.display = 'flex';
-                        scaleSlider.style.display = 'flex';
-                        break;
-                }
+                document.getElementById('exit-ar-button').style.display = 'flex';
+                modeSwitchButton.style.display = 'block';
 
-                // 編集モードボタンのアクティブ状態を更新
                 if (isEditMode) {
-                    toggleEditModeButton.classList.add('active-mode');
-                } else {
-                    toggleEditModeButton.classList.remove('active-mode');
+                    modeSwitchButton.textContent = '編集モード';
+                    modeSwitchButton.classList.add('active-mode');
+                    bottomBar.style.display = 'flex';
+
+                    addButton.style.display = 'none';
+                    choosingControls.style.display = 'none';
+                    actionControls.style.display = 'none';
+                    scaleSlider.style.display = 'none';
+
+                    switch (appState) {
+                        case 'IDLE':
+                            addButton.style.display = 'flex';
+                            break;
+                        case 'CHOOSING':
+                            choosingControls.style.display = 'flex';
+                            break;
+                        case 'PLACING':
+                        case 'EDITING':
+                            actionControls.style.display = 'flex';
+                            scaleSlider.style.display = 'flex';
+                            break;
+                    }
+                } else { // 鑑賞モード
+                    modeSwitchButton.textContent = '鑑賞モード';
+                    modeSwitchButton.classList.remove('active-mode');
+                    bottomBar.style.display = 'none';
+                    scaleSlider.style.display = 'none';
                 }
             }
 
-            // ★★★ 変更点: handleHoverは編集モードの時だけ機能する ★★★
             function handleHover() {
                 if (!isEditMode) {
                     if(hoveredObject) {
@@ -781,15 +792,9 @@
                     }
                     return;
                 }
-
-                if (appState === 'EDITING' && selectedObject && !selectedObject.userData.highlightGhost) {
-                     highlightObject(selectedObject);
-                }
-                if (appState !== 'EDITING' && selectedObject && selectedObject.userData.highlightGhost) {
-                    unhighlightObject(selectedObject);
-                }
+                
                 if (appState !== 'IDLE') {
-                    if(hoveredObject) {
+                     if(hoveredObject) {
                         unhighlightObject(hoveredObject);
                         hoveredObject = null;
                     }
@@ -849,22 +854,26 @@
                             
                             reticle.matrix.fromArray(hitPose.transform.matrix);
                             
-                            if (activeObject) {
-                                activeObject.position.setFromMatrixPosition(reticle.matrix);
-                                activeObject.visible = true;
-                            }
-                            
-                            if (appState === 'PLACING' || appState === 'EDITING') {
-                                reticle.visible = isPlaceable;
-                                crossMark.visible = !isPlaceable;
-                                if (crossMark.visible && activeObject) {
-                                    crossMark.position.copy(activeObject.position).add(activeObject.userData.centerOffset);
-                                    const scale = activeObject.userData.crossMarkScale * 0.6; 
-                                    crossMark.scale.set(scale, scale, scale);
-                                    crossMark.quaternion.copy(camera.quaternion);
+                            if (isEditMode) {
+                                if (activeObject) {
+                                    activeObject.position.setFromMatrixPosition(reticle.matrix);
+                                    activeObject.visible = true;
                                 }
-                            } else { 
-                                reticle.visible = true;
+                                if (appState === 'PLACING' || appState === 'EDITING') {
+                                    reticle.visible = isPlaceable;
+                                    crossMark.visible = !isPlaceable;
+                                    if (crossMark.visible && activeObject) {
+                                        crossMark.position.copy(activeObject.position).add(activeObject.userData.centerOffset);
+                                        const scale = activeObject.userData.crossMarkScale * 0.6; 
+                                        crossMark.scale.set(scale, scale, scale);
+                                        crossMark.quaternion.copy(camera.quaternion);
+                                    }
+                                } else {
+                                     reticle.visible = true;
+                                     crossMark.visible = false;
+                                }
+                            } else { // 鑑賞モード
+                                reticle.visible = false;
                                 crossMark.visible = false;
                             }
                         } else {
@@ -876,7 +885,7 @@
                     }
                 }
                 
-                if (appState === 'PLACING' || appState === 'EDITING') {
+                if (isEditMode && (appState === 'PLACING' || appState === 'EDITING')) {
                     confirmButton.disabled = !isPlaceable;
                 }
                 
