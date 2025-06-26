@@ -188,6 +188,15 @@
         .circle-button:active { /* ボタンを押した瞬間のスタイル */
             transform: scale(0.9); /* 少し小さくして押した感を出す */
         }
+        
+        /* ★★★ 変更点: 決定ボタンの無効状態スタイルを追加 ★★★ */
+        .circle-button:disabled {
+            background-color: rgba(128, 128, 128, 0.2);
+            border-color: rgba(128, 128, 128, 0.3);
+            color: #888;
+            cursor: not-allowed;
+        }
+
 
         /* === 追加・編集ボタンの初期表示設定 === */
         #add-button, #edit-button {
@@ -264,7 +273,6 @@
         import { ARButton } from 'three/addons/webxr/ARButton.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-        // メインの処理を定義
         function main() {
             const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
             if (isIOS) {
@@ -274,7 +282,6 @@
             setupWebXR();
         }
 
-        // iOS向けのセットアップ関数
         function setupIOS() {
             document.getElementById('title-container').style.display = 'none';
             const iosContainer = document.getElementById('ios-ar-container');
@@ -294,17 +301,16 @@
             });
         }
 
-        // WebXR（Androidなど）向けのセットアップ関数
         function setupWebXR() {
-            // === グローバル変数の定義 ===
             let camera, scene, renderer, controller;
             let hitTestSource = null;
             let hitTestSourceRequested = false;
             let reticle;
             const loader = new GLTFLoader();
             const preloadedModels = new Map();
-            // ★★★ 変更点 1: 床の高さを記録する変数を追加 ★★★
             let floorY = null;
+            // ★★★ 変更点: 「✕」マークの変数を追加 ★★★
+            let crossMark;
 
             const furnitureData = [
                 { name: 'イス', file: 'chair.glb', height: 0.79 },
@@ -325,12 +331,28 @@
                 depthWrite: false
             });
             
-            // === 初期化処理の開始 ===
             init();
 
-            // モデルを事前に読み込む関数
+            // ★★★ 変更点: 「✕」マークを生成する関数を追加 ★★★
+            function createCrossMark() {
+                const crossGroup = new THREE.Group();
+                const material = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
+                const geometry = new THREE.BoxGeometry(1, 0.05, 0.05); // 棒の形状
+                
+                const bar1 = new THREE.Mesh(geometry, material);
+                bar1.rotation.z = Math.PI / 4; // 45度回転
+                
+                const bar2 = new THREE.Mesh(geometry, material);
+                bar2.rotation.z = -Math.PI / 4; // -45度回転
+                
+                crossGroup.add(bar1);
+                crossGroup.add(bar2);
+                
+                crossGroup.visible = false; // 最初は非表示
+                return crossGroup;
+            }
+
             function preloadModels() {
-                console.log("すべてのモデルの事前読み込みを開始します...");
                 const loadingPromises = furnitureData.map(item => {
                     return new Promise((resolve, reject) => {
                         loader.load(item.file, (gltf) => {
@@ -344,12 +366,15 @@
                     .catch(error => console.error("モデルの事前読み込み中にエラーが発生しました。", error));
             }
 
-            // アプリ全体の初期化を行う関数
             function init() {
                 scene = new THREE.Scene();
                 camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
                 scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, 3));
                 
+                // ★★★ 変更点: 「✕」マークを生成してシーンに追加 ★★★
+                crossMark = createCrossMark();
+                scene.add(crossMark);
+
                 renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
                 renderer.setPixelRatio(window.devicePixelRatio);
                 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -374,7 +399,6 @@
                     document.getElementById('edit-button').style.display = 'none';
                     document.getElementById('choosing-controls').style.display = 'none';
                     document.getElementById('action-controls').style.display = 'none';
-                    // ★★★ 変更点 2: AR終了時に床の高さをリセット ★★★
                     floorY = null; 
                 });
                 
@@ -459,7 +483,7 @@
                 const size = box.getSize(new THREE.Vector3());
                 const scale = currentFurniture.height / size.y;
                 previewObject.scale.set(scale, scale, scale);
-                previewObject.visible = true;
+                previewObject.visible = false; // 最初は非表示
                 scene.add(previewObject);
             }
             
@@ -473,7 +497,7 @@
             }
 
             function onConfirm() {
-                if (appState === 'PLACING' && previewObject && previewObject.visible) {
+                if (appState === 'PLACING' && previewObject && reticle.visible) {
                     placeNewObject();
                 } else if (appState === 'EDITING') {
                     unhighlightObject(selectedObject);
@@ -620,45 +644,63 @@
             function render(timestamp, frame) {
                 if (!renderer.xr.isPresenting) return;
                 handleHover();
+                
+                const confirmButton = document.getElementById('confirm-button');
+
                 if (frame) {
                     const referenceSpace = renderer.xr.getReferenceSpace();
                     if (hitTestSource) {
                         const hitTestResults = frame.getHitTestResults(hitTestSource);
-                        // ★★★ 変更点 3: ヒットテストの結果を床かどうか判定する ★★★
+
                         if (hitTestResults.length > 0) {
                             const hit = hitTestResults[0];
                             const hitPose = hit.getPose(referenceSpace);
                             const hitY = hitPose.transform.position.y;
                             
-                            // 最初に検出した平面を床の基準とするか、より低い平面が見つかれば更新する
                             if (floorY === null || hitY < floorY) {
                                 floorY = hitY;
                             }
 
-                            // 床とみなす高さ(floorY)から一定の許容範囲内にある場合のみレティクルを表示
-                            const Y_TOLERANCE = 0.2; // 床の凹凸を考慮して20cmの許容範囲
-                            if (Math.abs(hitY - floorY) < Y_TOLERANCE) {
-                                reticle.visible = true;
-                                reticle.matrix.fromArray(hitPose.transform.matrix);
-                            } else {
-                                reticle.visible = false;
+                            const Y_TOLERANCE = 0.2;
+                            const isOnFloor = Math.abs(hitY - floorY) < Y_TOLERANCE;
+                            
+                            // ★★★ 変更点: 状態に応じて表示を切り替える ★★★
+                            if (appState === 'PLACING' && previewObject) {
+                                previewObject.visible = true;
+                                previewObject.position.setFromMatrixPosition(hitPose.transform.matrix);
+                                
+                                reticle.visible = isOnFloor;
+                                crossMark.visible = !isOnFloor;
+
+                                if (crossMark.visible) {
+                                    const box = new THREE.Box3().setFromObject(previewObject);
+                                    const center = new THREE.Vector3();
+                                    box.getCenter(center);
+                                    const size = box.getSize(new THREE.Vector3());
+                                    const scale = Math.max(size.x, size.y, size.z);
+                                    crossMark.position.copy(center);
+                                    crossMark.scale.set(scale, scale, scale);
+                                }
                             }
+                            confirmButton.disabled = !reticle.visible;
+
                         } else {
+                            // 平面が見つからない場合
                             reticle.visible = false;
+                            crossMark.visible = false;
+                            if (previewObject) previewObject.visible = false;
+                            confirmButton.disabled = true;
                         }
                     }
+                } else {
+                    // フレーム情報がない場合
+                    confirmButton.disabled = true;
                 }
                 
-                // プレビューオブジェクトの表示・非表示はレティクルの状態と連動させる
-                if (previewObject) {
-                    previewObject.visible = reticle.visible;
-                    if (reticle.visible) {
-                        previewObject.position.setFromMatrixPosition(reticle.matrix);
-                    }
-                }
-                 if (selectedObject && reticle.visible) {
+                // 編集モードでの追従
+                if (appState === 'EDITING' && selectedObject && reticle.visible) {
                     selectedObject.position.setFromMatrixPosition(reticle.matrix);
-                 }
+                }
                 
                 placedObjects.forEach(obj => {
                     if (obj.userData.highlightGhost) {
@@ -687,7 +729,6 @@
             }
         }
         
-        // 最初に main 関数を呼び出してアプリを起動する
         main();
     </script>
 </body>
