@@ -315,7 +315,6 @@
                     <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
                 </svg>
             </button>
-             <!-- ★★★ 変更点: 撮影ボタンのHTMLを追加 ★★★ -->
             <button id="photo-button" class="circle-button">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 32px; height: 32px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.776 48.776 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
@@ -409,6 +408,8 @@
             
             let isDraggingSlider = false; 
             let dotAnimationTimer = null;
+            // ★★★ 変更点: 撮影フラグを追加 ★★★
+            let shouldTakeScreenshot = false;
             
             const furnitureData = [
                 { name: 'イス', file: 'chair.glb', height: 0.79 },
@@ -486,8 +487,13 @@
                 
                 crossMark = createCrossMark();
                 scene.add(crossMark);
-
-                renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+                
+                // ★★★ 変更点: レンダラーの初期化オプションに preserveDrawingBuffer を追加 ★★★
+                renderer = new THREE.WebGLRenderer({ 
+                    antialias: true, 
+                    alpha: true, 
+                    preserveDrawingBuffer: true 
+                });
                 renderer.setPixelRatio(window.devicePixelRatio);
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 renderer.xr.enabled = true;
@@ -620,9 +626,18 @@
                 sliderHandle.addEventListener('touchstart', onSliderDragStart, { passive: false });
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
+                
+                document.getElementById('photo-button').addEventListener('click', () => {
+                    const topBar = document.getElementById('top-bar');
+                    const topRightControls = document.getElementById('top-right-controls');
+                    const photoButton = document.getElementById('photo-button');
 
-                // ★★★ 変更点: 撮影ボタンのイベントリスナーを追加 ★★★
-                document.getElementById('photo-button').addEventListener('click', takeScreenshot);
+                    topBar.style.display = 'none';
+                    topRightControls.style.display = 'none';
+                    photoButton.style.display = 'none';
+                    
+                    shouldTakeScreenshot = true;
+                });
             }
             
             function updateSliderForObject(object) {
@@ -756,7 +771,6 @@
                 });
             }
 
-            // ★★★ 変更点: UI表示ロジックを更新 ★★★
             function updateUI() {
                 const bottomBar = document.getElementById('bottom-bar');
                 const addButton = document.getElementById('add-button');
@@ -841,31 +855,6 @@
                     hoveredObject = newHoveredObject;
                     updateUI();
                 }
-            }
-            
-            // ★★★ 変更点: 撮影用の関数を追加 ★★★
-            function takeScreenshot() {
-                const topBar = document.getElementById('top-bar');
-                const topRightControls = document.getElementById('top-right-controls');
-                const photoButton = document.getElementById('photo-button');
-
-                topBar.style.display = 'none';
-                topRightControls.style.display = 'none';
-                photoButton.style.display = 'none';
-
-                setTimeout(() => {
-                    renderer.render(scene, camera);
-                    const dataURL = renderer.domElement.toDataURL('image/png');
-                    
-                    const link = document.createElement('a');
-                    link.href = dataURL;
-                    link.download = 'ar-furniture-photo.png';
-                    link.click();
-                    
-                    topBar.style.display = 'flex';
-                    topRightControls.style.display = 'flex';
-                    photoButton.style.display = 'flex';
-                }, 100);
             }
             
             function startDotAnimation() {
@@ -976,7 +965,23 @@
                     });
                     hitTestSourceRequested = true;
                 }
+                
+                // ★★★ 変更点: renderの最後にスクリーンショット処理を追加 ★★★
                 renderer.render(scene, camera);
+
+                if (shouldTakeScreenshot) {
+                    const dataURL = renderer.domElement.toDataURL('image/png');
+                    const link = document.createElement('a');
+                    link.href = dataURL;
+                    link.download = 'ar-furniture-photo.png';
+                    link.click();
+                    
+                    shouldTakeScreenshot = false;
+                    
+                    document.getElementById('top-bar').style.display = 'flex';
+                    document.getElementById('top-right-controls').style.display = 'flex';
+                    document.getElementById('photo-button').style.display = 'flex';
+                }
             }
         }
         
