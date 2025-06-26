@@ -137,7 +137,8 @@
         /* === 画面下部の操作エリアのスタイル === */
         #bottom-bar {
             position: absolute;
-            bottom: 20px;
+            /* ★★★ 変更点: ボタンの高さを考慮して、より上に配置 ★★★ */
+            bottom: 90px;
             left: 0;
             width: 100%;
             padding: 0 20px;
@@ -215,7 +216,6 @@
     </div>
 
     <div id="overlay">
-        <!-- ★★★ 変更点: 画面右上に終了ボタンを配置 ★★★ -->
         <div id="top-right-controls" style="position: absolute; top: 20px; right: 20px; pointer-events: auto;">
              <button id="exit-ar-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
@@ -413,7 +413,6 @@
 
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
-                    // ★★★ 変更点: 終了ボタンを表示 ★★★
                     document.getElementById('exit-ar-button').style.display = 'flex';
                     appState = 'IDLE';
                     updateUI();
@@ -423,7 +422,6 @@
 
                 renderer.xr.addEventListener('sessionend', () => {
                     document.getElementById('title-container').style.display = 'block';
-                    // ★★★ 変更点: 終了ボタンを非表示 ★★★
                     document.getElementById('exit-ar-button').style.display = 'none';
                     document.getElementById('add-button').style.display = 'none';
                     document.getElementById('edit-button').style.display = 'none';
@@ -450,7 +448,6 @@
             }
             
             function setupUI() {
-                // ★★★ 変更点: 終了ボタンのイベントリスナーを追加 ★★★
                 document.getElementById('exit-ar-button').addEventListener('click', () => {
                     const currentSession = renderer.xr.getSession();
                     if (currentSession) {
