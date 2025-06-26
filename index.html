@@ -101,7 +101,6 @@
             z-index: 10;
         }
         
-        /* ★★★ 変更点: 案内文のスタイルを調整 ★★★ */
         #instruction-text {
             position: absolute;
             top: 50%;
@@ -282,8 +281,7 @@
 
     <div id="overlay">
         <div id="instruction-text">
-            <!-- ★★★ 変更点: 案内文の改行とスタイルを更新 ★★★ -->
-            <span style="font-size: 1.25em; font-weight: bold;">床を認識中…</span><br><br>
+            <span style="font-size: 1.25em; font-weight: bold;">床を認識中<span id="loading-dots"></span></span><br><br>
             カメラをゆっくりと<br>床に向けて<br>動かしてください
         </div>
 
@@ -401,6 +399,8 @@
             let scaleSliderContainer, sliderTrack, sliderHandle;
             
             let isDraggingSlider = false; 
+            // ★★★ 変更点: アニメーション用のタイマー変数を追加 ★★★
+            let dotAnimationTimer = null;
             
             const furnitureData = [
                 { name: 'イス', file: 'chair.glb', height: 0.79 },
@@ -504,6 +504,7 @@
                     document.getElementById('mode-switch-button').style.display = 'none';
                     document.getElementById('bottom-bar').style.display = 'none';
                     document.getElementById('scale-slider-container').style.display = 'none';
+                    stopDotAnimation(); // ★★★ 変更点 ★★★
                     floorY = null; 
                 });
                 
@@ -823,6 +824,28 @@
                 }
             }
             
+            // ★★★ 変更点: アニメーション用の関数を追加 ★★★
+            function startDotAnimation() {
+                if (dotAnimationTimer) return; 
+                const dotsElement = document.getElementById('loading-dots');
+                if (!dotsElement) return;
+
+                let dotCount = 0;
+                const dots = ['・', '・・', '・・・'];
+                
+                dotAnimationTimer = setInterval(() => {
+                    dotsElement.textContent = dots[dotCount % dots.length];
+                    dotCount++;
+                }, 400); 
+            }
+
+            function stopDotAnimation() {
+                if (dotAnimationTimer) {
+                    clearInterval(dotAnimationTimer);
+                    dotAnimationTimer = null;
+                }
+            }
+
             function animate() {
                  renderer.setAnimationLoop(render);
             }
@@ -853,7 +876,11 @@
                             
                             reticle.matrix.fromArray(hitPose.transform.matrix);
                             
-                            instructionText.style.display = 'none';
+                            // ★★★ 変更点: 案内文の表示・非表示ロジックを更新 ★★★
+                            if (instructionText.style.display !== 'none') {
+                                instructionText.style.display = 'none';
+                                stopDotAnimation();
+                            }
 
                             if (isEditMode) {
                                 if (activeObject) { 
@@ -883,7 +910,10 @@
                            reticle.visible = false;
                            crossMark.visible = false;
                            if (activeObject) activeObject.visible = false;
-                           instructionText.style.display = 'block';
+                           if (instructionText.style.display !== 'block') {
+                                instructionText.style.display = 'block';
+                                startDotAnimation();
+                           }
                         }
                     }
                 }
