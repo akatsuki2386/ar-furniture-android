@@ -282,7 +282,6 @@
         </div>
 
         <div id="bottom-bar">
-            <!-- ★★★ 変更点: +ボタンのSVGを復活 ★★★ -->
             <button id="add-button" class="circle-button">
                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
@@ -392,8 +391,6 @@
             let hoveredObject = null;
             let appState = 'IDLE';
             let isEditMode = false; 
-
-            // ★★★ 変更点: ハイライト用のマテリアルを削除 ★★★
             
             init();
             
@@ -519,8 +516,8 @@
                     isEditMode = !isEditMode;
                     if (!isEditMode) {
                         appState = 'IDLE';
-                        if (selectedObject) setObjectTransparency(selectedObject, false); // 編集中のオブジェクトを元に戻す
-                        if (hoveredObject) setObjectTransparency(hoveredObject, false); // ホバー中も元に戻す
+                        if (selectedObject) setObjectTransparency(selectedObject, false);
+                        if (hoveredObject) setObjectTransparency(hoveredObject, false);
                         selectedObject = null;
                         hoveredObject = null;
                     }
@@ -536,7 +533,7 @@
 
                 document.getElementById('edit-button').addEventListener('click', () => {
                     if (isEditMode && appState === 'IDLE' && hoveredObject) {
-                        onSelect(); // 選択処理を呼び出す
+                        onSelect();
                     }
                 });
                 
@@ -633,13 +630,8 @@
                 if (!gltf) return;
                 
                 previewObject = gltf.scene.clone();
-                previewObject.traverse(child => {
-                    if (child.isMesh) {
-                        child.material = child.material.clone();
-                        child.material.transparent = true;
-                        child.material.opacity = 0.7;
-                    }
-                });
+                // 新規プレビューは常に半透明
+                setObjectTransparency(previewObject, true);
 
                 const initialBox = new THREE.Box3().setFromObject(previewObject);
                 const initialCenter = new THREE.Vector3();
@@ -661,9 +653,11 @@
             
             function onSelect() {
                 if (isEditMode && appState === 'IDLE' && hoveredObject) {
+                    if (selectedObject) setObjectTransparency(selectedObject, false);
+
                     selectedObject = hoveredObject;
                     hoveredObject = null;
-                    setObjectTransparency(selectedObject, true); // ★★★ 変更点 ★★★
+                    setObjectTransparency(selectedObject, true);
                     appState = 'EDITING';
                     updateUI();
                     updateSliderForObject(selectedObject);
@@ -674,7 +668,7 @@
                 if (appState === 'PLACING') {
                     placeNewObject();
                 } else if (appState === 'EDITING') {
-                    setObjectTransparency(selectedObject, false); // ★★★ 変更点 ★★★
+                    setObjectTransparency(selectedObject, false);
                     selectedObject = null;
                     appState = 'IDLE';
                     updateUI();
@@ -695,7 +689,7 @@
                     appState = 'CHOOSING';
                 } else if (appState === 'EDITING') {
                     if(selectedObject) {
-                        scene.remove(selectedObject); // ★★★ 変更点: ハイライト解除は不要 ★★★
+                        scene.remove(selectedObject);
                         const index = placedObjects.indexOf(selectedObject);
                         if (index > -1) placedObjects.splice(index, 1);
                         selectedObject = null;
@@ -708,13 +702,8 @@
             function placeNewObject() { 
                 if (!previewObject) return;
                 const solidObject = previewObject.clone();
-                solidObject.traverse(child => {
-                    if (child.isMesh) {
-                        child.material = child.material.clone();
-                        child.material.transparent = false;
-                        child.material.opacity = 1.0;
-                    }
-                });
+                setObjectTransparency(solidObject, false);
+
                 solidObject.position.copy(previewObject.position);
                 solidObject.rotation.copy(previewObject.rotation);
                 solidObject.scale.copy(previewObject.scale);
@@ -728,23 +717,12 @@
                 updateUI();
             }
             
-            // ★★★ 変更点: ハイライト用の関数群を削除し、透明度を切り替える関数を追加 ★★★
             function setObjectTransparency(object, isTransparent) {
                 if (!object) return;
                 object.traverse(child => {
                     if (child.isMesh) {
-                        if (isTransparent) {
-                            if (!child.material.userData) child.material.userData = {};
-                            child.material.userData.originalOpacity = child.material.opacity;
-                            child.material.userData.originalTransparent = child.material.transparent;
-                            child.material.transparent = true;
-                            child.material.opacity = 0.7;
-                        } else {
-                            if (child.material.userData && child.material.userData.originalOpacity !== undefined) {
-                                child.material.opacity = child.material.userData.originalOpacity;
-                                child.material.transparent = child.material.userData.originalTransparent;
-                            }
-                        }
+                        child.material.transparent = isTransparent;
+                        child.material.opacity = isTransparent ? 0.7 : 1.0;
                     }
                 });
             }
@@ -796,10 +774,10 @@
                 }
             }
 
-            // ★★★ 変更点: handleHoverからハイライト処理を削除 ★★★
             function handleHover() {
                 if (!isEditMode || appState !== 'IDLE') {
                     if (hoveredObject) {
+                        setObjectTransparency(hoveredObject, false);
                         hoveredObject = null;
                         updateUI();
                     }
@@ -821,6 +799,8 @@
                 }
                 
                 if (newHoveredObject !== hoveredObject) {
+                    if (hoveredObject) setObjectTransparency(hoveredObject, false);
+                    if (newHoveredObject) setObjectTransparency(newHoveredObject, true);
                     hoveredObject = newHoveredObject;
                     updateUI();
                 }
