@@ -330,42 +330,62 @@
             });
             
             init();
-
-            // ★★★ 変更点: 「✕」マークの見た目をボタン風に変更 ★★★
+            
+            // ★★★ 変更点: 「✕」マークの視認性を向上 ★★★
             function createCrossMark() {
                 const crossGroup = new THREE.Group();
                 
                 // 赤い円形の背景
                 const circleMaterial = new THREE.MeshBasicMaterial({
-                    color: 0xcc0000, // 少し暗めの赤
+                    color: 0xcc0000,
                     transparent: true,
                     opacity: 0.8,
-                    depthTest: false // 常に手前に描画
+                    depthTest: false
                 });
-                const circleGeometry = new THREE.CircleGeometry(0.5, 32); // 半径0.5の円
+                const circleGeometry = new THREE.CircleGeometry(0.5, 32);
                 const circleBackground = new THREE.Mesh(circleGeometry, circleMaterial);
+                crossGroup.add(circleBackground);
 
-                // 白い「✕」の線
+                // 「✕」の線の太さなどを定義
+                const lineWidth = 0.65; // 全体の長さ
+                const lineHeight = 0.12; // 白い部分の太さ
+                const outlineHeight = 0.18; // アウトラインを含めた太さ
+
+                // 黒いアウトライン用の線
+                const outlineMaterial = new THREE.MeshBasicMaterial({
+                    color: 0x222222, // 少し柔らかい黒
+                    depthTest: false
+                });
+                const outlineGeometry = new THREE.PlaneGeometry(lineWidth, outlineHeight);
+                
+                const outlineBar1 = new THREE.Mesh(outlineGeometry, outlineMaterial);
+                outlineBar1.rotation.z = Math.PI / 4;
+                outlineBar1.position.z = 0.01;
+
+                const outlineBar2 = new THREE.Mesh(outlineGeometry, outlineMaterial);
+                outlineBar2.rotation.z = -Math.PI / 4;
+                outlineBar2.position.z = 0.01;
+                
+                crossGroup.add(outlineBar1, outlineBar2);
+
+                // 白い本体の線
                 const lineMaterial = new THREE.MeshBasicMaterial({
                     color: 0xFFFFFF,
                     depthTest: false
                 });
-                const lineGeometry = new THREE.PlaneGeometry(0.6, 0.08); // 線の幅と太さ
+                const lineGeometry = new THREE.PlaneGeometry(lineWidth, lineHeight);
 
                 const bar1 = new THREE.Mesh(lineGeometry, lineMaterial);
-                bar1.rotation.z = Math.PI / 4; // 45度回転
-                
+                bar1.rotation.z = Math.PI / 4;
+                bar1.position.z = 0.02;
+
                 const bar2 = new THREE.Mesh(lineGeometry, lineMaterial);
-                bar2.rotation.z = -Math.PI / 4; // -45度回転
+                bar2.rotation.z = -Math.PI / 4;
+                bar2.position.z = 0.02;
 
-                // 線が円からはみ出ないように少し内側に配置
-                bar1.position.z = 0.01;
-                bar2.position.z = 0.01;
-
-                crossGroup.add(circleBackground);
                 crossGroup.add(bar1, bar2);
                 
-                crossGroup.renderOrder = 999; // 描画順を最優先に
+                crossGroup.renderOrder = 999;
                 crossGroup.visible = false;
                 return crossGroup;
             }
@@ -697,7 +717,6 @@
 
                                 if (crossMark.visible) {
                                     crossMark.position.copy(previewObject.position).add(previewObject.userData.centerOffset);
-                                    // ★★★ 修正点: ✕マークのスケールを少し小さくする (元の60%に) ★★★
                                     const scale = previewObject.userData.crossMarkScale * 0.6; 
                                     crossMark.scale.set(scale, scale, scale);
                                     crossMark.quaternion.copy(camera.quaternion);
