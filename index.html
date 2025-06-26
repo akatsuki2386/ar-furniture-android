@@ -317,8 +317,6 @@
             const preloadedModels = new Map();
             let floorY = null;
             let crossMark;
-            // ★★★ 変更点: レティクルの色違いマテリアルを追加 ★★★
-            let reticleValidMaterial, reticleInvalidMaterial;
 
             const furnitureData = [
                 { name: 'イス', file: 'chair.glb', height: 0.79 },
@@ -441,13 +439,9 @@
             }
 
             function initializeARExperience() {
-                // ★★★ 変更点: レティクルのマテリアルを準備 ★★★
-                reticleValidMaterial = new THREE.MeshBasicMaterial({ color: 0xFFFFFF });
-                reticleInvalidMaterial = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
-                
                 reticle = new THREE.Mesh( 
                     new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2), 
-                    reticleValidMaterial
+                    new THREE.MeshBasicMaterial()
                 );
 
                 reticle.matrixAutoUpdate = false;
@@ -548,17 +542,14 @@
             }
 
             function onConfirm() {
-                if ((appState === 'PLACING' && previewObject && reticle.visible) ||
-                    (appState === 'EDITING' && selectedObject && reticle.visible)) {
-                     // 決定ボタンはisPlaceableで制御されているので、ここではreticleの表示だけで判定
-                     if (appState === 'PLACING') {
-                        placeNewObject();
-                     } else { // EDITING
-                        unhighlightObject(selectedObject);
-                        selectedObject = null;
-                        appState = 'IDLE';
-                        updateUI();
-                     }
+                // The button is disabled when not placeable, so we just check the state
+                if (appState === 'PLACING') {
+                    placeNewObject();
+                } else if (appState === 'EDITING') {
+                    unhighlightObject(selectedObject);
+                    selectedObject = null;
+                    appState = 'IDLE';
+                    updateUI();
                 }
             }
             
@@ -696,13 +687,14 @@
                  renderer.setAnimationLoop(render);
             }
 
-            // ★★★ 変更点: render関数の中のロジックを全体的に見直し ★★★
+            // ★★★ 変更点: render関数の中のロジックを整理 ★★★
             function render(timestamp, frame) {
                 if (!renderer.xr.isPresenting) return;
                 handleHover();
                 
                 const confirmButton = document.getElementById('confirm-button');
                 let isPlaceable = false;
+                const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
 
                 if (frame) {
                     const referenceSpace = renderer.xr.getReferenceSpace();
@@ -719,38 +711,31 @@
                             const Y_TOLERANCE = 0.2;
                             isPlaceable = Math.abs(hitY - floorY) < Y_TOLERANCE;
                             
-                            reticle.visible = true;
                             reticle.matrix.fromArray(hitPose.transform.matrix);
-
-                            // 配置モードの時の処理
-                            if (appState === 'PLACING' && previewObject) {
-                                previewObject.position.setFromMatrixPosition(reticle.matrix);
-                                previewObject.visible = true;
+                            
+                            if (activeObject) {
+                                activeObject.position.setFromMatrixPosition(reticle.matrix);
+                                activeObject.visible = true;
+                            }
+                            
+                            if (appState === 'PLACING' || appState === 'EDITING') {
+                                reticle.visible = isPlaceable;
                                 crossMark.visible = !isPlaceable;
-
-                                if (crossMark.visible) {
-                                    crossMark.position.copy(previewObject.position).add(previewObject.userData.centerOffset);
-                                    const scale = previewObject.userData.crossMarkScale * 0.6; 
+                                if (crossMark.visible && activeObject) {
+                                    crossMark.position.copy(activeObject.position).add(activeObject.userData.centerOffset);
+                                    const scale = activeObject.userData.crossMarkScale * 0.6; 
                                     crossMark.scale.set(scale, scale, scale);
                                     crossMark.quaternion.copy(camera.quaternion);
                                 }
-                            } 
-                            // 編集モードの時の処理
-                            else if (appState === 'EDITING' && selectedObject) {
-                                selectedObject.position.setFromMatrixPosition(reticle.matrix);
-                                reticle.material = isPlaceable ? reticleValidMaterial : reticleInvalidMaterial;
-                                crossMark.visible = false;
-                            } 
-                            // それ以外のモード
-                            else {
-                                reticle.material = reticleValidMaterial;
+                            } else { // IDLE mode
+                                reticle.visible = true;
                                 crossMark.visible = false;
                             }
                         } else {
                            isPlaceable = false;
                            reticle.visible = false;
                            crossMark.visible = false;
-                           if (previewObject) previewObject.visible = false;
+                           if (activeObject) activeObject.visible = false;
                         }
                     }
                 }
