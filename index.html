@@ -228,7 +228,6 @@
             cursor: not-allowed;
         }
         
-        /* ★★★ 変更点: モード切替ボタンのスタイル ★★★ */
         #mode-switch-button {
             background-color: rgba(0, 0, 0, 0.5);
             color: white;
@@ -240,16 +239,16 @@
             cursor: pointer;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            min-width: 120px; /* ボタンの最小幅 */
+            min-width: 120px;
             text-align: center;
         }
         #mode-switch-button.active-mode {
-             background-color: rgba(0, 122, 255, 0.7); /* アクティブな時は青色に */
+             background-color: rgba(0, 122, 255, 0.7);
              border-color: rgba(0, 122, 255, 1);
         }
 
-        #add-button {
-            display: none; /* 初期状態では非表示 */
+        #add-button, #edit-button {
+            display: none;
         }
     </style>
 </head>
@@ -265,8 +264,8 @@
     </div>
 
     <div id="overlay">
-        <!-- ★★★ 変更点: UIの構造を変更 ★★★ -->
-        <div id="top-bar" style="position: absolute; top: 20px; width:100%; display: flex; justify-content: center; pointer-events: auto;">
+        <!-- ★★★ 変更点: 上部UIの位置と構造 ★★★ -->
+        <div id="top-bar" style="position: absolute; top: 40px; width:100%; display: flex; justify-content: center; pointer-events: auto;">
              <button id="mode-switch-button" style="display: none;">鑑賞モード</button>
         </div>
         <div id="top-right-controls" style="position: absolute; top: 20px; right: 20px; pointer-events: auto;">
@@ -284,9 +283,11 @@
         </div>
 
         <div id="bottom-bar">
-            <button id="add-button" class="circle-button">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+            <!-- ★★★ 変更点: 編集ボタンをここに戻す ★★★ -->
+            <button id="add-button" class="circle-button"></button>
+            <button id="edit-button" class="circle-button">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
                 </svg>
             </button>
             
@@ -472,7 +473,8 @@
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
                     appState = 'IDLE';
-                    isEditMode = false;
+                    // ★★★ 変更点: デフォルトで編集モードにする ★★★
+                    isEditMode = true; 
                     updateUI();
                     initializeARExperience();
                     preloadModels();
@@ -534,6 +536,17 @@
                         updateUI();
                     }
                 });
+
+                // ★★★ 変更点: 下の編集ボタンのイベントリスナーを追加 ★★★
+                document.getElementById('edit-button').addEventListener('click', () => {
+                    if (isEditMode && appState === 'IDLE' && hoveredObject) {
+                        selectedObject = hoveredObject;
+                        hoveredObject = null;
+                        appState = 'EDITING';
+                        updateUI();
+                        updateSliderForObject(selectedObject);
+                    }
+                });
                 
                 document.getElementById('back-button').addEventListener('click', () => {
                     if (appState === 'CHOOSING') {
@@ -567,7 +580,7 @@
                 sliderHandle = document.getElementById('slider-handle');
 
                 const onDragStart = (e) => {
-                    e.stopPropagation(); // prevent AR session from handling this event
+                    e.stopPropagation();
                     isDragging = true;
                 };
                 const onDragEnd = () => isDragging = false;
@@ -745,6 +758,7 @@
             function updateUI() {
                 const bottomBar = document.getElementById('bottom-bar');
                 const addButton = document.getElementById('add-button');
+                const editButton = document.getElementById('edit-button');
                 const choosingControls = document.getElementById('choosing-controls');
                 const actionControls = document.getElementById('action-controls');
                 const scaleSlider = document.getElementById('scale-slider-container');
@@ -759,6 +773,7 @@
                     bottomBar.style.display = 'flex';
 
                     addButton.style.display = 'none';
+                    editButton.style.display = 'none';
                     choosingControls.style.display = 'none';
                     actionControls.style.display = 'none';
                     scaleSlider.style.display = 'none';
@@ -766,6 +781,9 @@
                     switch (appState) {
                         case 'IDLE':
                             addButton.style.display = 'flex';
+                            if (hoveredObject) {
+                                editButton.style.display = 'flex';
+                            }
                             break;
                         case 'CHOOSING':
                             choosingControls.style.display = 'flex';
@@ -822,6 +840,8 @@
                     if (hoveredObject) {
                         highlightObject(hoveredObject);
                     }
+                    // ★★★ 変更点: UI更新を呼び出す ★★★
+                    updateUI();
                 }
             }
 
@@ -872,7 +892,7 @@
                                      reticle.visible = true;
                                      crossMark.visible = false;
                                 }
-                            } else { // 鑑賞モード
+                            } else { 
                                 reticle.visible = false;
                                 crossMark.visible = false;
                             }
