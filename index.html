@@ -267,14 +267,10 @@
         // メインの処理を定義
         function main() {
             const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-
             if (isIOS) {
-                // iPhone/iPadなら、AR Quick Look用のUIをセットアップして終了
                 setupIOS();
                 return;
             }
-            
-            // それ以外の端末（Androidなど）なら、WebXRのAR機能をセットアップ
             setupWebXR();
         }
 
@@ -284,13 +280,11 @@
             const iosContainer = document.getElementById('ios-ar-container');
             const iosLinks = document.getElementById('ios-ar-links');
             iosContainer.style.display = 'block';
-
             const furnitureDataForIOS = [
                 { name: 'イスを表示する', file: 'chair.usdz' },
                 { name: '本棚を表示する', file: 'bookshelf.usdz' },
                 { name: '脚立を表示する', file: 'stand.usdz' },
             ];
-
             furnitureDataForIOS.forEach(item => {
                 const a = document.createElement('a');
                 a.setAttribute('rel', 'ar');
@@ -309,6 +303,8 @@
             let reticle;
             const loader = new GLTFLoader();
             const preloadedModels = new Map();
+            // ★★★ 変更点 1: 床の高さを記録する変数を追加 ★★★
+            let floorY = null;
 
             const furnitureData = [
                 { name: 'イス', file: 'chair.glb', height: 0.79 },
@@ -338,23 +334,14 @@
                 const loadingPromises = furnitureData.map(item => {
                     return new Promise((resolve, reject) => {
                         loader.load(item.file, (gltf) => {
-                            console.log(`${item.file} の読み込みが完了しました。`);
                             preloadedModels.set(item.file, gltf);
                             resolve();
-                        }, undefined, (error) => {
-                            console.error(`${item.file} の読み込みに失敗:`, error);
-                            reject(error);
-                        });
+                        }, undefined, reject);
                     });
                 });
-                
                 Promise.all(loadingPromises)
-                    .then(() => {
-                        console.log("すべてのモデルの事前読み込みが完了しました！");
-                    })
-                    .catch(error => {
-                        console.error("モデルの事前読み込み中にエラーが発生しました。", error);
-                    });
+                    .then(() => console.log("すべてのモデルの事前読み込みが完了しました！"))
+                    .catch(error => console.error("モデルの事前読み込み中にエラーが発生しました。", error));
             }
 
             // アプリ全体の初期化を行う関数
@@ -387,11 +374,12 @@
                     document.getElementById('edit-button').style.display = 'none';
                     document.getElementById('choosing-controls').style.display = 'none';
                     document.getElementById('action-controls').style.display = 'none';
+                    // ★★★ 変更点 2: AR終了時に床の高さをリセット ★★★
+                    floorY = null; 
                 });
                 
                 animate();
 
-                // AR開始ボタンを生成してページに追加
                 document.body.appendChild(ARButton.createButton(renderer, {
                     requiredFeatures: ['hit-test'],
                     optionalFeatures: ['dom-overlay'],
@@ -399,7 +387,6 @@
                 }));
             }
 
-            // AR体験が始まった時に呼ばれる初期化関数
             function initializeARExperience() {
                 reticle = new THREE.Mesh( new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial());
                 reticle.matrixAutoUpdate = false;
@@ -408,7 +395,6 @@
                 setupUI();
             }
             
-            // UI（ボタンなど）のイベントリスナーを設定する関数
             function setupUI() {
                 document.getElementById('add-button').addEventListener('click', () => {
                     if (appState === 'IDLE') {
@@ -416,7 +402,6 @@
                         updateUI();
                     }
                 });
-
                 document.getElementById('edit-button').addEventListener('click', () => {
                     if (appState === 'IDLE' && hoveredObject) {
                         selectedObject = hoveredObject;
@@ -425,14 +410,12 @@
                         updateUI();
                     }
                 });
-                
                 document.getElementById('back-button').addEventListener('click', () => {
                     if (appState === 'CHOOSING') {
                         appState = 'IDLE';
                         updateUI();
                     }
                 });
-
                 const palette = document.getElementById('furniture-palette');
                 palette.innerHTML = '';
                 furnitureData.forEach((item) => {
@@ -449,25 +432,21 @@
                     });
                     palette.appendChild(button);
                 });
-                
                 document.getElementById('rotate-button').addEventListener('click', onRotate);
                 document.getElementById('delete-button').addEventListener('click', onDelete);
                 document.getElementById('confirm-button').addEventListener('click', onConfirm);
             }
             
-            // プレビュー更新関数（事前読み込みデータを使用）
             function updatePreviewObject() { 
                 if (previewObject) {
                     scene.remove(previewObject);
                     previewObject = null;
                 }
-
                 const gltf = preloadedModels.get(currentFurniture.file);
                 if (!gltf) {
                     console.error(`${currentFurniture.file} はまだ読み込まれていません。`);
                     return;
                 }
-
                 previewObject = gltf.scene.clone();
                 previewObject.traverse(child => {
                     if (child.isMesh) {
@@ -476,7 +455,6 @@
                         child.material.opacity = 0.7;
                     }
                 });
-
                 const box = new THREE.Box3().setFromObject(previewObject);
                 const size = box.getSize(new THREE.Vector3());
                 const scale = currentFurniture.height / size.y;
@@ -484,12 +462,6 @@
                 previewObject.visible = true;
                 scene.add(previewObject);
             }
-            
-            // (ここから下の関数は変更の必要がないため、内容は省略しています)
-            // onSelect, onConfirm, onRotate, onDelete, placeNewObject, 
-            // unhighlightObject, highlightObject, updateUI, handleHover, 
-            // animate, render などの関数は、元のままで問題ありません。
-            // 以下にそれらの関数を再掲します。
             
             function onSelect() {
                 if (appState === 'IDLE' && hoveredObject) {
@@ -501,7 +473,7 @@
             }
 
             function onConfirm() {
-                if (appState === 'PLACING') {
+                if (appState === 'PLACING' && previewObject && previewObject.visible) {
                     placeNewObject();
                 } else if (appState === 'EDITING') {
                     unhighlightObject(selectedObject);
@@ -538,7 +510,6 @@
             
             function placeNewObject() { 
                 if (!previewObject) return;
-                
                 const solidObject = previewObject.clone();
                 solidObject.traverse(child => {
                     if (child.isMesh) {
@@ -547,17 +518,13 @@
                         child.material.opacity = 1.0;
                     }
                 });
-
                 solidObject.position.copy(previewObject.position);
                 solidObject.rotation.copy(previewObject.rotation);
                 solidObject.scale.copy(previewObject.scale);
-                
                 scene.add(solidObject);
                 placedObjects.push(solidObject);
-
                 scene.remove(previewObject);
                 previewObject = null;
-                
                 appState = 'IDLE';
                 updateUI();
             }
@@ -585,12 +552,10 @@
                 const editButton = document.getElementById('edit-button');
                 const choosingControls = document.getElementById('choosing-controls');
                 const actionControls = document.getElementById('action-controls');
-
                 addButton.style.display = 'none';
                 editButton.style.display = 'none';
                 choosingControls.style.display = 'none';
                 actionControls.style.display = 'none';
-
                 switch (appState) {
                     case 'IDLE':
                         addButton.style.display = 'flex';
@@ -615,7 +580,6 @@
                 if (appState !== 'EDITING' && selectedObject && selectedObject.userData.highlightGhost) {
                     unhighlightObject(selectedObject);
                 }
-
                 if (appState !== 'IDLE') {
                     if(hoveredObject) {
                         unhighlightObject(hoveredObject);
@@ -624,10 +588,8 @@
                     }
                     return;
                 };
-
                 raycaster.setFromCamera({ x: 0, y: 0 }, camera);
                 const intersects = raycaster.intersectObjects(placedObjects, true);
-
                 let intersectedRoot = null;
                 if (intersects.length > 0) {
                     let currentObject = intersects[0].object;
@@ -639,7 +601,6 @@
                         currentObject = currentObject.parent;
                     }
                 }
-                
                 if (intersectedRoot !== hoveredObject) {
                     if (hoveredObject) {
                         unhighlightObject(hoveredObject);
@@ -658,27 +619,46 @@
 
             function render(timestamp, frame) {
                 if (!renderer.xr.isPresenting) return;
-                
                 handleHover();
-
                 if (frame) {
                     const referenceSpace = renderer.xr.getReferenceSpace();
                     if (hitTestSource) {
                         const hitTestResults = frame.getHitTestResults(hitTestSource);
+                        // ★★★ 変更点 3: ヒットテストの結果を床かどうか判定する ★★★
                         if (hitTestResults.length > 0) {
                             const hit = hitTestResults[0];
-                            reticle.visible = true;
-                            reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
+                            const hitPose = hit.getPose(referenceSpace);
+                            const hitY = hitPose.transform.position.y;
+                            
+                            // 最初に検出した平面を床の基準とするか、より低い平面が見つかれば更新する
+                            if (floorY === null || hitY < floorY) {
+                                floorY = hitY;
+                            }
+
+                            // 床とみなす高さ(floorY)から一定の許容範囲内にある場合のみレティクルを表示
+                            const Y_TOLERANCE = 0.2; // 床の凹凸を考慮して20cmの許容範囲
+                            if (Math.abs(hitY - floorY) < Y_TOLERANCE) {
+                                reticle.visible = true;
+                                reticle.matrix.fromArray(hitPose.transform.matrix);
+                            } else {
+                                reticle.visible = false;
+                            }
                         } else {
                             reticle.visible = false;
                         }
                     }
                 }
                 
-                const target = appState === 'PLACING' ? previewObject : selectedObject;
-                if (target && reticle.visible) {
-                    target.position.setFromMatrixPosition(reticle.matrix);
+                // プレビューオブジェクトの表示・非表示はレティクルの状態と連動させる
+                if (previewObject) {
+                    previewObject.visible = reticle.visible;
+                    if (reticle.visible) {
+                        previewObject.position.setFromMatrixPosition(reticle.matrix);
+                    }
                 }
+                 if (selectedObject && reticle.visible) {
+                    selectedObject.position.setFromMatrixPosition(reticle.matrix);
+                 }
                 
                 placedObjects.forEach(obj => {
                     if (obj.userData.highlightGhost) {
@@ -690,10 +670,6 @@
                     selectedObject.userData.highlightGhost.position.copy(selectedObject.position);
                     selectedObject.userData.highlightGhost.quaternion.copy(selectedObject.quaternion);
                  }
-
-                if(previewObject) {
-                    previewObject.visible = appState === 'PLACING';
-                }
 
                 if (!hitTestSourceRequested && renderer.xr.getSession()) {
                     const session = renderer.xr.getSession();
@@ -707,7 +683,6 @@
                     });
                     hitTestSourceRequested = true;
                 }
-
                 renderer.render(scene, camera);
             }
         }
