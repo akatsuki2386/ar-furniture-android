@@ -115,7 +115,6 @@
             line-height: 1.7;
             display: none;
             pointer-events: none;
-            /* ★★★ 変更点: ボックスの最小幅を設定して改行を防ぐ ★★★ */
             min-width: 260px;
             box-sizing: border-box;
         }
@@ -266,7 +265,7 @@
              border-color: rgba(0, 122, 255, 1);
         }
 
-        #add-button, #edit-button {
+        #add-button, #edit-button, #photo-button {
             display: none;
         }
     </style>
@@ -314,6 +313,13 @@
             <button id="edit-button" class="circle-button">
                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                </svg>
+            </button>
+             <!-- ★★★ 変更点: 撮影ボタンのHTMLを追加 ★★★ -->
+            <button id="photo-button" class="circle-button">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 32px; height: 32px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6.827 6.175A2.31 2.31 0 015.186 7.23c-.38.054-.757.112-1.134.175C2.999 7.58 2.25 8.507 2.25 9.574V18a2.25 2.25 0 002.25 2.25h15A2.25 2.25 0 0021.75 18V9.574c0-1.067-.75-1.994-1.802-2.169a47.865 47.865 0 00-1.134-.175 2.31 2.31 0 01-1.64-1.055l-.822-1.316a2.192 2.192 0 00-1.736-1.039 48.776 48.776 0 00-5.232 0 2.192 2.192 0 00-1.736 1.039l-.821 1.316z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 12.75a4.5 4.5 0 11-9 0 4.5 4.5 0 019 0zM18.75 10.5h.008v.008h-.008V10.5z" />
                 </svg>
             </button>
             
@@ -614,6 +620,9 @@
                 sliderHandle.addEventListener('touchstart', onSliderDragStart, { passive: false });
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
+
+                // ★★★ 変更点: 撮影ボタンのイベントリスナーを追加 ★★★
+                document.getElementById('photo-button').addEventListener('click', takeScreenshot);
             }
             
             function updateSliderForObject(object) {
@@ -747,10 +756,12 @@
                 });
             }
 
+            // ★★★ 変更点: UI表示ロジックを更新 ★★★
             function updateUI() {
                 const bottomBar = document.getElementById('bottom-bar');
                 const addButton = document.getElementById('add-button');
                 const editButton = document.getElementById('edit-button');
+                const photoButton = document.getElementById('photo-button');
                 const choosingControls = document.getElementById('choosing-controls');
                 const actionControls = document.getElementById('action-controls');
                 const scaleSlider = document.getElementById('scale-slider-container');
@@ -766,6 +777,7 @@
 
                     addButton.style.display = 'none';
                     editButton.style.display = 'none';
+                    photoButton.style.display = 'none';
                     choosingControls.style.display = 'none';
                     actionControls.style.display = 'none';
                     scaleSlider.style.display = 'none';
@@ -789,7 +801,12 @@
                 } else { 
                     modeSwitchButton.textContent = '鑑賞モード';
                     modeSwitchButton.classList.remove('active-mode');
-                    bottomBar.style.display = 'none';
+                    bottomBar.style.display = 'flex';
+                    photoButton.style.display = 'flex';
+                    addButton.style.display = 'none';
+                    editButton.style.display = 'none';
+                    choosingControls.style.display = 'none';
+                    actionControls.style.display = 'none';
                     scaleSlider.style.display = 'none';
                 }
             }
@@ -824,6 +841,31 @@
                     hoveredObject = newHoveredObject;
                     updateUI();
                 }
+            }
+            
+            // ★★★ 変更点: 撮影用の関数を追加 ★★★
+            function takeScreenshot() {
+                const topBar = document.getElementById('top-bar');
+                const topRightControls = document.getElementById('top-right-controls');
+                const photoButton = document.getElementById('photo-button');
+
+                topBar.style.display = 'none';
+                topRightControls.style.display = 'none';
+                photoButton.style.display = 'none';
+
+                setTimeout(() => {
+                    renderer.render(scene, camera);
+                    const dataURL = renderer.domElement.toDataURL('image/png');
+                    
+                    const link = document.createElement('a');
+                    link.href = dataURL;
+                    link.download = 'ar-furniture-photo.png';
+                    link.click();
+                    
+                    topBar.style.display = 'flex';
+                    topRightControls.style.display = 'flex';
+                    photoButton.style.display = 'flex';
+                }, 100);
             }
             
             function startDotAnimation() {
