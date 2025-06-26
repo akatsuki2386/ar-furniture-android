@@ -189,7 +189,6 @@
             transform: scale(0.9); /* 少し小さくして押した感を出す */
         }
         
-        /* ★★★ 変更点: 決定ボタンの無効状態スタイルを追加 ★★★ */
         .circle-button:disabled {
             background-color: rgba(128, 128, 128, 0.2);
             border-color: rgba(128, 128, 128, 0.3);
@@ -309,7 +308,6 @@
             const loader = new GLTFLoader();
             const preloadedModels = new Map();
             let floorY = null;
-            // ★★★ 変更点: 「✕」マークの変数を追加 ★★★
             let crossMark;
 
             const furnitureData = [
@@ -333,22 +331,27 @@
             
             init();
 
-            // ★★★ 変更点: 「✕」マークを生成する関数を追加 ★★★
+            // 「✕」マークを生成する関数
             function createCrossMark() {
                 const crossGroup = new THREE.Group();
-                const material = new THREE.MeshBasicMaterial({ color: 0xFF0000 });
-                const geometry = new THREE.BoxGeometry(1, 0.05, 0.05); // 棒の形状
+                // ★★★ 修正点: 常に手前に表示されるようにマテリアルを調整 ★★★
+                const material = new THREE.MeshBasicMaterial({ 
+                    color: 0xFF0000,
+                    depthTest: false, // 深度テストを無効化して、常に手前に描画
+                    transparent: true,
+                    opacity: 0.8
+                });
+                const geometry = new THREE.BoxGeometry(1, 0.05, 0.01); // 少し細くする
                 
                 const bar1 = new THREE.Mesh(geometry, material);
-                bar1.rotation.z = Math.PI / 4; // 45度回転
+                bar1.rotation.z = Math.PI / 4;
                 
                 const bar2 = new THREE.Mesh(geometry, material);
-                bar2.rotation.z = -Math.PI / 4; // -45度回転
+                bar2.rotation.z = -Math.PI / 4;
                 
-                crossGroup.add(bar1);
-                crossGroup.add(bar2);
-                
-                crossGroup.visible = false; // 最初は非表示
+                crossGroup.add(bar1, bar2);
+                crossGroup.renderOrder = 999; // 描画順を最優先に
+                crossGroup.visible = false;
                 return crossGroup;
             }
 
@@ -371,7 +374,6 @@
                 camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
                 scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, 3));
                 
-                // ★★★ 変更点: 「✕」マークを生成してシーンに追加 ★★★
                 crossMark = createCrossMark();
                 scene.add(crossMark);
 
@@ -461,6 +463,7 @@
                 document.getElementById('confirm-button').addEventListener('click', onConfirm);
             }
             
+            // ★★★ 修正点: プレビューオブジェクトの情報をuserDataに保存 ★★★
             function updatePreviewObject() { 
                 if (previewObject) {
                     scene.remove(previewObject);
@@ -468,7 +471,6 @@
                 }
                 const gltf = preloadedModels.get(currentFurniture.file);
                 if (!gltf) {
-                    console.error(`${currentFurniture.file} はまだ読み込まれていません。`);
                     return;
                 }
                 previewObject = gltf.scene.clone();
@@ -479,11 +481,21 @@
                         child.material.opacity = 0.7;
                     }
                 });
-                const box = new THREE.Box3().setFromObject(previewObject);
-                const size = box.getSize(new THREE.Vector3());
+
+                // スケールを適用する前に、バウンディングボックスを計算しておく
+                const initialBox = new THREE.Box3().setFromObject(previewObject);
+                const initialCenter = new THREE.Vector3();
+                initialBox.getCenter(initialCenter);
+                
+                const size = initialBox.getSize(new THREE.Vector3());
                 const scale = currentFurniture.height / size.y;
                 previewObject.scale.set(scale, scale, scale);
-                previewObject.visible = false; // 最初は非表示
+                
+                // 事前計算した情報をuserDataに保存
+                previewObject.userData.centerOffset = initialCenter.multiplyScalar(scale);
+                previewObject.userData.crossMarkScale = Math.max(size.x, size.z) * scale;
+
+                previewObject.visible = false;
                 scene.add(previewObject);
             }
             
@@ -646,6 +658,7 @@
                 handleHover();
                 
                 const confirmButton = document.getElementById('confirm-button');
+                let isPlaceable = false;
 
                 if (frame) {
                     const referenceSpace = renderer.xr.getReferenceSpace();
@@ -655,50 +668,59 @@
                         if (hitTestResults.length > 0) {
                             const hit = hitTestResults[0];
                             const hitPose = hit.getPose(referenceSpace);
-                            const hitY = hitPose.transform.position.y;
                             
-                            if (floorY === null || hitY < floorY) {
-                                floorY = hitY;
-                            }
-
-                            const Y_TOLERANCE = 0.2;
-                            const isOnFloor = Math.abs(hitY - floorY) < Y_TOLERANCE;
-                            
-                            // ★★★ 変更点: 状態に応じて表示を切り替える ★★★
                             if (appState === 'PLACING' && previewObject) {
-                                previewObject.visible = true;
-                                previewObject.position.setFromMatrixPosition(hitPose.transform.matrix);
+                                const hitY = hitPose.transform.position.y;
+                                if (floorY === null) floorY = hitY;
+
+                                const Y_TOLERANCE = 0.2;
+                                isPlaceable = Math.abs(hitY - floorY) < Y_TOLERANCE;
                                 
-                                reticle.visible = isOnFloor;
-                                crossMark.visible = !isOnFloor;
+                                // 全てのプレビュー要素の位置を更新
+                                reticle.matrix.fromArray(hitPose.transform.matrix);
+                                previewObject.position.setFromMatrixPosition(reticle.matrix);
+                                previewObject.visible = true;
 
+                                reticle.visible = isPlaceable;
+                                crossMark.visible = !isPlaceable;
+
+                                // ★★★ 修正点: 事前計算した情報を使って「✕」の位置と大きさを設定 ★★★
                                 if (crossMark.visible) {
-                                    const box = new THREE.Box3().setFromObject(previewObject);
-                                    const center = new THREE.Vector3();
-                                    box.getCenter(center);
-                                    const size = box.getSize(new THREE.Vector3());
-                                    const scale = Math.max(size.x, size.y, size.z);
-                                    crossMark.position.copy(center);
+                                    crossMark.position.copy(previewObject.position).add(previewObject.userData.centerOffset);
+                                    const scale = previewObject.userData.crossMarkScale;
                                     crossMark.scale.set(scale, scale, scale);
+                                    crossMark.quaternion.copy(camera.quaternion); // 常にカメラの方を向く
                                 }
+                            } else {
+                                // 配置モード以外では常に配置可能とする（レティクル表示）
+                                isPlaceable = true;
+                                reticle.visible = true;
+                                crossMark.visible = false;
+                                reticle.matrix.fromArray(hitPose.transform.matrix);
                             }
-                            confirmButton.disabled = !reticle.visible;
-
                         } else {
-                            // 平面が見つからない場合
-                            reticle.visible = false;
-                            crossMark.visible = false;
-                            if (previewObject) previewObject.visible = false;
-                            confirmButton.disabled = true;
+                           isPlaceable = false;
                         }
                     }
-                } else {
-                    // フレーム情報がない場合
-                    confirmButton.disabled = true;
                 }
                 
+                // UIの最終的な表示状態を決定
+                if (!isPlaceable) {
+                    reticle.visible = false;
+                    crossMark.visible = (appState === 'PLACING' && previewObject && previewObject.visible);
+                    if (crossMark.visible) {
+                         // 平面を見失っても、最後にいた場所に✕を出し続ける
+                    } else if (previewObject) {
+                         previewObject.visible = false;
+                    }
+                }
+                
+                if (appState === 'PLACING' || appState === 'EDITING') {
+                    confirmButton.disabled = !isPlaceable;
+                }
+
                 // 編集モードでの追従
-                if (appState === 'EDITING' && selectedObject && reticle.visible) {
+                if (appState === 'EDITING' && selectedObject && isPlaceable) {
                     selectedObject.position.setFromMatrixPosition(reticle.matrix);
                 }
                 
