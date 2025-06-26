@@ -115,6 +115,9 @@
             line-height: 1.7;
             display: none;
             pointer-events: none;
+            /* ★★★ 変更点: ボックスの最小幅を設定して改行を防ぐ ★★★ */
+            min-width: 260px;
+            box-sizing: border-box;
         }
         
         /* === 家具選択パレットのスタイル === */
@@ -399,7 +402,6 @@
             let scaleSliderContainer, sliderTrack, sliderHandle;
             
             let isDraggingSlider = false; 
-            // ★★★ 変更点: アニメーション用のタイマー変数を追加 ★★★
             let dotAnimationTimer = null;
             
             const furnitureData = [
@@ -504,7 +506,7 @@
                     document.getElementById('mode-switch-button').style.display = 'none';
                     document.getElementById('bottom-bar').style.display = 'none';
                     document.getElementById('scale-slider-container').style.display = 'none';
-                    stopDotAnimation(); // ★★★ 変更点 ★★★
+                    stopDotAnimation(); 
                     floorY = null; 
                 });
                 
@@ -824,7 +826,6 @@
                 }
             }
             
-            // ★★★ 変更点: アニメーション用の関数を追加 ★★★
             function startDotAnimation() {
                 if (dotAnimationTimer) return; 
                 const dotsElement = document.getElementById('loading-dots');
@@ -876,7 +877,6 @@
                             
                             reticle.matrix.fromArray(hitPose.transform.matrix);
                             
-                            // ★★★ 変更点: 案内文の表示・非表示ロジックを更新 ★★★
                             if (instructionText.style.display !== 'none') {
                                 instructionText.style.display = 'none';
                                 stopDotAnimation();
