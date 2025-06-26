@@ -463,7 +463,7 @@
                 renderer.xr.enabled = true;
                 document.body.appendChild(renderer.domElement);
                 
-                // タップイベントをコントローラーから取得
+                // ★★★ 変更点: コントローラーのselectイベントはタップ専用 ★★★
                 controller = renderer.xr.getController(0);
                 controller.addEventListener('select', onSelect);
                 scene.add(controller);
@@ -533,9 +533,8 @@
                         updateUI();
                     }
                 });
-                
-                // ★★★ 変更点: edit-buttonのイベントはonSelectが担当するので、ここでは不要 ★★★
-                // document.getElementById('edit-button').addEventListener('click', onSelect);
+
+                document.getElementById('edit-button').addEventListener('click', onSelect);
                 
                 document.getElementById('back-button').addEventListener('click', () => {
                     if (appState === 'CHOOSING') {
@@ -592,8 +591,9 @@
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
                 
-                renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
-                renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
+                // ★★★ 変更点: ジェスチャーリスナーをrenderer.domElementに統一 ★★★
+                renderer.domElement.addEventListener('touchstart', onTouchStart);
+                renderer.domElement.addEventListener('touchmove', onTouchMove);
                 renderer.domElement.addEventListener('touchend', onTouchEnd);
             }
             
