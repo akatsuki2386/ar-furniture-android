@@ -463,9 +463,10 @@
                 renderer.xr.enabled = true;
                 document.body.appendChild(renderer.domElement);
                 
-                controller = renderer.xr.getController(0);
-                controller.addEventListener('select', onSelect);
-                scene.add(controller);
+                // ★★★ 変更点: コントローラーのイベントリスナーを削除 ★★★
+                // controller = renderer.xr.getController(0);
+                // controller.addEventListener('select', onSelect);
+                // scene.add(controller);
 
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
@@ -594,7 +595,6 @@
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
                 
-                // ★★★ 変更点: ジェスチャーリスナーを再設定 ★★★
                 renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
                 renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
                 renderer.domElement.addEventListener('touchend', onTouchEnd);
@@ -814,8 +814,12 @@
             
             // ★★★ 変更点: ジェスチャー関連の関数を再構築 ★★★
             function onTouchStart(event) {
-                // UIボタン上のタッチは無視する
-                if (event.target.closest('.circle-button, #scale-slider-handle, #mode-switch-button')) return;
+                // UI要素上のタッチは、ジェスチャーとして扱わない
+                if (event.target.closest('.circle-button, #scale-slider-handle, #mode-switch-button')) {
+                    isSwiping = false;
+                    return;
+                }
+                
                 // ジェスチャー操作の対象外のモードなら何もしない
                 if (!isEditMode || (appState !== 'PLACING' && appState !== 'EDITING')) return;
                 
@@ -826,22 +830,24 @@
             }
 
             function onTouchMove(event) {
-                if (event.target.closest('.circle-button, #scale-slider-handle, #mode-switch-button')) return;
-
+                if (!isSwiping || event.touches.length !== 1) return;
+                
                 const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
-                if (!isSwiping || event.touches.length !== 1 || !activeObject) return;
+                if (!activeObject) return;
                 
                 event.preventDefault(); // 画面全体のスクロールを防ぐ
                 const currentX = event.touches[0].clientX;
                 const deltaX = currentX - lastTouchX;
                 
-                // 指の動きに合わせて家具を回転させる
                 activeObject.rotation.y += deltaX * 0.02;
                 lastTouchX = currentX;
             }
 
             function onTouchEnd(event) {
-                isSwiping = false;
+                // スワイプ操作が終わった直後のタップ誤動作を防ぐ
+                setTimeout(() => {
+                    isSwiping = false;
+                }, 100);
             }
 
             function animate() {
