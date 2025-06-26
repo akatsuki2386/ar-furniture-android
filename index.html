@@ -378,9 +378,6 @@
             let scaleSliderContainer, sliderTrack, sliderHandle;
             
             let isDraggingSlider = false; 
-            let touchStartX = 0, lastTouchX = 0, isSwiping = false; 
-            let initialPinchDistance = 0, isPinching = false;
-            let gestureJustEnded = false;
             
             const furnitureData = [
                 { name: 'イス', file: 'chair.glb', height: 0.79 },
@@ -595,11 +592,6 @@
                 sliderHandle.addEventListener('touchstart', onSliderDragStart, { passive: false });
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
-                
-                // ★★★ 変更点: ジェスチャーリスナーをWindowからrenderer.domElementに変更 ★★★
-                renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
-                renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
-                renderer.domElement.addEventListener('touchend', onTouchEnd);
             }
             
             function updateSliderForObject(object) {
@@ -658,8 +650,6 @@
             }
             
             function onSelect() {
-                if (gestureJustEnded) return;
-
                 if (isEditMode && appState === 'IDLE' && hoveredObject) {
                     if (selectedObject) setObjectTransparency(selectedObject, false);
 
@@ -814,67 +804,6 @@
                 }
             }
             
-            function getPinchDistance(touches) {
-                const touch1 = touches[0];
-                const touch2 = touches[1];
-                return Math.hypot(touch2.clientX - touch1.clientX, touch2.clientY - touch1.clientY);
-            }
-
-            function onTouchStart(event) {
-                if (event.target !== renderer.domElement) return;
-
-                if (!isEditMode || (appState !== 'PLACING' && appState !== 'EDITING')) return;
-                
-                if (event.touches.length === 1) {
-                    isSwiping = true;
-                    lastTouchX = event.touches[0].clientX;
-                } else if (event.touches.length === 2) {
-                    isSwiping = false;
-                    isPinching = true;
-                    initialPinchDistance = getPinchDistance(event.touches);
-                    const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
-                    if (activeObject) {
-                        activeObject.userData.baseScaleMultiplier = activeObject.userData.scaleMultiplier || 1.0;
-                    }
-                }
-            }
-
-            function onTouchMove(event) {
-                if (event.target !== renderer.domElement) return;
-
-                if (!isEditMode) return;
-                
-                const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
-                if (!activeObject) return;
-                
-                if (isSwiping && event.touches.length === 1) {
-                    event.preventDefault();
-                    const currentX = event.touches[0].clientX;
-                    const deltaX = currentX - lastTouchX;
-                    activeObject.rotation.y += deltaX * 0.02; 
-                    lastTouchX = currentX;
-                } else if (isPinching && event.touches.length === 2) {
-                    event.preventDefault();
-                    const currentPinchDistance = getPinchDistance(event.touches);
-                    const scaleRatio = currentPinchDistance / initialPinchDistance;
-                    const baseMultiplier = activeObject.userData.baseScaleMultiplier || 1.0;
-                    let newMultiplier = baseMultiplier * scaleRatio;
-                    newMultiplier = Math.max(0.5, Math.min(2.0, newMultiplier));
-                    
-                    const percent = (newMultiplier - 0.5) / 1.5;
-                    updateScaleFromSlider(percent);
-                }
-            }
-
-            function onTouchEnd(event) {
-                if (isSwiping || isPinching) {
-                    gestureJustEnded = true;
-                    setTimeout(() => { gestureJustEnded = false; }, 100);
-                }
-                isSwiping = false;
-                isPinching = false;
-            }
-
             function animate() {
                  renderer.setAnimationLoop(render);
             }
