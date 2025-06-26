@@ -258,401 +258,376 @@
             }
         }
     </script>
-
+    
     <script type="module">
-        // === 最初にデバイスを判定して処理を分岐 ===
-        (function() {
-            // iPhone, iPad, iPod Touchを判定する正規表現
+        import * as THREE from 'three';
+        import { ARButton } from 'three/addons/webxr/ARButton.js';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+        // メインの処理を定義
+        function main() {
             const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
 
-            // WebXR APIのサポート状況をチェック (より確実な方法)
-            // if (navigator.xr && navigator.xr.isSessionSupported) {
-            // isSessionSupportedをチェックするほうがよりモダンですが、今回はiOS判定で進めます
-            // }
-
             if (isIOS) {
-                // --- iOS向けの処理 ---
-                // WebXR関連のUIを非表示にする
-                document.getElementById('title-container').style.display = 'none';
-
-                // AR Quick Look用のUIを表示する
-                const iosContainer = document.getElementById('ios-ar-container');
-                const iosLinks = document.getElementById('ios-ar-links');
-                iosContainer.style.display = 'block';
-
-                const furnitureDataForIOS = [
-                    { name: 'イスを表示する', file: 'chair.usdz' },
-                    { name: '本棚を表示する', file: 'bookshelf.usdz' },
-                    { name: '脚立を表示する', file: 'stand.usdz' },
-                ];
-
-                // 各家具のARリンクを生成
-                furnitureDataForIOS.forEach(item => {
-                    const a = document.createElement('a');
-                    a.setAttribute('rel', 'ar');
-                    a.href = item.file; // .usdzファイルへのパス
-                    a.textContent = item.name;
-                    iosLinks.appendChild(a);
-                });
-
-                // iOSの場合は、これ以降のWebXRの初期化処理を実行しない
+                // iPhone/iPadなら、AR Quick Look用のUIをセットアップして終了
+                setupIOS();
                 return;
             }
+            
+            // それ以外の端末（Androidなど）なら、WebXRのAR機能をセットアップ
+            setupWebXR();
+        }
 
-            // --- これより下は、これまで通りのWebXRの処理 (AndroidなどiOS以外で実行) ---
+        // iOS向けのセットアップ関数
+        function setupIOS() {
+            document.getElementById('title-container').style.display = 'none';
+            const iosContainer = document.getElementById('ios-ar-container');
+            const iosLinks = document.getElementById('ios-ar-links');
+            iosContainer.style.display = 'block';
 
-            // 必要なライブラリをインポート
-            import * as THREE from 'three'; // 3Dグラフィックスの基本ライブラリ
-            import { ARButton } from 'three/addons/webxr/ARButton.js'; // AR開始ボタンを簡単に作成するライブラリ
-            import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js'; // 3Dモデル(.glb)を読み込むためのライブラリ
+            const furnitureDataForIOS = [
+                { name: 'イスを表示する', file: 'chair.usdz' },
+                { name: '本棚を表示する', file: 'bookshelf.usdz' },
+                { name: '脚立を表示する', file: 'stand.usdz' },
+            ];
 
+            furnitureDataForIOS.forEach(item => {
+                const a = document.createElement('a');
+                a.setAttribute('rel', 'ar');
+                a.href = item.file;
+                a.textContent = item.name;
+                iosLinks.appendChild(a);
+            });
+        }
+
+        // WebXR（Androidなど）向けのセットアップ関数
+        function setupWebXR() {
             // === グローバル変数の定義 ===
-            // 3D空間で使う基本的な要素
             let camera, scene, renderer, controller;
-            // 床面を検出するための機能に関連する変数
             let hitTestSource = null;
             let hitTestSourceRequested = false;
-            // 床に表示する円形マーカー（レティクル）
             let reticle;
-            // 3Dモデルを読み込むためのローダー
             const loader = new GLTFLoader();
-            
-            // 表示する家具のデータ。名前とファイル名、基準となる高さを設定
+            const preloadedModels = new Map();
+
             const furnitureData = [
                 { name: 'イス', file: 'chair.glb', height: 0.79 },
                 { name: '本棚', file: 'bookshelf.glb', height: 1.8 }, 
                 { name: '脚立', file: 'stand.glb', height: 1.2 }, 
             ];
-            // 現在選択されている家具の種類を保持
             let currentFurniture = furnitureData[0];
-            
-            // 新規配置する際の半透明のプレビューオブジェクト
             let previewObject = null;
-            // 実際に配置されたオブジェクトを格納する配列
             const placedObjects = [];
-            // 画面の中心からレイ（光線）を飛ばして、オブジェクトとの当たり判定を行うためのもの
             const raycaster = new THREE.Raycaster();
-            
-            // 操作対象として「選択」されたオブジェクト
             let selectedObject = null;
-            // 視線の中心にあり、ハイライト表示される「ホバー」状態のオブジェクト
             let hoveredObject = null;
-            
-            // アプリの現在の状態を管理（'IDLE':待機中, 'CHOOSING':家具選択中, 'PLACING':新規配置中, 'EDITING':編集モード）
             let appState = 'IDLE'; 
-            
-            // フォーカスした家具をハイライトするための、半透明の白色マテリアル
             const highlightMaterial = new THREE.MeshStandardMaterial({
                 color: 0xFFFFFF,
                 transparent: true,
                 opacity: 0.4,
-                depthWrite: false // 奥のオブジェクトと色が混ざるのを防ぐ
+                depthWrite: false
             });
             
             // === 初期化処理の開始 ===
             init();
 
+            // モデルを事前に読み込む関数
+            function preloadModels() {
+                console.log("すべてのモデルの事前読み込みを開始します...");
+                const loadingPromises = furnitureData.map(item => {
+                    return new Promise((resolve, reject) => {
+                        loader.load(item.file, (gltf) => {
+                            console.log(`${item.file} の読み込みが完了しました。`);
+                            preloadedModels.set(item.file, gltf);
+                            resolve();
+                        }, undefined, (error) => {
+                            console.error(`${item.file} の読み込みに失敗:`, error);
+                            reject(error);
+                        });
+                    });
+                });
+                
+                Promise.all(loadingPromises)
+                    .then(() => {
+                        console.log("すべてのモデルの事前読み込みが完了しました！");
+                    })
+                    .catch(error => {
+                        console.error("モデルの事前読み込み中にエラーが発生しました。", error);
+                    });
+            }
+
             // アプリ全体の初期化を行う関数
             function init() {
-                // シーン（3D空間）の作成
                 scene = new THREE.Scene();
-                // カメラの作成
                 camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
-                // 照明の作成（上からの光と下からの光を混ぜて、全体を自然に明るくする）
                 scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, 3));
                 
-                // レンダラー（描画装置）の作成
                 renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
                 renderer.setPixelRatio(window.devicePixelRatio);
                 renderer.setSize(window.innerWidth, window.innerHeight);
-                renderer.xr.enabled = true; // WebXR（AR機能）を有効化
+                renderer.xr.enabled = true;
                 document.body.appendChild(renderer.domElement);
                 
-                // コントローラー（画面タップ）の準備
                 controller = renderer.xr.getController(0);
-                controller.addEventListener('select', onSelect); // タップした時の処理を紐付け
+                controller.addEventListener('select', onSelect);
                 scene.add(controller);
 
-                // ARセッションが開始された時の処理
                 renderer.xr.addEventListener('sessionstart', () => {
-                    document.getElementById('title-container').style.display = 'none'; // タイトルを隠す
-                    appState = 'IDLE'; // アプリの状態を待機中にする
-                    updateUI(); // UIを更新して「＋」ボタンを表示
-                    initializeARExperience(); // AR体験用の初期化処理を呼ぶ
+                    document.getElementById('title-container').style.display = 'none';
+                    appState = 'IDLE';
+                    updateUI();
+                    initializeARExperience();
+                    preloadModels();
                 });
 
-                // ARセッションが終了した時の処理
                 renderer.xr.addEventListener('sessionend', () => {
-                    document.getElementById('title-container').style.display = 'block'; // タイトルを再表示
-                    // すべてのUIを非表示に戻す
+                    document.getElementById('title-container').style.display = 'block';
                     document.getElementById('add-button').style.display = 'none';
                     document.getElementById('edit-button').style.display = 'none';
                     document.getElementById('choosing-controls').style.display = 'none';
                     document.getElementById('action-controls').style.display = 'none';
                 });
                 
-                // アニメーションループを開始
                 animate();
 
                 // AR開始ボタンを生成してページに追加
                 document.body.appendChild(ARButton.createButton(renderer, {
-                    requiredFeatures: ['hit-test'], // 床面検出機能を必須とする
-                    optionalFeatures: ['dom-overlay'], // HTMLを重ねる機能を有効化
+                    requiredFeatures: ['hit-test'],
+                    optionalFeatures: ['dom-overlay'],
                     domOverlay: { root: document.querySelector("#overlay") }
                 }));
             }
 
             // AR体験が始まった時に呼ばれる初期化関数
             function initializeARExperience() {
-                // 床面マーカー（レティクル）を作成してシーンに追加
                 reticle = new THREE.Mesh( new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2), new THREE.MeshBasicMaterial());
                 reticle.matrixAutoUpdate = false;
-                reticle.visible = false; // 最初は非表示
+                reticle.visible = false;
                 scene.add(reticle);
-                setupUI(); // UIのセットアップ
+                setupUI();
             }
             
             // UI（ボタンなど）のイベントリスナーを設定する関数
             function setupUI() {
-                // 「＋」ボタンが押された時の処理
                 document.getElementById('add-button').addEventListener('click', () => {
                     if (appState === 'IDLE') {
-                        appState = 'CHOOSING'; // 家具選択モードに移行
+                        appState = 'CHOOSING';
                         updateUI();
                     }
                 });
 
-                // 「編集」ボタンが押された時の処理
                 document.getElementById('edit-button').addEventListener('click', () => {
                     if (appState === 'IDLE' && hoveredObject) {
-                        selectedObject = hoveredObject; // ホバー中のオブジェクトを選択状態に
+                        selectedObject = hoveredObject;
                         hoveredObject = null;
-                        appState = 'EDITING'; // 編集モードに移行
+                        appState = 'EDITING';
                         updateUI();
                     }
                 });
                 
-                // 「戻る」ボタンが押された時の処理
                 document.getElementById('back-button').addEventListener('click', () => {
                     if (appState === 'CHOOSING') {
-                        appState = 'IDLE'; // 待機モードに戻る
+                        appState = 'IDLE';
                         updateUI();
                     }
                 });
 
-                // 家具選択パレットのボタンを動的に生成
                 const palette = document.getElementById('furniture-palette');
                 palette.innerHTML = '';
                 furnitureData.forEach((item) => {
                     const button = document.createElement('button');
                     button.className = 'furniture-button';
                     button.textContent = item.name;
-                    
-                    // 各家具ボタンが押された時の処理
                     button.addEventListener('click', () => {
                         if (appState === 'CHOOSING') {
                             currentFurniture = item;
-                            updatePreviewObject(); // 選択された家具のプレビューを作成
-                            appState = 'PLACING'; // 配置モードに移行
+                            updatePreviewObject();
+                            appState = 'PLACING';
                             updateUI();
                         }
                     });
                     palette.appendChild(button);
                 });
                 
-                // 回転、削除、決定ボタンのイベントリスナー
                 document.getElementById('rotate-button').addEventListener('click', onRotate);
                 document.getElementById('delete-button').addEventListener('click', onDelete);
                 document.getElementById('confirm-button').addEventListener('click', onConfirm);
             }
             
-            // 画面がタップされた時のメインの処理
-            function onSelect() {
-                // 待機中にホバーしているオブジェクトをタップした場合
-                if (appState === 'IDLE' && hoveredObject) {
-                    selectedObject = hoveredObject; // そのオブジェクトを選択状態にする
-                    hoveredObject = null;
-                    appState = 'EDITING'; // 編集モードへ
-                    updateUI();
-                }
-            }
-
-            // 「決定」ボタンが押された時の処理
-            function onConfirm() {
-                if (appState === 'PLACING') { // 新規配置モードなら
-                    placeNewObject(); // 家具を実体化して配置
-                } else if (appState === 'EDITING') { // 編集モードなら
-                    unhighlightObject(selectedObject); // ハイライトを消す
-                    selectedObject = null; // 選択を解除
-                    appState = 'IDLE'; // 待機モードに戻る
-                    updateUI();
-                }
-            }
-            
-            // 「回転」ボタンが押された時の処理
-            function onRotate() {
-                const target = appState === 'PLACING' ? previewObject : selectedObject;
-                if (target) {
-                    target.rotation.y += Math.PI / 4; // Y軸周りに45度回転
-                }
-            }
-            
-            // 「削除」ボタンが押された時の処理
-            function onDelete() {
-                if (appState === 'PLACING') { // 新規配置中に削除 = キャンセル
-                    if(previewObject) scene.remove(previewObject);
-                    previewObject = null;
-                    appState = 'CHOOSING'; // 家具選択画面に戻る
-                } else if (appState === 'EDITING') { // 編集中に削除
-                    if(selectedObject) {
-                        unhighlightObject(selectedObject); // ハイライト用ゴーストを消す
-                        scene.remove(selectedObject); // 本体を消す
-                        const index = placedObjects.indexOf(selectedObject);
-                        if (index > -1) placedObjects.splice(index, 1); // 配列からも削除
-                        selectedObject = null;
-                    }
-                    appState = 'IDLE'; // 通常モードに戻る
-                }
-                updateUI();
-            }
-
-            // 選択された家具のプレビュー用オブジェクトを作成する関数
+            // プレビュー更新関数（事前読み込みデータを使用）
             function updatePreviewObject() { 
                 if (previewObject) {
                     scene.remove(previewObject);
                     previewObject = null;
                 }
-                loader.load(currentFurniture.file, (gltf) => {
-                    previewObject = gltf.scene;
-                    // 半透明にする処理
-                    previewObject.traverse(child => {
-                        if (child.isMesh) {
-                            child.material = child.material.clone();
-                            child.material.transparent = true;
-                            child.material.opacity = 0.7;
-                        }
-                    });
-                    // モデルの大きさを調整
-                    const box = new THREE.Box3().setFromObject(previewObject);
-                    const size = box.getSize(new THREE.Vector3());
-                    const scale = currentFurniture.height / size.y;
-                    previewObject.scale.set(scale, scale, scale);
-                    previewObject.visible = true;
-                    scene.add(previewObject);
-                }, undefined, (error) => {
-                    console.error(`プレビューモデル(${currentFurniture.file})の読み込みに失敗:`, error);
+
+                const gltf = preloadedModels.get(currentFurniture.file);
+                if (!gltf) {
+                    console.error(`${currentFurniture.file} はまだ読み込まれていません。`);
+                    return;
+                }
+
+                previewObject = gltf.scene.clone();
+                previewObject.traverse(child => {
+                    if (child.isMesh) {
+                        child.material = child.material.clone();
+                        child.material.transparent = true;
+                        child.material.opacity = 0.7;
+                    }
                 });
+
+                const box = new THREE.Box3().setFromObject(previewObject);
+                const size = box.getSize(new THREE.Vector3());
+                const scale = currentFurniture.height / size.y;
+                previewObject.scale.set(scale, scale, scale);
+                previewObject.visible = true;
+                scene.add(previewObject);
             }
             
-            // プレビュー中の家具を、その場に実体として配置する関数
+            // (ここから下の関数は変更の必要がないため、内容は省略しています)
+            // onSelect, onConfirm, onRotate, onDelete, placeNewObject, 
+            // unhighlightObject, highlightObject, updateUI, handleHover, 
+            // animate, render などの関数は、元のままで問題ありません。
+            // 以下にそれらの関数を再掲します。
+            
+            function onSelect() {
+                if (appState === 'IDLE' && hoveredObject) {
+                    selectedObject = hoveredObject;
+                    hoveredObject = null;
+                    appState = 'EDITING';
+                    updateUI();
+                }
+            }
+
+            function onConfirm() {
+                if (appState === 'PLACING') {
+                    placeNewObject();
+                } else if (appState === 'EDITING') {
+                    unhighlightObject(selectedObject);
+                    selectedObject = null;
+                    appState = 'IDLE';
+                    updateUI();
+                }
+            }
+            
+            function onRotate() {
+                const target = appState === 'PLACING' ? previewObject : selectedObject;
+                if (target) {
+                    target.rotation.y += Math.PI / 4;
+                }
+            }
+            
+            function onDelete() {
+                if (appState === 'PLACING') {
+                    if(previewObject) scene.remove(previewObject);
+                    previewObject = null;
+                    appState = 'CHOOSING';
+                } else if (appState === 'EDITING') {
+                    if(selectedObject) {
+                        unhighlightObject(selectedObject);
+                        scene.remove(selectedObject);
+                        const index = placedObjects.indexOf(selectedObject);
+                        if (index > -1) placedObjects.splice(index, 1);
+                        selectedObject = null;
+                    }
+                    appState = 'IDLE';
+                }
+                updateUI();
+            }
+            
             function placeNewObject() { 
                 if (!previewObject) return;
                 
-                // プレビューオブジェクトを複製して実体を作成
                 const solidObject = previewObject.clone();
                 solidObject.traverse(child => {
                     if (child.isMesh) {
-                        // マテリアルも複製し、不透明に戻す
                         child.material = child.material.clone();
                         child.material.transparent = false;
                         child.material.opacity = 1.0;
                     }
                 });
 
-                // 位置、回転、大きさをプレビューからコピー
                 solidObject.position.copy(previewObject.position);
                 solidObject.rotation.copy(previewObject.rotation);
                 solidObject.scale.copy(previewObject.scale);
                 
-                scene.add(solidObject); // シーンに追加
-                placedObjects.push(solidObject); // 配置済みリストに追加
+                scene.add(solidObject);
+                placedObjects.push(solidObject);
 
-                // 役目を終えたプレビューオブジェクトを削除
                 scene.remove(previewObject);
                 previewObject = null;
                 
-                appState = 'IDLE'; // 待機モードに戻る
+                appState = 'IDLE';
                 updateUI();
             }
             
-            // ハイライト（重ね塗り用の白いゴースト）を消す関数
             function unhighlightObject(object) {
                 if (!object || !object.userData.highlightGhost) return;
                 scene.remove(object.userData.highlightGhost);
                 object.userData.highlightGhost = null;
             }
 
-            // ハイライト（重ね塗り用の白いゴースト）を作成して表示する関数
             function highlightObject(object) {
                 if (!object || object.userData.highlightGhost) return;
-                // 本体を複製してゴーストを作成
                 const highlightGhost = object.clone();
                 highlightGhost.traverse(child => {
                     if (child.isMesh) {
-                        child.material = highlightMaterial; // 白い半透明マテリアルを適用
+                        child.material = highlightMaterial;
                     }
                 });
-                object.userData.highlightGhost = highlightGhost; // 本体とゴーストを紐付け
-                scene.add(highlightGhost); // シーンに追加
+                object.userData.highlightGhost = highlightGhost;
+                scene.add(highlightGhost);
             }
 
-            // アプリの状態(appState)に応じて、表示するUIを切り替える関数
             function updateUI() {
                 const addButton = document.getElementById('add-button');
                 const editButton = document.getElementById('edit-button');
                 const choosingControls = document.getElementById('choosing-controls');
                 const actionControls = document.getElementById('action-controls');
 
-                // まず、すべてのUIを一旦非表示にする
                 addButton.style.display = 'none';
                 editButton.style.display = 'none';
                 choosingControls.style.display = 'none';
                 actionControls.style.display = 'none';
 
-                // appStateに応じて必要なUIだけを表示する
                 switch (appState) {
-                    case 'IDLE': // 待機モード
+                    case 'IDLE':
                         addButton.style.display = 'flex';
-                        if (hoveredObject) { // もし何かをホバー中なら
-                            editButton.style.display = 'flex'; // 編集ボタンも表示
+                        if (hoveredObject) {
+                            editButton.style.display = 'flex';
                         }
                         break;
-                    case 'CHOOSING': // 家具選択モード
+                    case 'CHOOSING':
                         choosingControls.style.display = 'flex';
                         break;
-                    case 'PLACING': // 新規配置モード
-                    case 'EDITING': // 編集モード
+                    case 'PLACING':
+                    case 'EDITING':
                         actionControls.style.display = 'flex';
                         break;
                 }
             }
 
-            // 視線の中心にある家具を検出し、ホバー状態を管理する関数
             function handleHover() {
-                // 編集モードの時は、選択中のオブジェクトのハイライトを維持する
                 if (appState === 'EDITING' && selectedObject && !selectedObject.userData.highlightGhost) {
                      highlightObject(selectedObject);
                 }
-                // 編集モードが終わったら、選択されていたオブジェクトのハイライトを消す
                 if (appState !== 'EDITING' && selectedObject && selectedObject.userData.highlightGhost) {
                     unhighlightObject(selectedObject);
                 }
 
-                // 待機モードでないなら、これ以降のホバー処理は行わない
                 if (appState !== 'IDLE') {
                     if(hoveredObject) {
-                        unhighlightObject(hoveredObject); // ホバー中のハイライトがあれば消す
+                        unhighlightObject(hoveredObject);
                         hoveredObject = null;
                         updateUI();
                     }
                     return;
                 };
 
-                // 画面中心からレイを飛ばす
                 raycaster.setFromCamera({ x: 0, y: 0 }, camera);
                 const intersects = raycaster.intersectObjects(placedObjects, true);
 
-                // レイが当たった一番手前のオブジェクト（の親）を見つける
                 let intersectedRoot = null;
                 if (intersects.length > 0) {
                     let currentObject = intersects[0].object;
@@ -665,34 +640,30 @@
                     }
                 }
                 
-                // ホバー対象が変わった場合のみ処理を実行
                 if (intersectedRoot !== hoveredObject) {
                     if (hoveredObject) {
-                        unhighlightObject(hoveredObject); // 前のホバー対象のハイライトを消す
+                        unhighlightObject(hoveredObject);
                     }
-                    hoveredObject = intersectedRoot; // 新しいホバー対象を記録
+                    hoveredObject = intersectedRoot;
                     if (hoveredObject) {
-                        highlightObject(hoveredObject); // 新しい対象をハイライト
+                        highlightObject(hoveredObject);
                     }
-                    updateUI(); // UIを更新して編集ボタンの表示/非表示を切り替え
+                    updateUI();
                 }
             }
 
-            // 毎フレーム呼ばれる描画ループのメイン関数
             function animate() {
                  renderer.setAnimationLoop(render);
             }
 
-            // 実際の描画処理を行う関数
             function render(timestamp, frame) {
-                if (!renderer.xr.isPresenting) return; // AR中でなければ何もしない
+                if (!renderer.xr.isPresenting) return;
                 
-                handleHover(); // ホバー状態のチェック
+                handleHover();
 
-                if (frame) { // ARフレーム情報があれば
+                if (frame) {
                     const referenceSpace = renderer.xr.getReferenceSpace();
                     if (hitTestSource) {
-                        // 床面検出を行い、結果があればレティクル（マーカー）をその位置に表示
                         const hitTestResults = frame.getHitTestResults(hitTestSource);
                         if (hitTestResults.length > 0) {
                             const hit = hitTestResults[0];
@@ -704,13 +675,11 @@
                     }
                 }
                 
-                // 配置中または編集中のオブジェクトを、レティクルの位置に追従させる
                 const target = appState === 'PLACING' ? previewObject : selectedObject;
                 if (target && reticle.visible) {
                     target.position.setFromMatrixPosition(reticle.matrix);
                 }
                 
-                // ハイライト用ゴーストの位置を、常に本体の位置と同期させる
                 placedObjects.forEach(obj => {
                     if (obj.userData.highlightGhost) {
                         obj.userData.highlightGhost.position.copy(obj.position);
@@ -722,12 +691,10 @@
                     selectedObject.userData.highlightGhost.quaternion.copy(selectedObject.quaternion);
                  }
 
-                // プレビューオブジェクトは配置モードの時だけ表示
                 if(previewObject) {
                     previewObject.visible = appState === 'PLACING';
                 }
 
-                // 床面検出機能の初期化（まだなら）
                 if (!hitTestSourceRequested && renderer.xr.getSession()) {
                     const session = renderer.xr.getSession();
                     session.requestReferenceSpace('viewer').then((referenceSpace) => {
@@ -741,10 +708,12 @@
                     hitTestSourceRequested = true;
                 }
 
-                // 最終的な描画
                 renderer.render(scene, camera);
             }
-        })(); // 自己実行関数でラップ
+        }
+        
+        // 最初に main 関数を呼び出してアプリを起動する
+        main();
     </script>
 </body>
 </html>
