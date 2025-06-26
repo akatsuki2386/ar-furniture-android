@@ -166,6 +166,39 @@
             gap: 15px;
             display: none; /* 初期状態は非表示 */
         }
+        
+        /* ★★★ 変更点: 拡大縮小スライダーのコンテナ ★★★ */
+        #scale-slider-container {
+            position: absolute;
+            bottom: 170px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 320px;
+            height: 40px;
+            display: none;
+            align-items: center;
+            justify-content: center;
+            pointer-events: auto;
+        }
+        #slider-track {
+            width: 100%;
+            height: 8px;
+            background-color: rgba(255, 255, 255, 0.3);
+            border-radius: 4px;
+            position: relative;
+        }
+        #slider-handle {
+            width: 32px;
+            height: 32px;
+            background-color: white;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            transform: translateY(-50%);
+            cursor: pointer;
+            border: 4px solid #4a5568;
+        }
 
         /* === 円形ボタンの共通スタイル（ガラス風） === */
         .circle-button {
@@ -221,6 +254,13 @@
                   <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3-3-3m0 0 3-3m-3 3h12" />
                 </svg>
             </button>
+        </div>
+        
+        <!-- ★★★ 変更点: スライダーのHTMLを追加 ★★★ -->
+        <div id="scale-slider-container">
+            <div id="slider-track">
+                <div id="slider-handle"></div>
+            </div>
         </div>
 
         <div id="bottom-bar">
@@ -337,6 +377,10 @@
                 depthWrite: false
             });
             
+            // ★★★ 変更点: スライダー関連の変数を追加 ★★★
+            let scaleSliderContainer, sliderTrack, sliderHandle;
+            let isDragging = false;
+            
             init();
             
             function createCrossMark() {
@@ -426,6 +470,7 @@
                     document.getElementById('edit-button').style.display = 'none';
                     document.getElementById('choosing-controls').style.display = 'none';
                     document.getElementById('action-controls').style.display = 'none';
+                    document.getElementById('scale-slider-container').style.display = 'none';
                     floorY = null; 
                 });
                 
@@ -450,6 +495,7 @@
                 setupUI();
             }
             
+            // ★★★ 変更点: スライダーのセットアップとイベント処理を追加 ★★★
             function setupUI() {
                 document.getElementById('exit-ar-button').addEventListener('click', () => {
                     const currentSession = renderer.xr.getSession();
@@ -467,9 +513,10 @@
                 document.getElementById('edit-button').addEventListener('click', () => {
                     if (appState === 'IDLE' && hoveredObject) {
                         selectedObject = hoveredObject;
-                        hoveredObject = null;
+                        hoveredObject = null; // ハイライトを消すため
                         appState = 'EDITING';
                         updateUI();
+                        updateSliderForObject(selectedObject); // 編集対象のスケールをスライダーに反映
                     }
                 });
                 document.getElementById('back-button').addEventListener('click', () => {
@@ -497,17 +544,72 @@
                 document.getElementById('rotate-button').addEventListener('click', onRotate);
                 document.getElementById('delete-button').addEventListener('click', onDelete);
                 document.getElementById('confirm-button').addEventListener('click', onConfirm);
+                
+                // スライダーのセットアップ
+                scaleSliderContainer = document.getElementById('scale-slider-container');
+                sliderTrack = document.getElementById('slider-track');
+                sliderHandle = document.getElementById('slider-handle');
+
+                const onDragStart = () => isDragging = true;
+                const onDragEnd = () => isDragging = false;
+
+                const onDragMove = (event) => {
+                    if (!isDragging) return;
+                    event.preventDefault();
+                    
+                    const clientX = event.clientX || event.touches[0].clientX;
+                    const rect = sliderTrack.getBoundingClientRect();
+                    let percent = (clientX - rect.left) / rect.width;
+                    percent = Math.max(0, Math.min(1, percent)); // 0-1の範囲にクランプ
+                    
+                    updateScaleFromSlider(percent);
+                };
+                
+                sliderHandle.addEventListener('mousedown', onDragStart);
+                document.addEventListener('mousemove', onDragMove);
+                document.addEventListener('mouseup', onDragEnd);
+                
+                sliderHandle.addEventListener('touchstart', onDragStart);
+                document.addEventListener('touchmove', onDragMove, { passive: false });
+                document.addEventListener('touchend', onDragEnd);
             }
             
+            function updateSliderForObject(object) {
+                if (!object) return;
+                const multiplier = object.userData.scaleMultiplier || 1.0;
+                // multiplier (0.5 to 2.0) を percent (0 to 1) に変換
+                const percent = (multiplier - 0.5) / 1.5;
+                updateSliderHandlePosition(percent);
+            }
+
+            function updateSliderHandlePosition(percent) {
+                 const handleWidth = sliderHandle.offsetWidth;
+                 const trackWidth = sliderTrack.offsetWidth;
+                 sliderHandle.style.left = `calc(${percent * 100}% - ${handleWidth * percent}px)`;
+            }
+
+            function updateScaleFromSlider(percent) {
+                const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
+                if (!activeObject) return;
+                
+                // percent (0 to 1) を multiplier (0.5 to 2.0) に変換
+                const multiplier = 0.5 + percent * 1.5;
+                activeObject.userData.scaleMultiplier = multiplier;
+                
+                const initialScale = activeObject.userData.initialScale;
+                activeObject.scale.copy(initialScale).multiplyScalar(multiplier);
+
+                updateSliderHandlePosition(percent);
+            }
+
             function updatePreviewObject() { 
                 if (previewObject) {
                     scene.remove(previewObject);
                     previewObject = null;
                 }
                 const gltf = preloadedModels.get(currentFurniture.file);
-                if (!gltf) {
-                    return;
-                }
+                if (!gltf) return;
+                
                 previewObject = gltf.scene.clone();
                 previewObject.traverse(child => {
                     if (child.isMesh) {
@@ -522,14 +624,17 @@
                 initialBox.getCenter(initialCenter);
                 
                 const size = initialBox.getSize(new THREE.Vector3());
-                const scale = currentFurniture.height / size.y;
-                previewObject.scale.set(scale, scale, scale);
+                const scaleFactor = currentFurniture.height / size.y;
+                previewObject.scale.set(scaleFactor, scaleFactor, scaleFactor);
                 
-                previewObject.userData.centerOffset = initialCenter.multiplyScalar(scale);
-                previewObject.userData.crossMarkScale = Math.max(size.x, size.z) * scale;
+                previewObject.userData.initialScale = previewObject.scale.clone();
+                previewObject.userData.scaleMultiplier = 1.0;
+                previewObject.userData.centerOffset = initialCenter.multiplyScalar(scaleFactor);
+                previewObject.userData.crossMarkScale = Math.max(size.x, size.z) * scaleFactor;
 
                 previewObject.visible = false;
                 scene.add(previewObject);
+                updateSliderForObject(previewObject);
             }
             
             function onSelect() {
@@ -538,11 +643,11 @@
                     hoveredObject = null;
                     appState = 'EDITING';
                     updateUI();
+                    updateSliderForObject(selectedObject);
                 }
             }
 
             function onConfirm() {
-                // The button is disabled when not placeable, so we just check the state
                 if (appState === 'PLACING') {
                     placeNewObject();
                 } else if (appState === 'EDITING') {
@@ -591,6 +696,12 @@
                 solidObject.position.copy(previewObject.position);
                 solidObject.rotation.copy(previewObject.rotation);
                 solidObject.scale.copy(previewObject.scale);
+                // userDataもコピーしておく
+                solidObject.userData.initialScale = previewObject.userData.initialScale.clone();
+                solidObject.userData.scaleMultiplier = previewObject.userData.scaleMultiplier;
+                solidObject.userData.centerOffset = previewObject.userData.centerOffset.clone();
+                solidObject.userData.crossMarkScale = previewObject.userData.crossMarkScale;
+
                 scene.add(solidObject);
                 placedObjects.push(solidObject);
                 scene.remove(previewObject);
@@ -622,10 +733,14 @@
                 const editButton = document.getElementById('edit-button');
                 const choosingControls = document.getElementById('choosing-controls');
                 const actionControls = document.getElementById('action-controls');
+                const scaleSlider = document.getElementById('scale-slider-container');
+                
                 addButton.style.display = 'none';
                 editButton.style.display = 'none';
                 choosingControls.style.display = 'none';
                 actionControls.style.display = 'none';
+                scaleSlider.style.display = 'none';
+
                 switch (appState) {
                     case 'IDLE':
                         addButton.style.display = 'flex';
@@ -639,6 +754,7 @@
                     case 'PLACING':
                     case 'EDITING':
                         actionControls.style.display = 'flex';
+                        scaleSlider.style.display = 'flex';
                         break;
                 }
             }
@@ -687,7 +803,6 @@
                  renderer.setAnimationLoop(render);
             }
 
-            // ★★★ 変更点: render関数の中のロジックを整理 ★★★
             function render(timestamp, frame) {
                 if (!renderer.xr.isPresenting) return;
                 handleHover();
