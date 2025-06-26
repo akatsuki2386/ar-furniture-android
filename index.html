@@ -595,10 +595,10 @@
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
                 
-                // ★★★ 変更点: ジェスチャーリスナーをWindowに追加 ★★★
-                window.addEventListener('touchstart', onTouchStart, { passive: false });
-                window.addEventListener('touchmove', onTouchMove, { passive: false });
-                window.addEventListener('touchend', onTouchEnd);
+                // ★★★ 変更点: ジェスチャーリスナーをWindowからrenderer.domElementに変更 ★★★
+                renderer.domElement.addEventListener('touchstart', onTouchStart, { passive: false });
+                renderer.domElement.addEventListener('touchmove', onTouchMove, { passive: false });
+                renderer.domElement.addEventListener('touchend', onTouchEnd);
             }
             
             function updateSliderForObject(object) {
@@ -657,16 +657,21 @@
             }
             
             function onSelect() {
-                if (isEditMode && appState === 'IDLE' && hoveredObject) {
-                    if (selectedObject) setObjectTransparency(selectedObject, false);
+                // タッチジェスチャーの開始と競合しないように少し遅延させる
+                setTimeout(() => {
+                    if (isSwiping || isPinching) return;
 
-                    selectedObject = hoveredObject;
-                    hoveredObject = null;
-                    setObjectTransparency(selectedObject, true);
-                    appState = 'EDITING';
-                    updateUI();
-                    updateSliderForObject(selectedObject);
-                }
+                    if (isEditMode && appState === 'IDLE' && hoveredObject) {
+                        if (selectedObject) setObjectTransparency(selectedObject, false);
+
+                        selectedObject = hoveredObject;
+                        hoveredObject = null;
+                        setObjectTransparency(selectedObject, true);
+                        appState = 'EDITING';
+                        updateUI();
+                        updateSliderForObject(selectedObject);
+                    }
+                }, 100);
             }
 
             function onConfirm() {
@@ -818,7 +823,7 @@
             }
 
             function onTouchStart(event) {
-                if (event.target.closest('.circle-button, #scale-slider-handle, #mode-switch-button')) return;
+                if (event.target !== renderer.domElement) return;
 
                 if (!isEditMode || (appState !== 'PLACING' && appState !== 'EDITING')) return;
                 
@@ -837,17 +842,22 @@
             }
 
             function onTouchMove(event) {
+                if (event.target !== renderer.domElement) return;
+
                 if (!isEditMode) return;
                 
                 const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
                 if (!activeObject) return;
                 
                 if (isSwiping && event.touches.length === 1) {
+                    event.preventDefault();
                     const currentX = event.touches[0].clientX;
                     const deltaX = currentX - lastTouchX;
-                    activeObject.rotation.y -= deltaX * 0.02; // 回転感度を少し上げる
+                    // ★★★ 変更点: 回転方向を反転 ★★★
+                    activeObject.rotation.y += deltaX * 0.02; 
                     lastTouchX = currentX;
                 } else if (isPinching && event.touches.length === 2) {
+                    event.preventDefault();
                     const currentPinchDistance = getPinchDistance(event.touches);
                     const scaleRatio = currentPinchDistance / initialPinchDistance;
                     const baseMultiplier = activeObject.userData.baseScaleMultiplier || 1.0;
