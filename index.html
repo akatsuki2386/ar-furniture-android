@@ -257,29 +257,18 @@
             -webkit-backdrop-filter: blur(10px);
             display: flex;
             align-items: center;
+            gap: 5px; /* ★ラベル間の隙間を少し設定 */
         }
         
-        /* ラベルと区切り文字の共通スタイル */
-        #mode-switch-button > span {
+        .mode-label {
             transition: all 0.3s ease-in-out;
             padding: 5px 15px;
             border-radius: 9999px;
-        }
-
-        /* ★★★ 修正: こちらがデフォルトのラベルスタイルになります ★★★ */
-        .mode-label {
             font-weight: normal;
             color: #a0aec0;
             background-color: transparent;
         }
 
-        /* 区切り文字のスタイル */
-        #mode-switch-button > span.separator {
-             color: #6c757d;
-             padding: 5px 0;
-        }
-
-        /* ★★★ 修正: アクティブなラベルのスタイル（.mode-labelを持つ要素の.activeクラス） ★★★ */
         .mode-label.active {
             font-weight: bold;
             color: #1A202C;
@@ -311,7 +300,6 @@
         <div id="top-bar" style="position: absolute; top: 40px; width:100%; display: flex; justify-content: center; pointer-events: auto;">
             <button id="mode-switch-button" style="display: none;">
                 <span id="edit-mode-label" class="mode-label">編集モード</span>
-                <span class="separator">|</span>
                 <span id="view-mode-label" class="mode-label">鑑賞モード</span>
             </button>
         </div>
