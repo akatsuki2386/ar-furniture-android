@@ -118,22 +118,22 @@
             box-sizing: border-box;
         }
         
-        /* === ★★★ 追加: デバッグ表示エリアのスタイル ★★★ === */
+        /* === デバッグ表示エリアのスタイル === */
         #debug-info {
             position: fixed;
-            top: 10px;
+            top: 80px; /* モード切替ボタンと重ならないように少し下げる */
             left: 10px;
             color: white;
             background: rgba(0, 0, 0, 0.6);
             padding: 8px;
             border-radius: 5px;
             z-index: 999;
-            font-family: monospace; /* プログラムっぽいフォント */
+            font-family: monospace;
             font-size: 12px;
             line-height: 1.5;
-            white-space: pre; /* 改行をそのまま表示する */
-            pointer-events: auto; /* デバッグエリア自体は触れるように */
-            display: none; /* 初期状態は非表示 */
+            white-space: pre;
+            pointer-events: auto;
+            display: none;
         }
 
         /* === 家具選択パレットのスタイル === */
@@ -450,13 +450,12 @@
             let appState = 'IDLE';
             let isEditMode = false; 
 
-            // ★★★ 追加: デバッグ&ジェスチャー用の変数をまとめる ★★★
             let debugInfo;
             const gestureState = {
                 touchCount: 0,
                 distance: 0.0,
                 lastX: 0,
-                isInteracting: false // 1本指か2本指で操作中かどうかのフラグ
+                isInteracting: false
             };
             
             init();
@@ -531,12 +530,12 @@
                 renderer.xr.enabled = true;
                 document.body.appendChild(renderer.domElement);
 
-                // ★★★ 追加: デバッグ表示エリアの取得 ★★★
                 debugInfo = document.getElementById('debug-info');
 
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
-                    debugInfo.style.display = 'block'; // AR開始時に表示
+                    debugInfo.style.display = 'block'; 
+                    updateDebugDisplay(); // ★★★ 修正: AR開始時に初期状態を表示 ★★★
                     appState = 'IDLE';
                     isEditMode = true; 
                     updateUI();
@@ -546,7 +545,7 @@
 
                 renderer.xr.addEventListener('sessionend', () => {
                     document.getElementById('title-container').style.display = 'block';
-                    debugInfo.style.display = 'none'; // AR終了時に非表示
+                    debugInfo.style.display = 'none';
                     document.getElementById('exit-ar-button').style.display = 'none';
                     document.getElementById('mode-switch-button').style.display = 'none';
                     document.getElementById('bottom-bar').style.display = 'none';
@@ -660,13 +659,11 @@
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
                 
-                // ★★★ 変更: タッチイベントリスナーをジェスチャー対応のものに置き換え ★★★
-                renderer.domElement.addEventListener('touchstart', handleTouchStart);
-                renderer.domElement.addEventListener('touchmove', handleTouchMove);
+                renderer.domElement.addEventListener('touchstart', handleTouchStart, { passive: false });
+                renderer.domElement.addEventListener('touchmove', handleTouchMove, { passive: false });
                 renderer.domElement.addEventListener('touchend', handleTouchEnd);
             }
             
-            // ★★★ 追加: デバッグ表示を更新する関数 ★★★
             function updateDebugDisplay() {
                 if (!debugInfo) return;
                 const debugText = `[Debug Info]
@@ -676,50 +673,51 @@ Interacting: ${gestureState.isInteracting}`;
                 debugInfo.innerText = debugText;
             }
 
-            // ★★★ 追加: 2点間の距離を計算するヘルパー関数 ★★★
             function getDistance(touches) {
                 const dx = touches[0].clientX - touches[1].clientX;
                 const dy = touches[0].clientY - touches[1].clientY;
                 return Math.sqrt(dx * dx + dy * dy);
             }
             
-            // ★★★ 追加: ジェスチャー処理のメインロジック ★★★
+            // ★★★ 修正: ジェスチャー処理のロジックをより堅牢に ★★★
             function handleTouchStart(event) {
+                event.preventDefault();
                 gestureState.touchCount = event.touches.length;
+                gestureState.isInteracting = true;
 
-                if (event.target === renderer.domElement) {
-                    if (gestureState.touchCount > 0) {
-                        gestureState.isInteracting = true;
-                    }
-                    if (gestureState.touchCount === 2) {
-                        gestureState.distance = getDistance(event.touches);
-                    }
+                if (gestureState.touchCount === 2) {
+                    gestureState.distance = getDistance(event.touches);
+                } else {
+                    gestureState.distance = 0;
                 }
                 updateDebugDisplay();
             }
 
             function handleTouchMove(event) {
+                event.preventDefault();
                 if (!gestureState.isInteracting) return;
                 
-                //常に指の数を更新
                 gestureState.touchCount = event.touches.length;
 
                 if (gestureState.touchCount === 2) {
                     gestureState.distance = getDistance(event.touches);
+                } else {
+                    gestureState.distance = 0;
                 }
                 updateDebugDisplay();
             }
 
             function handleTouchEnd(event) {
-                // 指が画面から離れたら、触れている指の数を更新する
+                event.preventDefault();
                 gestureState.touchCount = event.touches.length;
-
+                
                 if (gestureState.touchCount < 1) {
                     gestureState.isInteracting = false;
                 }
-                // リセット
-                gestureState.distance = 0;
                 
+                if (gestureState.touchCount < 2) {
+                    gestureState.distance = 0;
+                }
                 updateDebugDisplay();
             }
 
@@ -779,7 +777,6 @@ Interacting: ${gestureState.isInteracting}`;
             }
             
             function onSelect() {
-                // ジェスチャー操作中は選択できないようにする
                 if (gestureState.isInteracting) return;
 
                 if (isEditMode && appState === 'IDLE' && hoveredObject) {
@@ -913,7 +910,6 @@ Interacting: ${gestureState.isInteracting}`;
             }
 
             function handleHover() {
-                // ジェスチャー中はホバー処理をしない
                 if (gestureState.isInteracting) {
                     if(hoveredObject) {
                          setObjectTransparency(hoveredObject, false);
@@ -1011,7 +1007,6 @@ Interacting: ${gestureState.isInteracting}`;
                             }
 
                             if (isEditMode) {
-                                // ジェスチャー操作中はオブジェクトを床に追従させない
                                 if (activeObject && !gestureState.isInteracting) { 
                                     activeObject.position.setFromMatrixPosition(reticle.matrix);
                                 }
