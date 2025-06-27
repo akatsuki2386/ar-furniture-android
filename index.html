@@ -5,7 +5,6 @@
     <title>AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
-        /* CSSは変更ありません */
         body { 
             margin: 0;
             background-color: #1A202C;
@@ -165,7 +164,10 @@
             justify-content: center;
             align-items: center;
             gap: 15px;
-            pointer-events: none; /* 下の階層のボタンが押せるように */
+            pointer-events: none;
+        }
+        #action-controls, #choosing-controls {
+            pointer-events: auto;
         }
         #action-controls {
             width: 100%;
@@ -174,14 +176,12 @@
             justify-content: space-around;
             align-items: center;
             display: none;
-            pointer-events: auto;
         }
         #choosing-controls {
             display: flex;
             align-items: center;
             gap: 15px;
             display: none;
-            pointer-events: auto;
         }
         #scale-slider-container {
             position: absolute;
@@ -234,7 +234,6 @@
         .circle-button:active {
             transform: scale(0.9);
         }
-        
         .circle-button:disabled {
             background-color: rgba(128, 128, 128, 0.2);
             border-color: rgba(128, 128, 128, 0.3);
@@ -277,20 +276,16 @@
     <div id="title-container">
         <h1>AR家具配置<br>シミュレーション</h1>
     </div>
-
     <div id="ios-ar-container">
         <h2>表示したい家具を選んでください</h2>
-        <div id="ios-ar-links">
-        </div>
+        <div id="ios-ar-links"></div>
     </div>
-
     <div id="overlay">
         <div id="debug-info"></div>
         <div id="instruction-text">
             <span style="font-size: 1.25em; font-weight: bold;">床を認識中<span id="loading-dots"></span></span><br><br>
             カメラをゆっくりと<br>床に向けて<br>動かしてください
         </div>
-        
         <div id="top-bar" style="position: absolute; top: 40px; width:100%; display: flex; justify-content: center; pointer-events: none;">
             <button id="mode-switch-button" style="display: none;">
                 <span id="edit-mode-label" class="mode-label">編集モード</span>
@@ -299,57 +294,23 @@
         </div>
         <div id="top-right-controls" style="position: absolute; top: 20px; right: 20px; pointer-events: none;">
             <button id="exit-ar-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3-3-3m0 0 3-3m-3 3h12" />
-                </svg>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3-3-3m0 0 3-3m-3 3h12" /></svg>
             </button>
         </div>
-        
         <div id="scale-slider-container">
-            <div id="slider-track">
-                <div id="slider-handle"></div>
-            </div>
+            <div id="slider-track"><div id="slider-handle"></div></div>
         </div>
-
         <div id="bottom-bar">
-            <button id="add-button" class="circle-button">
-                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
-                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                 </svg>
-            </button>
-            <button id="edit-button" class="circle-button">
-                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;">
-                     <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
-                 </svg>
-            </button>
-            
+            <button id="add-button" class="circle-button"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg></button>
+            <button id="edit-button" class="circle-button"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg></button>
             <div id="choosing-controls">
-                <button id="back-button" class="circle-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-                    </svg>
-                </button>
-                <div id="furniture-palette">
-                </div>
+                <button id="back-button" class="circle-button"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg></button>
+                <div id="furniture-palette"></div>
             </div>
-
             <div id="action-controls">
-                <button id="delete-button" class="circle-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 0 0-2.09 2.134v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                    </svg>
-                </button>
-                <button id="confirm-button" class="circle-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                    </svg>
-                </button>
-                <button id="rotate-button" class="circle-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.092 1.21-.138 2.43-.138 3.662s.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.092-1.21.138-2.43.138-3.662Z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5" />
-                    </svg>
-                </button>
+                <button id="delete-button" class="circle-button"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 0 0-2.09 2.134v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg></button>
+                <button id="confirm-button" class="circle-button"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg></button>
+                <button id="rotate-button" class="circle-button"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.092 1.21-.138 2.43-.138 3.662s.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.092-1.21.138-2.43.138-3.662Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5" /></svg></button>
             </div>
         </div>
     </div>
@@ -598,6 +559,7 @@ Interacting: ${gestureState.isInteracting}`;
                 if (!activeObject) return;
                 const clampedMultiplier = THREE.MathUtils.clamp(newMultiplier, 0.5, 2.0);
                 activeObject.userData.scaleMultiplier = clampedMultiplier;
+                if (!activeObject.userData.initialScale) return;
                 activeObject.scale.copy(activeObject.userData.initialScale).multiplyScalar(clampedMultiplier);
                 const percent = (clampedMultiplier - 0.5) / 1.5;
                 updateSliderHandlePosition(percent);
@@ -610,7 +572,7 @@ Interacting: ${gestureState.isInteracting}`;
             }
 
             function handleTouchStart(event) {
-                if (event.target.closest('.circle-button, .furniture-button, #mode-switch-button')) return;
+                if (event.target !== event.currentTarget) return;
                 event.preventDefault();
                 const activeObject = (appState === 'PLACING' || appState === 'EDITING') ? (previewObject || selectedObject) : null;
                 if (!activeObject || !isEditMode) return;
@@ -680,7 +642,7 @@ Interacting: ${gestureState.isInteracting}`;
                 previewObject.scale.set(scaleFactor, scaleFactor, scaleFactor);
                 previewObject.userData.initialScale = previewObject.scale.clone();
                 previewObject.userData.scaleMultiplier = 1.0;
-                previewObject.userData.centerOffset = initialCenter.multiplyScalar(scaleFactor);
+                previewObject.userData.centerOffset = initialCenter.clone().multiplyScalar(scaleFactor);
                 previewObject.userData.crossMarkScale = Math.max(size.x, size.z) * scaleFactor;
                 previewObject.visible = false;
                 scene.add(previewObject);
@@ -700,9 +662,9 @@ Interacting: ${gestureState.isInteracting}`;
                 }
             }
 
-            function onConfirm() { /* (変更なし) */ }
-            function onRotate() { /* (変更なし) */ }
-            function onDelete() { /* (変更なし) */ }
+            function onConfirm() { if(appState === 'PLACING') { placeNewObject(); } else if (appState === 'EDITING') { setObjectTransparency(selectedObject, false); selectedObject = null; appState = 'IDLE'; updateUI(); }}
+            function onRotate() { const target = (appState === 'PLACING') ? previewObject : selectedObject; if(target) target.rotation.y += Math.PI / 4; }
+            function onDelete() { if (appState === 'PLACING') { if(previewObject) scene.remove(previewObject); previewObject = null; appState = 'CHOOSING'; } else if (appState === 'EDITING') { if(selectedObject) { scene.remove(selectedObject); const index = placedObjects.indexOf(selectedObject); if (index > -1) placedObjects.splice(index, 1); selectedObject = null; } appState = 'IDLE'; } updateUI();}
 
             function placeNewObject() { 
                 if (!previewObject) return;
@@ -711,8 +673,8 @@ Interacting: ${gestureState.isInteracting}`;
                 solidObject.position.copy(previewObject.position);
                 solidObject.rotation.copy(previewObject.rotation);
                 solidObject.scale.copy(previewObject.scale);
+                
                 // ★★★ ここがバグ修正の最重要ポイント ★★★
-                // userDataを正しくコピーする
                 solidObject.userData = { ...previewObject.userData };
                 if(previewObject.userData.initialScale) {
                     solidObject.userData.initialScale = previewObject.userData.initialScale.clone();
@@ -729,11 +691,122 @@ Interacting: ${gestureState.isInteracting}`;
                 updateUI();
             }
             
-            function setObjectTransparency(object, isTransparent) { /* (変更なし) */ }
-            function updateUI() { /* (変更なし) */ }
-            function handleHover() { /* (変更なし) */ }
-            function startDotAnimation() { /* (変更なし) */ }
-            function stopDotAnimation() { /* (変更なし) */ }
+            function setObjectTransparency(object, isTransparent) {
+                if (!object) return;
+                object.traverse(child => {
+                    if (child.isMesh) {
+                        child.material.transparent = isTransparent;
+                        child.material.opacity = isTransparent ? 0.7 : 1.0;
+                    }
+                });
+            }
+
+            function updateUI() {
+                const bottomBar = document.getElementById('bottom-bar');
+                const addButton = document.getElementById('add-button');
+                const editButton = document.getElementById('edit-button');
+                const choosingControls = document.getElementById('choosing-controls');
+                const actionControls = document.getElementById('action-controls');
+                const scaleSlider = document.getElementById('scale-slider-container');
+                const modeSwitchButton = document.getElementById('mode-switch-button');
+                const editModeLabel = document.getElementById('edit-mode-label');
+                const viewModeLabel = document.getElementById('view-mode-label');
+
+                document.getElementById('exit-ar-button').style.display = 'flex';
+                modeSwitchButton.style.display = 'flex';
+
+                if (isEditMode) {
+                    editModeLabel.classList.add('active');
+                    viewModeLabel.classList.remove('active');
+                    bottomBar.style.display = 'flex';
+                    addButton.style.display = 'none';
+                    editButton.style.display = 'none';
+                    choosingControls.style.display = 'none';
+                    actionControls.style.display = 'none';
+                    scaleSlider.style.display = 'none';
+
+                    switch (appState) {
+                        case 'IDLE':
+                            addButton.style.display = 'flex';
+                            if (hoveredObject) editButton.style.display = 'flex';
+                            break;
+                        case 'CHOOSING':
+                            choosingControls.style.display = 'flex';
+                            break;
+                        case 'PLACING':
+                        case 'EDITING':
+                            actionControls.style.display = 'flex';
+                            scaleSlider.style.display = 'flex';
+                            break;
+                    }
+                } else { 
+                    editModeLabel.classList.remove('active');
+                    viewModeLabel.classList.add('active');
+                    bottomBar.style.display = 'none';
+                    addButton.style.display = 'none';
+                    editButton.style.display = 'none';
+                    choosingControls.style.display = 'none';
+                    actionControls.style.display = 'none';
+                    scaleSlider.style.display = 'none';
+                }
+            }
+
+            function handleHover() {
+                if (gestureState.isInteracting) {
+                    if(hoveredObject) {
+                         setObjectTransparency(hoveredObject, false);
+                         hoveredObject = null;
+                         updateUI();
+                    }
+                    return;
+                }
+                if (!isEditMode || appState !== 'IDLE') {
+                    if (hoveredObject) {
+                        setObjectTransparency(hoveredObject, false);
+                        hoveredObject = null;
+                        updateUI();
+                    }
+                    return;
+                }
+                raycaster.setFromCamera({ x: 0, y: 0 }, camera);
+                const intersects = raycaster.intersectObjects(placedObjects, true);
+                let newHoveredObject = null;
+                if (intersects.length > 0) {
+                    let currentObject = intersects[0].object;
+                    while (currentObject) {
+                        if (placedObjects.includes(currentObject)) {
+                            newHoveredObject = currentObject;
+                            break; 
+                        }
+                        currentObject = currentObject.parent;
+                    }
+                }
+                if (newHoveredObject !== hoveredObject) {
+                    if (hoveredObject) setObjectTransparency(hoveredObject, false);
+                    if (newHoveredObject) setObjectTransparency(newHoveredObject, true);
+                    hoveredObject = newHoveredObject;
+                    updateUI();
+                }
+            }
+            
+            function startDotAnimation() {
+                if (dotAnimationTimer) return; 
+                const dotsElement = document.getElementById('loading-dots');
+                if (!dotsElement) return;
+                let dotCount = 0;
+                const dots = ['・', '・・', '・・・'];
+                dotAnimationTimer = setInterval(() => {
+                    dotsElement.textContent = dots[dotCount % dots.length];
+                    dotCount++;
+                }, 400); 
+            }
+
+            function stopDotAnimation() {
+                if (dotAnimationTimer) {
+                    clearInterval(dotAnimationTimer);
+                    dotAnimationTimer = null;
+                }
+            }
 
             function animate() {
                 renderer.setAnimationLoop(render);
@@ -811,11 +884,9 @@ Interacting: ${gestureState.isInteracting}`;
                         }
                     }
                 }
-                
                 if (isEditMode && (appState === 'PLACING' || appState === 'EDITING')) {
                     if(confirmButton) confirmButton.disabled = !isPlaceable;
                 }
-                
                 if (!hitTestSourceRequested && renderer.xr.getSession()) {
                     const session = renderer.xr.getSession();
                     session.requestReferenceSpace('viewer').then((referenceSpace) => {
@@ -828,7 +899,6 @@ Interacting: ${gestureState.isInteracting}`;
                     });
                     hitTestSourceRequested = true;
                 }
-                
                 renderer.render(scene, camera);
             }
         }
