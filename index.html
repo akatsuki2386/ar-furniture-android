@@ -8,10 +8,10 @@
         /* === 基本スタイルの設定 === */
         body { 
             margin: 0;
-            background-color: #1A202C; /* AR開始前の背景色を濃い紺色に */
-            color: white; /* 基本の文字色を白に */
-            font-family: sans-serif; /* 標準的なフォントを指定 */
-            overflow: hidden; /* スクロールバーが表示されないようにする */
+            background-color: #1A202C;
+            color: white;
+            font-family: sans-serif;
+            overflow: hidden;
         }
         canvas { display: block; }
 
@@ -30,12 +30,12 @@
             font-weight: bold;
             line-height: 1.4;
             color: white;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.5); /* 文字に影をつけて立体感を出す */
+            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
 
         /* === iPhone向けUIのコンテナ === */
         #ios-ar-container {
-            display: none; /* 初期状態は非表示 */
+            display: none;
             position: absolute;
             top: 50%;
             left: 50%;
@@ -51,7 +51,6 @@
             margin-top: 20px;
             align-items: center;
         }
-        /* iPhone向けARボタンのスタイル */
         #ios-ar-links a {
             display: block;
             padding: 14px 24px;
@@ -71,15 +70,15 @@
         /* === AR開始ボタンのスタイル === */
         #ARButton {
             color: white !important;
-            background-color: rgba(255, 255, 255, 0.2) !important; /* 半透明の白色 */
-            border: 1px solid rgba(255, 255, 255, 0.3) !important; /* 少し明るい半透明の枠線 */
-            backdrop-filter: blur(10px) !important; /* 背景をぼかすガラスのような効果 */
-            -webkit-backdrop-filter: blur(10px) !important; /* Safari用の同じ効果 */
-            border-radius: 9999px !important; /* 角を丸くして円形に近づける */
+            background-color: rgba(255, 255, 255, 0.2) !important;
+            border: 1px solid rgba(255, 255, 255, 0.3) !important;
+            backdrop-filter: blur(10px) !important;
+            -webkit-backdrop-filter: blur(10px) !important;
+            border-radius: 9999px !important;
             font-size: 16px !important;
             font-weight: bold !important;
             padding: 14px 24px !important;
-            min-width: 220px !important; /* ボタンの最小幅を確保し、長い文字でも改行されないように */
+            min-width: 220px !important;
             box-shadow: none !important;
             opacity: 1 !important;
             position: absolute !important;
@@ -87,7 +86,7 @@
             left: 50% !important;
             transform: translateX(-50%) !important;
             z-index: 100 !important;
-            white-space: nowrap !important; /* 文字を強制的に一行で表示 */
+            white-space: nowrap !important;
         }
 
         /* === UI要素を重ねるための基本設定 === */
@@ -97,7 +96,7 @@
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none; /* 下にあるカメラ映像を操作できるようにするため */
+            pointer-events: none;
             z-index: 10;
         }
         
@@ -121,35 +120,35 @@
         
         /* === 家具選択パレットのスタイル === */
         #furniture-palette {
-            display: flex; /* ボタンを横並びにする */
+            display: flex;
             flex-direction: row;
-            gap: 15px; /* ボタン間の隙間 */
+            gap: 15px;
             padding: 10px;
-            background-color: rgba(0, 0, 0, 0.5); /* 半透明の黒背景 */
-            border-radius: 16px; /* 角を丸くする */
-            pointer-events: auto; /* パレット内のボタンは押せるようにする */
+            background-color: rgba(0, 0, 0, 0.5);
+            border-radius: 16px;
+            pointer-events: auto;
         }
 
         /* === 家具選択ボタンのスタイル === */
         .furniture-button {
             width: 60px;
             height: 60px;
-            background-color: #6B7280; /* 通常時の色 */
+            background-color: #6B7280;
             color: white;
-            border: 2px solid transparent; /* 枠線は透明に */
+            border: 2px solid transparent;
             border-radius: 12px;
             font-size: 14px;
             font-weight: bold;
             cursor: pointer;
-            transition: all 0.2s ease-in-out; /* アニメーション効果を滑らかに */
+            transition: all 0.2s ease-in-out;
             display: flex;
             justify-content: center;
             align-items: center;
         }
-        .furniture-button.selected { /* 選択された時のスタイル */
-            background-color: #007AFF; /* 選択されている時の色 */
-            border-color: #FFF; /* 白い枠線で強調 */
-            transform: scale(1.1); /* 少し大きくして目立たせる */
+        .furniture-button.selected {
+            background-color: #007AFF;
+            border-color: #FFF;
+            transform: scale(1.1);
         }
         
         /* === 画面下部の操作エリアのスタイル === */
@@ -160,11 +159,11 @@
             width: 100%;
             padding: 0 20px;
             box-sizing: border-box;
-            pointer-events: auto; /* ボタンを押せるようにする */
+            pointer-events: auto;
             display: flex;
             justify-content: center;
             align-items: center;
-            gap: 15px; /* 各ボタン間の隙間 */
+            gap: 15px;
         }
         
         /* === 決定・削除・回転ボタンのコンテナ === */
@@ -174,7 +173,7 @@
             display: flex;
             justify-content: space-around;
             align-items: center;
-            display: none; /* 初期状態では非表示 */
+            display: none;
         }
 
         /* === 家具選択UIのコンテナ === */
@@ -182,7 +181,7 @@
             display: flex;
             align-items: center;
             gap: 15px;
-            display: none; /* 初期状態は非表示 */
+            display: none;
         }
         
         #scale-slider-container {
@@ -226,17 +225,17 @@
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             color: white;
-            border-radius: 50%; /* 正円にする */
+            border-radius: 50%;
             cursor: pointer;
             display: flex;
             justify-content: center;
             align-items: center;
             transition: transform 0.1s ease, background-color 0.2s ease;
             pointer-events: auto;
-            flex-shrink: 0; /* 親要素がリサイズされてもボタンが縮まないように */
+            flex-shrink: 0;
         }
-        .circle-button:active { /* ボタンを押した瞬間のスタイル */
-            transform: scale(0.9); /* 少し小さくして押した感を出す */
+        .circle-button:active {
+            transform: scale(0.9);
         }
         
         .circle-button:disabled {
@@ -246,13 +245,13 @@
             cursor: not-allowed;
         }
         
-        /* === ★★★ 変更: モード切替トグルボタンのスタイル ★★★ === */
+        /* === モード切替トグルボタンのスタイル === */
         #mode-switch-button {
             background-color: rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 9999px;
-            padding: 5px; /* ボタン自体のパディングは小さくする */
-            font-size: 15px; /* 少し小さく調整 */
+            padding: 5px;
+            font-size: 15px;
             cursor: pointer;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
@@ -263,29 +262,28 @@
         /* ラベルと区切り文字の共通スタイル */
         #mode-switch-button > span {
             transition: all 0.3s ease-in-out;
-            padding: 5px 15px; /* ラベルの内側の余白 */
-            border-radius: 9999px; /* 角丸 */
+            padding: 5px 15px;
+            border-radius: 9999px;
         }
 
-        /* ラベルのデフォルト（非アクティブ）スタイル */
-        #mode-switch-button > span#edit-mode-label,
-        #mode-switch-button > span#view-mode-label {
+        /* ★★★ 修正: こちらがデフォルトのラベルスタイルになります ★★★ */
+        .mode-label {
             font-weight: normal;
-            color: #a0aec0; /* 非アクティブ時の色 */
-            background-color: transparent; /* 背景なし */
+            color: #a0aec0;
+            background-color: transparent;
         }
 
         /* 区切り文字のスタイル */
         #mode-switch-button > span.separator {
              color: #6c757d;
-             padding: 5px 0; /* 区切り文字には左右の余白は不要 */
+             padding: 5px 0;
         }
 
-        /* アクティブなラベルのスタイル（枠と文字色） */
-        #mode-switch-button > span.active {
+        /* ★★★ 修正: アクティブなラベルのスタイル（.mode-labelを持つ要素の.activeクラス） ★★★ */
+        .mode-label.active {
             font-weight: bold;
-            color: #1A202C; /* 背景色に合わせた濃い色 */
-            background-color: white; /* 白い背景で枠のように見せる */
+            color: #1A202C;
+            background-color: white;
         }
 
         #add-button, #edit-button {
@@ -312,9 +310,9 @@
         
         <div id="top-bar" style="position: absolute; top: 40px; width:100%; display: flex; justify-content: center; pointer-events: auto;">
             <button id="mode-switch-button" style="display: none;">
-                <span id="edit-mode-label">編集モード</span>
+                <span id="edit-mode-label" class="mode-label">編集モード</span>
                 <span class="separator">|</span>
-                <span id="view-mode-label">鑑賞モード</span>
+                <span id="view-mode-label" class="mode-label">鑑賞モード</span>
             </button>
         </div>
         <div id="top-right-controls" style="position: absolute; top: 20px; right: 20px; pointer-events: auto;">
@@ -388,6 +386,7 @@
         import { ARButton } from 'three/addons/webxr/ARButton.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+        // (JavaScript部分は変更ありません)
         function main() {
             const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
             if (isIOS) {
@@ -793,7 +792,6 @@
                 modeSwitchButton.style.display = 'flex';
 
                 if (isEditMode) {
-                    // 編集モードのラベルをアクティブに
                     editModeLabel.classList.add('active');
                     viewModeLabel.classList.remove('active');
 
@@ -821,11 +819,10 @@
                             break;
                     }
                 } else { 
-                    // 鑑賞モードのラベルをアクティブに
                     editModeLabel.classList.remove('active');
                     viewModeLabel.classList.add('active');
 
-                    bottomBar.style.display = 'none'; // 鑑賞モードでは下部バーは非表示
+                    bottomBar.style.display = 'none';
                     addButton.style.display = 'none';
                     editButton.style.display = 'none';
                     choosingControls.style.display = 'none';
