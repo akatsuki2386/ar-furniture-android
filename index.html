@@ -658,7 +658,7 @@
                     document.getElementById('title-container').style.display = 'none';
                     document.getElementById('help-button').style.display = 'flex'; 
                     if (debugInfo) {
-                        debugInfo.style.display = 'block'; // デバッグ情報を表示
+                        debugInfo.style.display = 'block';
                     }
                     appState = 'IDLE';
                     isEditMode = true; 
@@ -718,35 +718,33 @@
                 const totalPages = pages.length;
                 let currentPage = 0;
 
-                const openHelp = () => {
-                    helpModal.style.display = 'flex';
-                }
-                const closeHelp = () => helpModal.style.display = 'none';
-
-                // --- 画面上デバッグのためのイベントリスナー ---
-                const logEvent = (eventName) => {
+                // --- 画面上デバッグのためのヘルパー関数 ---
+                const logEvent = (message) => {
                     if (debugInfo) {
-                        // 既存のログに追記するのではなく、最新のイベントで上書きする
-                        debugInfo.dataset.lastEvent = `${eventName} @ ${new Date().toLocaleTimeString()}`;
+                        debugInfo.dataset.lastEvent = message;
                     }
                 };
                 
-                helpButton.addEventListener('touchstart', (e) => {
-                    e.stopPropagation();
-                    logEvent('🔴 helpButton: touchstart');
-                });
-                
-                helpButton.addEventListener('touchend', (e) => {
-                    e.stopPropagation();
-                    logEvent('🔵 helpButton: touchend');
-                });
+                // --- ここから検証用のopenHelp関数 ---
+                const openHelp = () => {
+                    logEvent('✅ openHelp 関数が呼ばれました！');
+                    helpModal.style.display = 'flex';
+                    // スタイル設定直後の状態をログに表示
+                    logEvent(`flexに設定直後: ${helpModal.style.display}`);
 
-                helpButton.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    logEvent('🟢 helpButton: click');
-                    openHelp(); 
-                });
+                    // 10ミリ秒後に、スタイルが維持されているかチェック
+                    setTimeout(() => {
+                        logEvent(`10ミリ秒後: ${helpModal.style.display}`);
+                    }, 10);
+                };
                 // --- ここまで ---
+
+                const closeHelp = () => helpModal.style.display = 'none';
+
+                // 「?」ボタンのイベントリスナーは元のまま
+                helpButton.addEventListener('touchstart', (e) => { e.stopPropagation(); logEvent('🔴 helpButton: touchstart'); });
+                helpButton.addEventListener('touchend', (e) => { e.stopPropagation(); logEvent('🔵 helpButton: touchend'); });
+                helpButton.addEventListener('click', (e) => { e.stopPropagation(); logEvent('🟢 helpButton: click'); openHelp(); });
 
                 closeButton.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -1218,11 +1216,9 @@ Selected: ${!!selectedObject}`;
             /**************************************************/
             function render() {
                 if (!renderer.xr.isPresenting) {
-                    // ARが終了したら何もしない
                     return;
                 }
 
-                // デバッグ情報を毎フレーム更新
                 updateDebugDisplay();
 
                 handleHover();
