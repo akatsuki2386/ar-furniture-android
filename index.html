@@ -5,7 +5,7 @@
     <title>AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
-        /* (CSSは変更なしのため省略) */
+        /* (CSSは変更なし) */
         body { 
             margin: 0;
             background-color: #1A202C;
@@ -657,9 +657,6 @@
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
                     document.getElementById('help-button').style.display = 'flex'; 
-                    if (debugInfo) {
-                        debugInfo.style.display = 'block';
-                    }
                     appState = 'IDLE';
                     isEditMode = true; 
                     updateUI();
@@ -702,7 +699,7 @@
             }
 
             /**************************************************/
-            /****************** 修正箇所 2/2 ******************/
+            /****************** ★★★最終修正箇所★★★ ***********/
             /**************************************************/
             function setupHelpModal() {
                 const helpButton = document.getElementById('help-button');
@@ -718,34 +715,24 @@
                 const totalPages = pages.length;
                 let currentPage = 0;
 
-                // --- 画面上デバッグのためのヘルパー関数 ---
-                const logEvent = (message) => {
-                    if (debugInfo) {
-                        debugInfo.dataset.lastEvent = message;
-                    }
-                };
-                
-                // --- ここから検証用のopenHelp関数 ---
                 const openHelp = () => {
-                    logEvent('✅ openHelp 関数が呼ばれました！');
+                    // 1. スタイルを変更する
                     helpModal.style.display = 'flex';
-                    // スタイル設定直後の状態をログに表示
-                    logEvent(`flexに設定直後: ${helpModal.style.display}`);
 
-                    // 10ミリ秒後に、スタイルが維持されているかチェック
-                    setTimeout(() => {
-                        logEvent(`10ミリ秒後: ${helpModal.style.display}`);
-                    }, 10);
+                    // 2. ★★★ 強制リフロー（再描画）★★★
+                    // この一行で、ブラウザに強制的にスタイルを再計算・描画させる
+                    helpModal.offsetHeight; 
                 };
-                // --- ここまで ---
 
-                const closeHelp = () => helpModal.style.display = 'none';
+                const closeHelp = () => {
+                    helpModal.style.display = 'none';
+                };
 
-                // 「?」ボタンのイベントリスナーは元のまま
-                helpButton.addEventListener('touchstart', (e) => { e.stopPropagation(); logEvent('🔴 helpButton: touchstart'); });
-                helpButton.addEventListener('touchend', (e) => { e.stopPropagation(); logEvent('🔵 helpButton: touchend'); });
-                helpButton.addEventListener('click', (e) => { e.stopPropagation(); logEvent('🟢 helpButton: click'); openHelp(); });
-
+                helpButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    openHelp();
+                });
+                
                 closeButton.addEventListener('click', (e) => {
                     e.stopPropagation();
                     closeHelp();
@@ -880,17 +867,12 @@
             }
             
             function updateDebugDisplay() {
-                 if (!debugInfo || !renderer.xr.isPresenting) return;
-        
-                const stateText = `[App State]
-Mode: ${isEditMode ? 'EDIT' : 'VIEW'}
-State: ${appState}
-Hovered: ${!!hoveredObject}
-Selected: ${!!selectedObject}`;
-
-                const lastEventLog = debugInfo.dataset.lastEvent || 'No event yet.';
-
-                debugInfo.innerText = `--- Last Event ---\n${lastEventLog}\n\n--- App Status ---\n${stateText}`;
+                if (!debugInfo) return;
+                const debugText = `[Debug Info]
+Touches:  ${gestureState.touchCount}
+Distance: ${gestureState.initialDistance.toFixed(2)}
+Interacting: ${gestureState.isInteracting}`;
+                debugInfo.innerText = debugText;
             }
 
             function getDistance(touches) {
@@ -915,6 +897,7 @@ Selected: ${!!selectedObject}`;
                     gestureState.initialDistance = getDistance(event.touches);
                     gestureState.originalMultiplier = activeObject.userData.scaleMultiplier || 1.0; 
                 }
+                updateDebugDisplay();
             }
 
             function handleTouchMove(event) {
@@ -945,6 +928,7 @@ Selected: ${!!selectedObject}`;
                     const percent = (newMultiplier - 0.5) / 1.5;
                     updateSliderHandlePosition(percent);
                 }
+                updateDebugDisplay();
             }
 
             function handleTouchEnd(event) {
@@ -955,6 +939,8 @@ Selected: ${!!selectedObject}`;
                      handleTouchStart(event);
                 }
                 gestureState.touchCount = event.touches.length;
+
+                updateDebugDisplay();
             }
 
             function updateSliderForObject(object) {
@@ -1211,15 +1197,27 @@ Selected: ${!!selectedObject}`;
                 renderer.setAnimationLoop(render);
             }
 
-            /**************************************************/
-            /****************** 修正箇所 1/2 ******************/
-            /**************************************************/
+            function render() {
+                renderer.setAnimationLoop(render);
+            }
+
             function render() {
                 if (!renderer.xr.isPresenting) {
+                    if(debugDisplayInitialized) {
+                        debugInfo.style.display = 'none';
+                        debugDisplayInitialized = false;
+                    }
                     return;
                 }
 
-                updateDebugDisplay();
+                if (!debugDisplayInitialized) {
+                    document.getElementById('title-container').style.display = 'none';
+                    if(debugInfo) {
+                        debugInfo.style.display = 'block';
+                        updateDebugDisplay();
+                    }
+                    debugDisplayInitialized = true;
+                }
 
                 handleHover();
                 
