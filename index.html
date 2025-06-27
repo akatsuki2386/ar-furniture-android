@@ -5,7 +5,6 @@
     <title>AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
-        /* CSSは変更ありません */
         body { 
             margin: 0;
             background-color: #1A202C;
@@ -58,8 +57,9 @@
             left: 0;
             width: 100%;
             height: 100%;
-            pointer-events: none;
             z-index: 10;
+            /* ★★★ 修正: タッチイベントを受け取れるように変更 ★★★ */
+            pointer-events: auto;
         }
         #instruction-text { display: none; }
         #debug-info {
@@ -75,12 +75,13 @@
             font-size: 12px;
             line-height: 1.5;
             white-space: pre;
-            pointer-events: auto;
             display: none;
-            border: 2px solid white; /* ★★★ 枠線を最初から白で表示 ★★★ */
+            border: 2px solid white;
+            /* デバッグ情報自体はタッチを邪魔しないようにする */
+            pointer-events: none; 
         }
-        #top-bar, #top-right-controls, #bottom-bar, #furniture-palette, .furniture-button, #action-controls, #choosing-controls, #scale-slider-container, .circle-button, #mode-switch-button, .mode-label, #add-button, #edit-button {
-             /* 他のUIはテストのため非表示 */
+        #top-bar, #top-right-controls, #bottom-bar { 
+            /* 他のUIはテストのため非表示 */
             display: none !important;
         }
     </style>
@@ -132,11 +133,11 @@
                 document.body.appendChild(renderer.domElement);
 
                 debugInfo = document.getElementById('debug-info');
-
-                // ★★★ 変更: タッチイベントリスナーをテスト用のものに ★★★
-                renderer.domElement.addEventListener('touchstart', handleTouchStart, { passive: false });
-                renderer.domElement.addEventListener('touchmove', handleTouchMove, { passive: false });
-                renderer.domElement.addEventListener('touchend', handleTouchEnd);
+                // ★★★ 修正: イベントリスナーを #overlay に設定 ★★★
+                const overlay = document.getElementById('overlay');
+                overlay.addEventListener('touchstart', handleTouchStart, { passive: false });
+                overlay.addEventListener('touchmove', handleTouchMove, { passive: false });
+                overlay.addEventListener('touchend', handleTouchEnd);
 
                 renderer.xr.addEventListener('sessionend', () => {
                     debugDisplayInitialized = false;
@@ -152,7 +153,6 @@
                 }));
             }
             
-            // ★★★ 追加: テスト用のシンプルなタッチ処理 ★★★
             function handleTouchStart(event) {
                 event.preventDefault();
                 if(debugInfo) {
@@ -163,7 +163,7 @@
             function handleTouchMove(event) {
                 event.preventDefault();
                 if(debugInfo) {
-                    debugInfo.style.borderColor = 'lime'; // 緑色に光らせる
+                    debugInfo.style.borderColor = 'lime';
                     debugInfo.innerText = `[Debug Info]\nEvent: touchmove\nTouches: ${event.touches.length}`;
                 }
             }
@@ -171,7 +171,7 @@
             function handleTouchEnd(event) {
                 event.preventDefault();
                 if(debugInfo) {
-                    debugInfo.style.borderColor = 'white'; // 枠の色を元に戻す
+                    debugInfo.style.borderColor = 'white';
                     debugInfo.innerText = `[Debug Info]\nEvent: touchend\nTouches: ${event.touches.length}`;
                 }
             }
@@ -179,7 +179,6 @@
             function render() {
                 if (!renderer.xr.isPresenting) return;
 
-                // AR開始後、最初の1回だけデバッグ表示を初期化
                 if (!debugDisplayInitialized) {
                     const title = document.getElementById('title-container');
                     if(title) title.style.display = 'none';
