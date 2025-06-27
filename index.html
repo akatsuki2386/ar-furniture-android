@@ -5,7 +5,6 @@
     <title>AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
-        /* (既存のCSSは省略) */
         body { 
             margin: 0;
             background-color: #1A202C;
@@ -299,7 +298,7 @@
             display: none; 
             justify-content: center;
             align-items: center;
-            z-index: 300;
+            z-index: 9999; /* ★★★ 変更 ★★★ */
         }
         .help-content {
             background-color: #2D3748;
@@ -308,7 +307,7 @@
             width: 90%;
             max-width: 400px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            position: relative; /* ★★★ 変更・追加箇所 ★★★ ボタンの位置の基準にする */
+            position: relative;
             user-select: none;
         }
         .help-pages-wrapper {
@@ -538,8 +537,7 @@
         }
 
         function setupWebXR() {
-            // (既存の変数は省略)
-            let camera, scene, renderer, controller;
+            let camera, scene, renderer;
             let hitTestSource = null;
             let hitTestSourceRequested = false;
             let reticle;
@@ -548,7 +546,6 @@
             let floorY = null;
             let crossMark;
             let scaleSliderContainer, sliderTrack, sliderHandle;
-           
             let isDraggingSlider = false; 
             let dotAnimationTimer = null;
            
@@ -632,7 +629,6 @@
                     .catch(error => console.error("モデルの事前読み込み中にエラーが発生しました。", error));
             }
 
-
             function init() {
                 scene = new THREE.Scene();
                 camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
@@ -658,18 +654,17 @@
 
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
-                    // ★★★ 変更・追加箇所 ★★★
                     document.getElementById('help-button').style.display = 'flex'; 
                     appState = 'IDLE';
                     isEditMode = true; 
-                    updateUI();
                     initializeARExperience();
                     preloadModels();
+                    // ★★★ 変更 ★★★ ARセッション開始後にヘルプ機能を初期化
+                    setupHelpModal();
                 });
 
                 renderer.xr.addEventListener('sessionend', () => {
                     document.getElementById('title-container').style.display = 'block';
-                    // ★★★ 変更・追加箇所 ★★★
                     document.getElementById('help-button').style.display = 'none'; 
                     if(debugInfo) debugInfo.style.display = 'none';
                     debugDisplayInitialized = false;
@@ -682,15 +677,13 @@
                     floorY = null; 
                 });
                
-                animate();
-
                 document.body.appendChild(ARButton.createButton(renderer, {
                     requiredFeatures: ['hit-test'],
                     optionalFeatures: ['dom-overlay'],
                     domOverlay: { root: document.querySelector("#overlay") }
                 }));
-                // ★★★ 変更・追加箇所 ★★★
-                setupHelpModal();
+
+                animate();
             }
 
             function initializeARExperience() {
@@ -704,7 +697,6 @@
                 setupUI();
             }
 
-            // ★★★ 変更・追加箇所 ★★★ ここから
             function setupHelpModal() {
                 const helpButton = document.getElementById('help-button');
                 const helpModal = document.getElementById('help-modal');
@@ -722,9 +714,9 @@
                 const openHelp = () => helpModal.style.display = 'flex';
                 const closeHelp = () => helpModal.style.display = 'none';
 
-                // イベントの伝播を止める処理を追加
+                // ★★★ 変更 ★★★ イベントを 'pointerdown' に変更
                 helpButton.addEventListener('pointerdown', (e) => {
-                    e.stopPropagation(); // 他のイベントとの競合を防ぐ
+                    e.stopPropagation();
                     openHelp();
                 });
                 closeButton.addEventListener('pointerdown', (e) => {
@@ -758,7 +750,7 @@
                 let isSwiping = false;
 
                 helpContent.addEventListener('touchstart', (e) => {
-                    e.stopPropagation(); // 背景のジェスチャーと競合しないように
+                    e.stopPropagation();
                     touchStartX = e.changedTouches[0].screenX;
                     isSwiping = true;
                 });
@@ -771,11 +763,9 @@
                     handleSwipe();
                 });
                
-                // スワイプ中の意図しない動作を防ぐ
                 helpContent.addEventListener('touchmove', (e) => {
                     e.stopPropagation();
                 });
-
 
                 function handleSwipe() {
                     const swipeThreshold = 50; 
@@ -788,9 +778,8 @@
 
                 goToPage(0);
             }
-            // ★★★ 変更・追加箇所 ★★★ ここまで
 
-             function setupUI() {
+            function setupUI() {
                 document.getElementById('exit-ar-button').addEventListener('click', (e) => { e.stopPropagation(); endSession(); });
                
                 function endSession() {
@@ -1085,7 +1074,6 @@ Interacting: ${gestureState.isInteracting}`;
                 const modeSwitchButton = document.getElementById('mode-switch-button');
                 const editModeLabel = document.getElementById('edit-mode-label');
                 const viewModeLabel = document.getElementById('view-mode-label');
-
                
                 document.getElementById('exit-ar-button').style.display = 'flex';
                 modeSwitchButton.style.display = 'flex';
