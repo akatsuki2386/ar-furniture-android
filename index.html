@@ -5,7 +5,7 @@
     <title>AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
-        /* (CSSは変更なしのため省略) */
+        /* (既存のCSSは省略) */
         body { 
             margin: 0;
             background-color: #1A202C;
@@ -308,7 +308,7 @@
             width: 90%;
             max-width: 400px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            position: relative;
+            position: relative; /* ★★★ 変更 ★★★ ボタンの位置の基準にする */
             user-select: none;
         }
         .help-pages-wrapper {
@@ -337,7 +337,7 @@
         }
          .help-page li {
             margin-bottom: 10px;
-        }
+         }
         .help-nav {
             display: flex;
             justify-content: space-between;
@@ -449,6 +449,7 @@
 
     <div id="overlay">
         <button id="help-button">?</button>
+
         <div id="debug-info"></div>
         <div id="instruction-text">
             <span style="font-size: 1.25em; font-weight: bold;">床を認識中<span id="loading-dots"></span></span><br><br>
@@ -578,7 +579,6 @@
 
             init();
             
-            // (createCrossMark, preloadModels 関数は変更なしのため省略)
             function createCrossMark() {
                 const canvas = document.createElement('canvas');
                 const size = 256;
@@ -701,7 +701,6 @@
                 setupUI();
             }
 
-            // ★★★ 変更 ★★★ ヘルプ機能のロジック全体を修正
             function setupHelpModal() {
                 const helpButton = document.getElementById('help-button');
                 const helpModal = document.getElementById('help-modal');
@@ -709,26 +708,37 @@
                 const closeButton = document.querySelector('.help-close-button');
                 
                 const pagesContainer = document.querySelector('.help-pages-container');
+                const pages = document.querySelectorAll('.help-page');
                 const prevButton = document.getElementById('prev-page-button');
                 const nextButton = document.getElementById('next-page-button');
                 const dots = document.querySelectorAll('.indicator-dot');
-                const totalPages = dots.length;
+                const totalPages = pages.length;
                 let currentPage = 0;
 
                 const openHelp = () => helpModal.style.display = 'flex';
                 const closeHelp = () => helpModal.style.display = 'none';
 
-                // --- イベントリスナーを'pointerdown'に変更 ---
-                helpButton.addEventListener('pointerdown', (e) => {
+                /**************************************************/
+                /****************** 修正箇所 ********************/
+                /**************************************************/
+                // ボタンに触れた瞬間にイベントの伝播を止める
+                helpButton.addEventListener('touchstart', (e) => {
+                    e.stopPropagation();
+                });
+
+                // ボタンから指が離れてクリックが成立した時にヘルプを開く
+                helpButton.addEventListener('click', (e) => {
                     e.stopPropagation();
                     openHelp();
                 });
-                closeButton.addEventListener('pointerdown', (e) => {
+                /**************************************************/
+                /**************************************************/
+                
+                closeButton.addEventListener('click', (e) => {
                     e.stopPropagation();
                     closeHelp();
                 });
-                helpModal.addEventListener('pointerdown', (e) => {
-                    // 背景クリックで閉じる
+                helpModal.addEventListener('click', (e) => {
                     if (e.target === helpModal) {
                         e.stopPropagation();
                         closeHelp();
@@ -747,52 +757,46 @@
                     nextButton.disabled = currentPage === totalPages - 1;
                 }
 
-                prevButton.addEventListener('pointerdown', (e) => {
-                    e.stopPropagation();
-                    goToPage(currentPage - 1);
-                });
-                nextButton.addEventListener('pointerdown', (e) => {
-                    e.stopPropagation();
-                    goToPage(currentPage + 1);
-                });
+                prevButton.addEventListener('click', () => goToPage(currentPage - 1));
+                nextButton.addEventListener('click', () => goToPage(currentPage + 1));
                 
-                // --- スワイプ機能 (pointerイベントに統一) ---
                 let touchStartX = 0;
+                let touchEndX = 0;
                 let isSwiping = false;
 
-                helpContent.addEventListener('pointerdown', (e) => {
-                    e.stopPropagation(); // ARジェスチャーとの競合を防ぐ
-                    touchStartX = e.clientX;
+                helpContent.addEventListener('touchstart', (e) => {
+                    e.stopPropagation(); // 背景のジェスチャーと競合しないように
+                    touchStartX = e.changedTouches[0].screenX;
                     isSwiping = true;
-                    // ドラッグ中のテキスト選択などを防ぐ
-                    helpContent.setPointerCapture(e.pointerId);
                 });
 
-                helpContent.addEventListener('pointerup', (e) => {
+                helpContent.addEventListener('touchend', (e) => {
                     e.stopPropagation();
                     if (!isSwiping) return;
                     isSwiping = false;
-                    helpContent.releasePointerCapture(e.pointerId);
-                    
-                    const touchEndX = e.clientX;
-                    const swipeThreshold = 50; // 50pxのスワイプでページめくり
+                    touchEndX = e.changedTouches[0].screenX;
+                    handleSwipe();
+                });
+                
+                // スワイプ中の意図しない動作を防ぐ
+                helpContent.addEventListener('touchmove', (e) => {
+                    e.stopPropagation();
+                });
+
+
+                function handleSwipe() {
+                    const swipeThreshold = 50; 
                     if (touchStartX - touchEndX > swipeThreshold) {
                         goToPage(currentPage + 1);
                     } else if (touchEndX - touchStartX > swipeThreshold) {
                         goToPage(currentPage - 1);
                     }
-                });
+                }
 
-                // スワイプ中の意図しない動作を防ぐ
-                helpContent.addEventListener('touchmove', (e) => {
-                    e.stopPropagation();
-                });
-                
-                goToPage(0); // 初期化
+                goToPage(0);
             }
 
-
-            function setupUI() {
+             function setupUI() {
                 document.getElementById('exit-ar-button').addEventListener('click', (e) => { e.stopPropagation(); endSession(); });
                 
                 function endSession() {
