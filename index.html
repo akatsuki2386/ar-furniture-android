@@ -5,7 +5,7 @@
     <title>AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
-        /* (既存のCSSは省略) */
+        /* (CSSは変更なしのため省略) */
         body { 
             margin: 0;
             background-color: #1A202C;
@@ -701,6 +701,9 @@
                 setupUI();
             }
 
+            /**************************************************/
+            /****************** 修正箇所 2/2 ******************/
+            /**************************************************/
             function setupHelpModal() {
                 const helpButton = document.getElementById('help-button');
                 const helpModal = document.getElementById('help-modal');
@@ -718,21 +721,23 @@
                 const openHelp = () => helpModal.style.display = 'flex';
                 const closeHelp = () => helpModal.style.display = 'none';
 
-                /**************************************************/
-                /****************** 修正箇所 ********************/
-                /**************************************************/
-                // ボタンに触れた瞬間にイベントの伝播を止める
+                // clickイベントの代わりに touchend で発火させる
+                helpButton.addEventListener('touchend', (e) => {
+                    // イベントが #overlay に伝わらないようにする
+                    e.stopPropagation();
+                    // 後続のclickイベントやその他のデフォルト動作を防ぐ
+                    e.preventDefault(); 
+                    openHelp();
+                });
+                
+                // touchendだけだと、ボタン上でスワイプした場合にも発火してしまうため、
+                // touchstartとtouchmoveでも伝播を止めて、意図しない動作を防いでおく
                 helpButton.addEventListener('touchstart', (e) => {
                     e.stopPropagation();
                 });
-
-                // ボタンから指が離れてクリックが成立した時にヘルプを開く
-                helpButton.addEventListener('click', (e) => {
+                helpButton.addEventListener('touchmove', (e) => {
                     e.stopPropagation();
-                    openHelp();
                 });
-                /**************************************************/
-                /**************************************************/
                 
                 closeButton.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -886,8 +891,18 @@ Interacting: ${gestureState.isInteracting}`;
                 return Math.sqrt(dx * dx + dy * dy);
             }
             
+            /**************************************************/
+            /****************** 修正箇所 1/2 ******************/
+            /**************************************************/
             function handleTouchStart(event) {
-                if (event.target !== event.currentTarget) return;
+                const tappedElement = event.target;
+                // UI要素（ボタンやスライダー、ヘルプモーダルなど）の上でタッチが開始された場合は、
+                // ARジェスチャーとして扱わず、以降の処理を中断する
+                if (tappedElement.closest('#help-button, #exit-ar-button, #mode-switch-button, .circle-button, .furniture-button, #scale-slider-container, .help-content')) {
+                    return;
+                }
+                
+                // AR空間の操作の場合、デフォルトのブラウザ動作（スクロールなど）を防ぐ
                 event.preventDefault();
 
                 const activeObject = (appState === 'PLACING' || appState === 'EDITING') ? (previewObject || selectedObject) : null;
