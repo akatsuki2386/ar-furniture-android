@@ -251,40 +251,41 @@
             background-color: rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 9999px;
-            padding: 10px 20px;
-            font-size: 16px;
+            padding: 5px; /* ボタン自体のパディングは小さくする */
+            font-size: 15px; /* 少し小さく調整 */
             cursor: pointer;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             display: flex;
-            gap: 12px; /* 文字間の隙間 */
             align-items: center;
         }
         
-        #mode-switch-button > span { /* ボタン直下の子span要素に適用 */
+        /* ラベルと区切り文字の共通スタイル */
+        #mode-switch-button > span {
             transition: all 0.3s ease-in-out;
+            padding: 5px 15px; /* ラベルの内側の余白 */
+            border-radius: 9999px; /* 角丸 */
+        }
+
+        /* ラベルのデフォルト（非アクティブ）スタイル */
+        #mode-switch-button > span#edit-mode-label,
+        #mode-switch-button > span#view-mode-label {
             font-weight: normal;
-            color: #a0aec0; /* 非アクティブ時の色 (少しグレーがかった白) */
+            color: #a0aec0; /* 非アクティブ時の色 */
+            background-color: transparent; /* 背景なし */
         }
 
+        /* 区切り文字のスタイル */
         #mode-switch-button > span.separator {
-             color: #6c757d; /* 区切り文字の色 */
+             color: #6c757d;
+             padding: 5px 0; /* 区切り文字には左右の余白は不要 */
         }
 
+        /* アクティブなラベルのスタイル（枠と文字色） */
         #mode-switch-button > span.active {
             font-weight: bold;
-            color: white; /* アクティブ時の色 */
-        }
-
-        /* ★★★ 追加: 括弧を表示するための疑似要素 ★★★ */
-        #mode-switch-button > span.active::before {
-            content: '(';
-            margin-right: 0.2em;
-        }
-
-        #mode-switch-button > span.active::after {
-            content: ')';
-            margin-left: 0.2em;
+            color: #1A202C; /* 背景色に合わせた濃い色 */
+            background-color: white; /* 白い背景で枠のように見せる */
         }
 
         #add-button, #edit-button {
