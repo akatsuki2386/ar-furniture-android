@@ -723,16 +723,16 @@
                 const closeHelp = () => helpModal.style.display = 'none';
 
                 // イベントの伝播を止める処理を追加
-                helpButton.addEventListener('click', (e) => {
+                helpButton.addEventListener('pointerdown', (e) => {
                     e.stopPropagation(); // 他のイベントとの競合を防ぐ
                     openHelp();
                 });
-                closeButton.addEventListener('click', (e) => {
+                closeButton.addEventListener('pointerdown', (e) => {
                     e.stopPropagation();
                     closeHelp();
                 });
-                helpModal.addEventListener('click', (e) => {
-                    if (e.target === helpModal) {
+                helpModal.addEventListener('pointerdown', (e) => {
+                    if (!e.target.closest('.help-content')) {
                         e.stopPropagation();
                         closeHelp();
                     }
