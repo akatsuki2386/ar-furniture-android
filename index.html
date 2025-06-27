@@ -653,14 +653,7 @@
                 renderer.xr.addEventListener('sessionend', () => {
                     document.getElementById('title-container').style.display = 'block';
                     document.getElementById('help-button').style.display = 'none'; 
-                    if(debugInfo) debugInfo.style.display = 'none';
-                    debugDisplayInitialized = false;
-                    Object.keys(gestureState).forEach(key => gestureState[key] = (typeof gestureState[key] === 'boolean' ? false : (key === 'originalMultiplier' ? 1.0 : 0)));
-                    document.getElementById('exit-ar-button').style.display = 'none';
-                    document.getElementById('mode-switch-button').style.display = 'none';
-                    document.getElementById('bottom-bar').style.display = 'none';
-                    document.getElementById('scale-slider-container').style.display = 'none';
-                    document.getElementById('help-modal').style.display = 'none'; // セッション終了時にヘルプも隠す
+                    document.getElementById('help-modal').style.display = 'none';
                     stopDotAnimation(); 
                     floorY = null; 
                 });
@@ -689,11 +682,10 @@
                 const helpContent = document.querySelector('.help-content');
                 const closeButton = document.querySelector('.help-close-button');
                 const pagesContainer = document.querySelector('.help-pages-container');
-                const pages = document.querySelectorAll('.help-page');
                 const prevButton = document.getElementById('prev-page-button');
                 const nextButton = document.getElementById('next-page-button');
                 const dots = document.querySelectorAll('.indicator-dot');
-                const totalPages = pages.length;
+                const totalPages = dots.length;
                 let currentPage = 0;
 
                 helpButton.addEventListener('click', (e) => {
@@ -805,8 +797,6 @@
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
             }
-            
-            function updateDebugDisplay() { /* 不使用 */ }
 
             function getDistance(touches) {
                 const dx = touches[0].clientX - touches[1].clientX;
@@ -815,7 +805,7 @@
             }
             
             function handleTouchStart(event) {
-                if (appState === 'HELP') return; // ヘルプモード中はジェスチャー操作を無効化
+                if (appState === 'HELP') return;
                 if (event.target !== event.currentTarget) return;
                 event.preventDefault();
                 const activeObject = (appState === 'PLACING' || appState === 'EDITING') ? (previewObject || selectedObject) : null;
@@ -999,12 +989,9 @@
 
                 if (appState === 'HELP') {
                     helpModal.style.display = 'flex';
-                    modeSwitchButton.style.display = 'none';
-                    helpButton.style.display = 'none';
-                    document.getElementById('exit-ar-button').style.display = 'none';
-                    
-                    // ★★★ 強制リフロー（再描画）の追加 ★★★
-                    helpModal.offsetHeight; 
+                    // ヘルプモード中は他の主要なUIを隠す
+                    bottomBar.style.display = 'none';
+                    modeSwitchButton.style.display = 'none'; 
                     return;
                 }
 
@@ -1014,6 +1001,9 @@
                 } else {
                     editModeLabel.classList.remove('active');
                     viewModeLabel.classList.add('active');
+                    helpButton.style.display = 'flex';
+                    document.getElementById('exit-ar-button').style.display = 'flex';
+                    modeSwitchButton.style.display = 'flex';
                     return;
                 }
 
@@ -1096,82 +1086,74 @@
             }
 
             function render() {
-                if (!renderer.xr.isPresenting) {
-                    if(debugDisplayInitialized) {
-                        debugDisplayInitialized = false;
-                    }
-                    return;
-                }
-                if (!debugDisplayInitialized) {
-                    debugDisplayInitialized = true;
-                }
+                if (!renderer.xr.isPresenting) { return; }
 
                 handleHover();
                 
-                if (appState === 'HELP') {
-                    renderer.render(scene, camera);
-                    return;
-                }
-
-                const confirmButton = document.getElementById('confirm-button');
                 const instructionText = document.getElementById('instruction-text');
-                let isPlaceable = false;
-                const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
+                
+                // ヘルプモード中は、ヒットテストやオブジェクト操作を行わない
+                if (appState !== 'HELP') {
+                    const confirmButton = document.getElementById('confirm-button');
+                    let isPlaceable = false;
+                    const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
 
-                if (renderer.xr.getFrame()) {
-                    const frame = renderer.xr.getFrame();
-                    const referenceSpace = renderer.xr.getReferenceSpace();
-                    if (hitTestSource) {
-                        const hitTestResults = frame.getHitTestResults(hitTestSource);
-                        if (hitTestResults.length > 0) {
-                            const hit = hitTestResults[0];
-                            const hitPose = hit.getPose(referenceSpace);
-                            const hitY = hitPose.transform.position.y;
-                            if (floorY === null) floorY = hitY;
-                            const Y_TOLERANCE = 0.2;
-                            isPlaceable = Math.abs(hitY - floorY) < Y_TOLERANCE;
-                            reticle.matrix.fromArray(hitPose.transform.matrix);
-                            if (instructionText.style.display !== 'none') {
-                                instructionText.style.display = 'none';
-                                stopDotAnimation();
-                            }
-                            if (isEditMode) {
-                                if (activeObject && !gestureState.isInteracting) { 
-                                    activeObject.position.setFromMatrixPosition(reticle.matrix);
+                    if (renderer.xr.getFrame()) {
+                        const frame = renderer.xr.getFrame();
+                        const referenceSpace = renderer.xr.getReferenceSpace();
+                        if (hitTestSource) {
+                            const hitTestResults = frame.getHitTestResults(hitTestSource);
+                            if (hitTestResults.length > 0) {
+                                const hit = hitTestResults[0];
+                                const hitPose = hit.getPose(referenceSpace);
+                                const hitY = hitPose.transform.position.y;
+                                if (floorY === null) floorY = hitY;
+                                const Y_TOLERANCE = 0.2;
+                                isPlaceable = Math.abs(hitY - floorY) < Y_TOLERANCE;
+                                reticle.matrix.fromArray(hitPose.transform.matrix);
+                                if (instructionText.style.display !== 'none') {
+                                    instructionText.style.display = 'none';
+                                    stopDotAnimation();
                                 }
-                                if(activeObject) activeObject.visible = true;
-                                if (appState === 'PLACING' || appState === 'EDITING') {
-                                    reticle.visible = isPlaceable;
-                                    crossMark.visible = !isPlaceable;
-                                    if (crossMark.visible && activeObject) {
-                                        crossMark.position.copy(activeObject.position).add(activeObject.userData.centerOffset);
-                                        const scale = activeObject.userData.crossMarkScale * 0.6; 
-                                        crossMark.scale.set(scale, scale, scale);
-                                        crossMark.quaternion.copy(camera.quaternion);
+                                if (isEditMode) {
+                                    if (activeObject && !gestureState.isInteracting) { 
+                                        activeObject.position.setFromMatrixPosition(reticle.matrix);
                                     }
-                                } else {
-                                    reticle.visible = true;
+                                    if(activeObject) activeObject.visible = true;
+                                    if (appState === 'PLACING' || appState === 'EDITING') {
+                                        reticle.visible = isPlaceable;
+                                        crossMark.visible = !isPlaceable;
+                                        if (crossMark.visible && activeObject) {
+                                            crossMark.position.copy(activeObject.position).add(activeObject.userData.centerOffset);
+                                            const scale = activeObject.userData.crossMarkScale * 0.6; 
+                                            crossMark.scale.set(scale, scale, scale);
+                                            crossMark.quaternion.copy(camera.quaternion);
+                                        }
+                                    } else {
+                                        reticle.visible = true;
+                                        crossMark.visible = false;
+                                    }
+                                } else { 
+                                    reticle.visible = false;
                                     crossMark.visible = false;
                                 }
-                            } else { 
+                            } else {
+                                isPlaceable = false;
                                 reticle.visible = false;
                                 crossMark.visible = false;
-                            }
-                        } else {
-                            isPlaceable = false;
-                            reticle.visible = false;
-                            crossMark.visible = false;
-                            if (activeObject) activeObject.visible = false;
-                            if (instructionText.style.display !== 'block') {
-                                instructionText.style.display = 'block';
-                                startDotAnimation();
+                                if (activeObject) activeObject.visible = false;
+                                if (instructionText.style.display !== 'block') {
+                                    instructionText.style.display = 'block';
+                                    startDotAnimation();
+                                }
                             }
                         }
                     }
+                    if (isEditMode && (appState === 'PLACING' || appState === 'EDITING')) {
+                        confirmButton.disabled = !isPlaceable;
+                    }
                 }
-                if (isEditMode && (appState === 'PLACING' || appState === 'EDITING')) {
-                    confirmButton.disabled = !isPlaceable;
-                }
+                
                 if (!hitTestSourceRequested && renderer.xr.getSession()) {
                     const session = renderer.xr.getSession();
                     session.requestReferenceSpace('viewer').then((referenceSpace) => {
@@ -1184,6 +1166,7 @@
                     });
                     hitTestSourceRequested = true;
                 }
+                
                 renderer.render(scene, camera);
             }
         }
