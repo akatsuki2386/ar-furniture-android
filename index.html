@@ -5,6 +5,7 @@
     <title>AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
+        /* (既存のCSSは省略) */
         body { 
             margin: 0;
             background-color: #1A202C;
@@ -268,6 +269,139 @@
         #add-button, #edit-button {
             display: none;
         }
+
+        /* ★★★ 追加 ★★★ ここからヘルプ機能のCSS */
+        #help-button {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            width: 56px;
+            height: 56px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: white;
+            border-radius: 50%;
+            cursor: pointer;
+            display: none; /* 初期状態は非表示 */
+            justify-content: center;
+            align-items: center;
+            font-size: 28px;
+            font-weight: bold;
+            z-index: 200;
+        }
+
+        #help-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: none; /* 初期状態は非表示 */
+            justify-content: center;
+            align-items: center;
+            z-index: 300;
+        }
+
+        .help-content {
+            background-color: #2D3748;
+            padding: 20px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 400px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
+            position: relative;
+            user-select: none;
+        }
+        
+        .help-pages-wrapper {
+            overflow: hidden;
+            border-radius: 8px;
+        }
+
+        .help-pages-container {
+            display: flex;
+            transition: transform 0.3s ease-in-out;
+        }
+
+        .help-page {
+            width: 100%;
+            flex-shrink: 0;
+            box-sizing: border-box;
+            padding: 10px;
+            min-height: 250px;
+        }
+
+        .help-page h3 {
+            margin-top: 0;
+            color: #A0AEC0;
+            text-align: center;
+        }
+        .help-page ul {
+            padding-left: 20px;
+            line-height: 1.8;
+        }
+         .help-page li {
+            margin-bottom: 10px;
+        }
+
+        .help-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 15px;
+        }
+
+        .nav-button {
+            background: none;
+            border: none;
+            color: white;
+            font-size: 36px;
+            font-weight: bold;
+            cursor: pointer;
+            padding: 0 15px;
+        }
+        .nav-button:disabled {
+            opacity: 0.2;
+            cursor: default;
+        }
+
+        .page-indicators {
+            display: flex;
+            gap: 8px;
+        }
+        .indicator-dot {
+            width: 10px;
+            height: 10px;
+            background-color: #718096;
+            border-radius: 50%;
+            transition: background-color 0.3s;
+        }
+        .indicator-dot.active {
+            background-color: white;
+        }
+
+        .help-close-button {
+            position: absolute;
+            bottom: -60px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 50px;
+            height: 50px;
+            background-color: rgba(255, 255, 255, 0.8);
+            color: #1A202C;
+            border: none;
+            border-radius: 50%;
+            font-size: 24px;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        /* ★★★ 追加 ★★★ ここまでヘルプ機能のCSS */
     </style>
 </head>
 <body>
@@ -275,11 +409,58 @@
         <h1>AR家具配置<br>シミュレーション</h1>
     </div>
 
+    <button id="help-button">?</button>
+
     <div id="ios-ar-container">
         <h2>表示したい家具を選んでください</h2>
         <div id="ios-ar-links">
         </div>
     </div>
+    
+    <div id="help-modal">
+        <div class="help-content">
+            <div class="help-pages-wrapper">
+                <div class="help-pages-container">
+                    <div class="help-page" id="page-1">
+                        <h3>基本操作</h3>
+                        <ul>
+                            <li><b>モード切替:</b> 画面上部のボタンで「編集」「鑑賞」を切り替えます。</li>
+                            <li><b>床の認識:</b> カメラを床に向け、ゆっくり動かすと空間を認識します。</li>
+                            <li><b>家具の配置:</b> 編集モードで「+」を押し、置きたい家具を選んで配置します。</li>
+                        </ul>
+                    </div>
+                    <div class="help-page" id="page-2">
+                        <h3>ボタン説明</h3>
+                        <ul>
+                            <li><b>＋:</b> 家具選択リストを開きます。</li>
+                            <li><b>✓:</b> 家具の配置や編集を確定します。</li>
+                            <li><b>🗑️:</b> 選択中の家具を削除します。</li>
+                            <li><b>🔄:</b> 選択中の家具を45度回転します。</li>
+                        </ul>
+                    </div>
+                    <div class="help-page" id="page-3">
+                        <h3>ジェスチャー説明</h3>
+                         <ul>
+                            <li><b>移動:</b> 家具を置きたい場所をタップします。</li>
+                            <li><b>回転:</b> 1本指で左右にドラッグします。</li>
+                            <li><b>拡縮:</b> 2本指を広げたり狭めたりします（ピンチ操作）。</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+            <div class="help-nav">
+                <button class="nav-button" id="prev-page-button">&lt;</button>
+                <div class="page-indicators">
+                    <div class="indicator-dot active"></div>
+                    <div class="indicator-dot"></div>
+                    <div class="indicator-dot"></div>
+                </div>
+                <button class="nav-button" id="next-page-button">&gt;</button>
+            </div>
+        </div>
+        <button class="help-close-button">×</button>
+    </div>
+
 
     <div id="overlay">
         <div id="debug-info"></div>
@@ -370,6 +551,7 @@
         }
 
         function setupWebXR() {
+            // (既存の変数は省略)
             let camera, scene, renderer, controller;
             let hitTestSource = null;
             let hitTestSourceRequested = false;
@@ -398,19 +580,19 @@
             let isEditMode = false; 
 
             let debugInfo;
-            // ★★★ 変更点1：gestureStateにoriginalMultiplierを追加 ★★★
             const gestureState = {
                 touchCount: 0,
                 initialDistance: 0.0,
                 lastX: 0,
                 isInteracting: false,
-                originalMultiplier: 1.0 // ジェスチャー開始時の拡大率を保存
+                originalMultiplier: 1.0
             };
             
             let debugDisplayInitialized = false;
 
             init();
             
+            // (createCrossMark, preloadModels 関数は変更なしのため省略)
             function createCrossMark() {
                 const canvas = document.createElement('canvas');
                 const size = 256;
@@ -464,6 +646,7 @@
                     .catch(error => console.error("モデルの事前読み込み中にエラーが発生しました。", error));
             }
 
+
             function init() {
                 scene = new THREE.Scene();
                 camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
@@ -487,9 +670,10 @@
                 overlay.addEventListener('touchmove', handleTouchMove, { passive: false });
                 overlay.addEventListener('touchend', handleTouchEnd);
 
-
+                // ★★★ 変更 ★★★ sessionstart/endでヘルプボタンの表示を制御
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
+                    document.getElementById('help-button').style.display = 'flex'; // ヘルプボタン表示
                     appState = 'IDLE';
                     isEditMode = true; 
                     updateUI();
@@ -499,6 +683,7 @@
 
                 renderer.xr.addEventListener('sessionend', () => {
                     document.getElementById('title-container').style.display = 'block';
+                    document.getElementById('help-button').style.display = 'none'; // ヘルプボタン非表示
                     if(debugInfo) debugInfo.style.display = 'none';
                     debugDisplayInitialized = false;
                     Object.keys(gestureState).forEach(key => gestureState[key] = (typeof gestureState[key] === 'boolean' ? false : (key === 'originalMultiplier' ? 1.0 : 0)));
@@ -517,6 +702,8 @@
                     optionalFeatures: ['dom-overlay'],
                     domOverlay: { root: document.querySelector("#overlay") }
                 }));
+                 // ★★★ 追加 ★★★ ヘルプ機能の初期化処理を呼び出す
+                setupHelpModal();
             }
 
             function initializeARExperience() {
@@ -529,8 +716,89 @@
                 scene.add(reticle);
                 setupUI();
             }
-            
-            function setupUI() {
+
+            // ★★★ 追加 ★★★ ここからヘルプ機能の全ロジック
+            function setupHelpModal() {
+                const helpButton = document.getElementById('help-button');
+                const helpModal = document.getElementById('help-modal');
+                const helpContent = document.querySelector('.help-content');
+                const closeButton = document.querySelector('.help-close-button');
+                
+                const pagesContainer = document.querySelector('.help-pages-container');
+                const pages = document.querySelectorAll('.help-page');
+                const prevButton = document.getElementById('prev-page-button');
+                const nextButton = document.getElementById('next-page-button');
+                const dots = document.querySelectorAll('.indicator-dot');
+                const totalPages = pages.length;
+                let currentPage = 0;
+
+                // --- 表示・非表示の制御 ---
+                const openHelp = () => helpModal.style.display = 'flex';
+                const closeHelp = () => helpModal.style.display = 'none';
+
+                helpButton.addEventListener('click', openHelp);
+                closeButton.addEventListener('click', closeHelp);
+                // 背景クリックで閉じる（モーダル自体へのクリックは除外）
+                helpModal.addEventListener('click', (e) => {
+                    if (e.target === helpModal) {
+                        closeHelp();
+                    }
+                });
+
+                // --- ページめくり機能 ---
+                function goToPage(pageIndex) {
+                    currentPage = Math.max(0, Math.min(pageIndex, totalPages - 1));
+                    pagesContainer.style.transform = `translateX(-${currentPage * 100}%)`;
+
+                    // インジケーターの更新
+                    dots.forEach((dot, index) => {
+                        dot.classList.toggle('active', index === currentPage);
+                    });
+
+                    // ナビゲーションボタンの有効/無効化
+                    prevButton.disabled = currentPage === 0;
+                    nextButton.disabled = currentPage === totalPages - 1;
+                }
+
+                prevButton.addEventListener('click', () => goToPage(currentPage - 1));
+                nextButton.addEventListener('click', () => goToPage(currentPage + 1));
+                
+                // --- スワイプ機能 ---
+                let touchStartX = 0;
+                let touchEndX = 0;
+                let isSwiping = false;
+
+                helpContent.addEventListener('touchstart', (e) => {
+                    touchStartX = e.changedTouches[0].screenX;
+                    isSwiping = true;
+                });
+
+                helpContent.addEventListener('touchend', (e) => {
+                    if (!isSwiping) return;
+                    isSwiping = false;
+                    touchEndX = e.changedTouches[0].screenX;
+                    handleSwipe();
+                });
+
+                function handleSwipe() {
+                    const swipeThreshold = 50; // 50px以上のスワイプでページめくり
+                    if (touchStartX - touchEndX > swipeThreshold) {
+                        // 左スワイプ
+                        goToPage(currentPage + 1);
+                    } else if (touchEndX - touchStartX > swipeThreshold) {
+                        // 右スワイプ
+                        goToPage(currentPage - 1);
+                    }
+                }
+
+                // 初期状態を設定
+                goToPage(0);
+            }
+            // ★★★ 追加 ★★★ ここまでヘルプ機能の全ロジック
+
+            // (これ以降の既存JavaScriptコードは変更なしなので、見やすさのために省略します)
+            // setupUI, updateDebugDisplay, getDistance, handleTouchStart, handleTouchMove, handleTouchEnd, ... animate, render など
+             function setupUI() {
                 document.getElementById('exit-ar-button').addEventListener('click', (e) => { e.stopPropagation(); endSession(); });
                 
                 function endSession() {
@@ -620,8 +888,6 @@ Interacting: ${gestureState.isInteracting}`;
                 return Math.sqrt(dx * dx + dy * dy);
             }
             
-            // ★★★ 変更点2：handleTouchStartを修正 ★★★
-            // 拡大縮小ジェスチャー開始時に、スケール値の代わりに現在の拡大率(multiplier)を保存するようにします。
             function handleTouchStart(event) {
                 if (event.target !== event.currentTarget) return;
                 event.preventDefault();
@@ -636,14 +902,11 @@ Interacting: ${gestureState.isInteracting}`;
                     gestureState.lastX = event.touches[0].clientX;
                 } else if (gestureState.touchCount === 2) {
                     gestureState.initialDistance = getDistance(event.touches);
-                    // ジェスチャー開始時のオブジェクトの拡大率を保存
                     gestureState.originalMultiplier = activeObject.userData.scaleMultiplier || 1.0; 
                 }
                 updateDebugDisplay();
             }
 
-            // ★★★ 変更点3：handleTouchMoveを修正 ★★★
-            // ジェスチャー中の処理を、上限・下限を考慮し、スライダーと連動するように変更します。
             function handleTouchMove(event) {
                 if (!gestureState.isInteracting) return;
                 event.preventDefault();
@@ -652,29 +915,23 @@ Interacting: ${gestureState.isInteracting}`;
                 if (!activeObject || !isEditMode) return;
                 
                 if (gestureState.touchCount === 1 && event.touches.length === 1) {
-                    // 回転処理 (変更なし)
                     const currentX = event.touches[0].clientX;
                     const deltaX = currentX - gestureState.lastX;
                     activeObject.rotation.y += deltaX * 0.01;
                     gestureState.lastX = currentX;
 
                 } else if (gestureState.touchCount === 2 && event.touches.length === 2) {
-                    // 拡大縮小処理 (ここからが修正箇所)
-                    if (gestureState.initialDistance === 0) return; // 安全対策
+                    if (gestureState.initialDistance === 0) return; 
                     const currentDistance = getDistance(event.touches);
                     const scaleRatio = currentDistance / gestureState.initialDistance;
                     
-                    // 保存した開始時の拡大率に、現在のジェスチャーの変化率を掛ける
                     let newMultiplier = gestureState.originalMultiplier * scaleRatio;
 
-                    // 拡大率を 0.5倍 ～ 2.0倍 の範囲に制限（クランプ）
                     newMultiplier = Math.max(0.5, Math.min(2.0, newMultiplier));
 
-                    // オブジェクトのスケールとuserDataを更新
                     activeObject.scale.copy(activeObject.userData.initialScale).multiplyScalar(newMultiplier);
                     activeObject.userData.scaleMultiplier = newMultiplier;
 
-                    // スライダーの表示を更新
                     const percent = (newMultiplier - 0.5) / 1.5;
                     updateSliderHandlePosition(percent);
                 }
@@ -685,7 +942,6 @@ Interacting: ${gestureState.isInteracting}`;
                 if (event.touches.length === 0) {
                     gestureState.isInteracting = false;
                 }
-                // 指の数が変わった場合は、再度touchstartの処理を呼び出す
                 if (event.touches.length > 0 && event.touches.length !== gestureState.touchCount) {
                      handleTouchStart(event);
                 }
@@ -697,7 +953,6 @@ Interacting: ${gestureState.isInteracting}`;
             function updateSliderForObject(object) {
                 if (!object) return;
                 const multiplier = object.userData.scaleMultiplier || 1.0;
-                // multiplier(0.5-2.0)をパーセント(0-1)に変換
                 const percent = (multiplier - 0.5) / 1.5;
                 updateSliderHandlePosition(percent);
             }
@@ -705,7 +960,6 @@ Interacting: ${gestureState.isInteracting}`;
             function updateSliderHandlePosition(percent) {
                 const handleWidth = sliderHandle.offsetWidth;
                 const trackWidth = sliderTrack.offsetWidth;
-                // ハンドルの中心がパーセントの位置に来るように調整
                 sliderHandle.style.left = `calc(${percent * 100}% - ${handleWidth * percent}px)`;
             }
 
@@ -713,7 +967,6 @@ Interacting: ${gestureState.isInteracting}`;
                 const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
                 if (!activeObject) return;
                 
-                // パーセント(0-1)をmultiplier(0.5-2.0)に変換
                 const multiplier = 0.5 + percent * 1.5;
                 activeObject.userData.scaleMultiplier = multiplier;
                 
@@ -742,7 +995,6 @@ Interacting: ${gestureState.isInteracting}`;
                 const scaleFactor = currentFurniture.height / size.y;
                 previewObject.scale.set(scaleFactor, scaleFactor, scaleFactor);
                 
-                // 初期スケールと拡大率をuserDataに保存
                 previewObject.userData.initialScale = previewObject.scale.clone();
                 previewObject.userData.scaleMultiplier = 1.0;
                 previewObject.userData.centerOffset = initialCenter.multiplyScalar(scaleFactor);
@@ -977,7 +1229,7 @@ Interacting: ${gestureState.isInteracting}`;
                 let isPlaceable = false;
                 const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
 
-                if (renderer.xr.getFrame()) { // Use getFrame() to be safe
+                if (renderer.xr.getFrame()) {
                     const frame = renderer.xr.getFrame();
                     const referenceSpace = renderer.xr.getReferenceSpace();
                     if (hitTestSource) {
