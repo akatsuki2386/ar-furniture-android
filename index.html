@@ -246,42 +246,35 @@
             cursor: not-allowed;
         }
         
+        /* === ★★★ 変更: モード切替トグルボタンのスタイル ★★★ === */
         #mode-switch-button {
             background-color: rgba(0, 0, 0, 0.5);
-            color: white;
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 9999px;
             padding: 10px 20px;
             font-size: 16px;
-            font-weight: bold;
             cursor: pointer;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            min-width: 120px;
-            text-align: center;
+            display: flex;
+            gap: 8px; /* 文字間の隙間 */
+            align-items: center;
         }
-        #mode-switch-button.active-mode {
-             background-color: rgba(0, 122, 255, 0.7);
-             border-color: rgba(0, 122, 255, 1);
+        
+        #mode-switch-button span {
+            transition: all 0.3s ease-in-out;
+            font-weight: normal;
+            color: #a0aec0; /* 非アクティブ時の色 (少しグレーがかった白) */
+        }
+
+        #mode-switch-button span.active {
+            font-weight: bold;
+            color: white; /* アクティブ時の色 */
         }
 
         #add-button, #edit-button {
             display: none;
         }
-
-        /* === ★★★ 追加: UIゴーストモード用のスタイル ★★★ === */
-        .ui-element-container {
-            /* 不透明度（opacity）の変化を0.4秒かけて滑らかにする */
-            transition: opacity 0.4s ease-in-out;
-        }
-
-        .ui-element-container.ghost {
-            /* 透明度を15%に設定（見えるか見えないかのギリギリ感） */
-            opacity: 0.15; 
-            /* 透明なUIが下のAR空間の操作を邪魔しないようにする */
-            pointer-events: none; 
-        }
-
     </style>
 </head>
 <body>
@@ -300,18 +293,20 @@
             <span style="font-size: 1.25em; font-weight: bold;">床を認識中<span id="loading-dots"></span></span><br><br>
             カメラをゆっくりと<br>床に向けて<br>動かしてください
         </div>
-
-        <div id="ar-ui-wrapper"> 
-            <div id="top-bar" class="ui-element-container" style="position: absolute; top: 40px; width:100%; display: flex; justify-content: center; pointer-events: auto;">
-                <button id="mode-switch-button" style="display: none;">鑑賞モード</button>
-            </div>
-            <div id="top-right-controls" class="ui-element-container" style="position: absolute; top: 20px; right: 20px; pointer-events: auto;">
-                <button id="exit-ar-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3-3-3m0 0 3-3m-3 3h12" />
-                    </svg>
-                </button>
-            </div>
+        
+        <div id="top-bar" style="position: absolute; top: 40px; width:100%; display: flex; justify-content: center; pointer-events: auto;">
+            <button id="mode-switch-button" style="display: none;">
+                <span id="edit-mode-label">編集モード</span>
+                <span>/</span>
+                <span id="view-mode-label">鑑賞モード</span>
+            </button>
+        </div>
+        <div id="top-right-controls" style="position: absolute; top: 20px; right: 20px; pointer-events: auto;">
+            <button id="exit-ar-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3-3-3m0 0 3-3m-3 3h12" />
+                </svg>
+            </button>
         </div>
         
         <div id="scale-slider-container">
@@ -331,6 +326,7 @@
                      <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
                  </svg>
             </button>
+            
             <div id="choosing-controls">
                 <button id="back-button" class="circle-button">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
@@ -419,10 +415,6 @@
             let lastTouchX = 0, isSwiping = false, swipeMoved = false; 
             let dotAnimationTimer = null;
             
-            // ★★★ 追加: UIゴースト機能用の変数 ★★★
-            let isUIGhosted = false;
-            const arUIWrapper = document.getElementById('ar-ui-wrapper');
-
             const furnitureData = [
                 { name: 'イス', file: 'chair.glb', height: 0.79 },
                 { name: '本棚', file: 'bookshelf.glb', height: 1.8 }, 
@@ -508,21 +500,6 @@
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 renderer.xr.enabled = true;
                 document.body.appendChild(renderer.domElement);
-                
-                // ★★★ 追加: UIゴースト化のためのクリックイベント ★★★
-                renderer.domElement.addEventListener('click', () => {
-                    // 鑑賞モードの時だけ、UIのゴースト化を切り替える
-                    if (!isEditMode) {
-                        isUIGhosted = !isUIGhosted; // 状態を反転
-                        
-                        // ラッパーに 'ghost' クラスを付け外しする
-                        if (isUIGhosted) {
-                            arUIWrapper.classList.add('ghost');
-                        } else {
-                            arUIWrapper.classList.remove('ghost');
-                        }
-                    }
-                });
 
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
@@ -580,10 +557,6 @@
                         if (hoveredObject) setObjectTransparency(hoveredObject, false);
                         selectedObject = null;
                         hoveredObject = null;
-                    } else {
-                        // 編集モードに戻った時、ゴースト化を解除
-                        isUIGhosted = false;
-                        arUIWrapper.classList.remove('ghost');
                     }
                     updateUI();
                 });
@@ -788,6 +761,7 @@
                 });
             }
 
+            // ★★★ 変更: updateUI関数でトグルボタンの表示を制御 ★★★
             function updateUI() {
                 const bottomBar = document.getElementById('bottom-bar');
                 const addButton = document.getElementById('add-button');
@@ -796,15 +770,19 @@
                 const actionControls = document.getElementById('action-controls');
                 const scaleSlider = document.getElementById('scale-slider-container');
                 const modeSwitchButton = document.getElementById('mode-switch-button');
+                const editModeLabel = document.getElementById('edit-mode-label');
+                const viewModeLabel = document.getElementById('view-mode-label');
+
                 
                 document.getElementById('exit-ar-button').style.display = 'flex';
-                modeSwitchButton.style.display = 'block';
+                modeSwitchButton.style.display = 'flex'; // flexに変更
 
                 if (isEditMode) {
-                    modeSwitchButton.textContent = '編集モード';
-                    modeSwitchButton.classList.add('active-mode');
-                    bottomBar.style.display = 'flex';
+                    // 編集モードのラベルをアクティブに
+                    editModeLabel.classList.add('active');
+                    viewModeLabel.classList.remove('active');
 
+                    bottomBar.style.display = 'flex';
                     addButton.style.display = 'none';
                     editButton.style.display = 'none';
                     choosingControls.style.display = 'none';
@@ -828,8 +806,10 @@
                             break;
                     }
                 } else { 
-                    modeSwitchButton.textContent = '鑑賞モード';
-                    modeSwitchButton.classList.remove('active-mode');
+                    // 鑑賞モードのラベルをアクティブに
+                    editModeLabel.classList.remove('active');
+                    viewModeLabel.classList.add('active');
+
                     bottomBar.style.display = 'none'; // 鑑賞モードでは下部バーは非表示
                     addButton.style.display = 'none';
                     editButton.style.display = 'none';
