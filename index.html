@@ -563,9 +563,8 @@
             let selectedObject = null;
             let hoveredObject = null;
 
-            // ★★★ 状態管理の強化 ★★★
             let appState = 'IDLE'; 
-            let previousAppState = 'IDLE'; // 直前の状態を保存する変数
+            let previousAppState = 'IDLE';
             
             let isEditMode = false; 
 
@@ -661,6 +660,7 @@
                     document.getElementById('mode-switch-button').style.display = 'none';
                     document.getElementById('bottom-bar').style.display = 'none';
                     document.getElementById('scale-slider-container').style.display = 'none';
+                    document.getElementById('help-modal').style.display = 'none'; // セッション終了時にヘルプも隠す
                     stopDotAnimation(); 
                     floorY = null; 
                 });
@@ -683,9 +683,6 @@
                 setupUI();
             }
             
-            /**************************************************/
-            /************** ★★★ 修正箇所 1/2 ★★★ **************/
-            /**************************************************/
             function setupHelpModal() {
                 const helpButton = document.getElementById('help-button');
                 const helpModal = document.getElementById('help-modal');
@@ -699,18 +696,18 @@
                 const totalPages = pages.length;
                 let currentPage = 0;
 
-                // 「?」ボタンが押されたら「ヘルプモード」に切り替える
                 helpButton.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    previousAppState = appState; // 直前の状態を記憶
-                    appState = 'HELP';
-                    updateUI();
+                    if (appState !== 'HELP') {
+                        previousAppState = appState;
+                        appState = 'HELP';
+                        updateUI();
+                    }
                 });
 
-                // 閉じる処理
                 const closeHelp = (e) => {
                     e.stopPropagation();
-                    appState = previousAppState; // 記憶しておいた状態に戻る
+                    appState = previousAppState;
                     updateUI();
                 };
 
@@ -721,7 +718,6 @@
                     }
                 });
 
-                // --- 以下、ページネーションのロジック (変更なし) ---
                 function goToPage(pageIndex) {
                     currentPage = Math.max(0, Math.min(pageIndex, totalPages - 1));
                     pagesContainer.style.transform = `translateX(-${currentPage * 100}%)`;
@@ -731,9 +727,7 @@
                 }
                 prevButton.addEventListener('click', () => goToPage(currentPage - 1));
                 nextButton.addEventListener('click', () => goToPage(currentPage + 1));
-                let touchStartX = 0;
-                let touchEndX = 0;
-                let isSwiping = false;
+                let touchStartX = 0, touchEndX = 0, isSwiping = false;
                 helpContent.addEventListener('touchstart', (e) => { e.stopPropagation(); touchStartX = e.changedTouches[0].screenX; isSwiping = true; });
                 helpContent.addEventListener('touchend', (e) => {
                     e.stopPropagation();
@@ -812,7 +806,7 @@
                 document.addEventListener('touchend', onSliderDragEnd);
             }
             
-            function updateDebugDisplay() { /* 今回は使用しない */ }
+            function updateDebugDisplay() { /* 不使用 */ }
 
             function getDistance(touches) {
                 const dx = touches[0].clientX - touches[1].clientX;
@@ -821,6 +815,7 @@
             }
             
             function handleTouchStart(event) {
+                if (appState === 'HELP') return; // ヘルプモード中はジェスチャー操作を無効化
                 if (event.target !== event.currentTarget) return;
                 event.preventDefault();
                 const activeObject = (appState === 'PLACING' || appState === 'EDITING') ? (previewObject || selectedObject) : null;
@@ -979,9 +974,6 @@
                 });
             }
 
-            /**************************************************/
-            /************** ★★★ 修正箇所 2/2 ★★★ **************/
-            /**************************************************/
             function updateUI() {
                 const bottomBar = document.getElementById('bottom-bar');
                 const addButton = document.getElementById('add-button');
@@ -994,8 +986,6 @@
                 const viewModeLabel = document.getElementById('view-mode-label');
                 const helpModal = document.getElementById('help-modal');
                 const helpButton = document.getElementById('help-button');
-
-                // まず全てのUIを非表示状態にリセット
                 bottomBar.style.display = 'none';
                 addButton.style.display = 'none';
                 editButton.style.display = 'none';
@@ -1003,41 +993,35 @@
                 actionControls.style.display = 'none';
                 scaleSlider.style.display = 'none';
                 helpModal.style.display = 'none';
-                
-                // 常に表示されるボタン
                 document.getElementById('exit-ar-button').style.display = 'flex';
                 modeSwitchButton.style.display = 'flex';
                 helpButton.style.display = 'flex';
 
-                // ヘルプモードの場合
                 if (appState === 'HELP') {
                     helpModal.style.display = 'flex';
-                    // ヘルプ中は他のUIは基本的に出さない
-                    modeSwitchButton.style.display = 'none'; // モード切替も隠す
-                    return; // これで処理を終了
+                    modeSwitchButton.style.display = 'none';
+                    helpButton.style.display = 'none';
+                    document.getElementById('exit-ar-button').style.display = 'none';
+                    
+                    // ★★★ 強制リフロー（再描画）の追加 ★★★
+                    helpModal.offsetHeight; 
+                    return;
                 }
 
-                // --- ヘルプモードでない場合の処理 ---
-
-                // モード切替ボタンの表示更新
                 if (isEditMode) {
                     editModeLabel.classList.add('active');
                     viewModeLabel.classList.remove('active');
                 } else {
                     editModeLabel.classList.remove('active');
                     viewModeLabel.classList.add('active');
-                    // 鑑賞モードならここで処理終了
                     return;
                 }
 
-                // 編集モードの場合、状態に応じてUIを表示
                 bottomBar.style.display = 'flex';
                 switch (appState) {
                     case 'IDLE':
                         addButton.style.display = 'flex';
-                        if (hoveredObject) {
-                            editButton.style.display = 'flex';
-                        }
+                        if (hoveredObject) { editButton.style.display = 'flex'; }
                         break;
                     case 'CHOOSING':
                         choosingControls.style.display = 'flex';
@@ -1051,7 +1035,7 @@
             }
 
             function handleHover() {
-                if (gestureState.isInteracting || appState === 'HELP') { // ヘルプモード中も何もしない
+                if (gestureState.isInteracting || appState === 'HELP') {
                     if(hoveredObject) {
                          setObjectTransparency(hoveredObject, false);
                          hoveredObject = null;
@@ -1114,20 +1098,16 @@
             function render() {
                 if (!renderer.xr.isPresenting) {
                     if(debugDisplayInitialized) {
-                        debugInfo.style.display = 'none';
                         debugDisplayInitialized = false;
                     }
                     return;
                 }
                 if (!debugDisplayInitialized) {
-                    document.getElementById('title-container').style.display = 'none';
-                    if(debugInfo) debugInfo.style.display = 'block';
                     debugDisplayInitialized = true;
                 }
 
                 handleHover();
                 
-                // ヘルプモード中は3Dオブジェクトの操作を止める
                 if (appState === 'HELP') {
                     renderer.render(scene, camera);
                     return;
@@ -1207,6 +1187,7 @@
                 renderer.render(scene, camera);
             }
         }
+        
         main();
     </script>
 </body>
