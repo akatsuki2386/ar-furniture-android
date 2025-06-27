@@ -30,38 +30,9 @@
             color: white;
             text-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
-        #ios-ar-container {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            text-align: center;
-            z-index: 5;
-            width: 90%;
-        }
-        #ios-ar-links {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-            margin-top: 20px;
-            align-items: center;
-        }
-        #ios-ar-links a {
-            display: block;
-            padding: 14px 24px;
-            background-color: rgba(255, 255, 255, 0.2);
-            color: white;
-            text-decoration: none;
-            border-radius: 9999px;
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            font-weight: bold;
-            font-size: 16px;
-            min-width: 220px;
-            box-sizing: border-box;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-        }
+        #ios-ar-container { display: none; }
+        #ios-ar-links { display: none; }
+
         #ARButton {
             color: white !important;
             background-color: rgba(255, 255, 255, 0.2) !important;
@@ -91,23 +62,8 @@
             pointer-events: none;
             z-index: 10;
         }
-        #instruction-text {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            color: white;
-            font-size: 16px;
-            text-align: center;
-            background-color: rgba(0, 0, 0, 0.6);
-            padding: 20px 30px;
-            border-radius: 15px;
-            line-height: 1.7;
-            display: none;
-            pointer-events: none;
-            min-width: 260px;
-            box-sizing: border-box;
-        }
+        #instruction-text { display: none; }
+        
         #debug-info {
             position: fixed;
             top: 80px;
@@ -124,149 +80,7 @@
             pointer-events: auto;
             display: none;
         }
-        #furniture-palette {
-            display: flex;
-            flex-direction: row;
-            gap: 15px;
-            padding: 10px;
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 16px;
-            pointer-events: auto;
-        }
-        .furniture-button {
-            width: 60px;
-            height: 60px;
-            background-color: #6B7280;
-            color: white;
-            border: 2px solid transparent;
-            border-radius: 12px;
-            font-size: 14px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: all 0.2s ease-in-out;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-        .furniture-button.selected {
-            background-color: #007AFF;
-            border-color: #FFF;
-            transform: scale(1.1);
-        }
-        #bottom-bar {
-            position: absolute;
-            bottom: 90px;
-            left: 0;
-            width: 100%;
-            padding: 0 20px;
-            box-sizing: border-box;
-            pointer-events: auto;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            gap: 15px;
-        }
-        #action-controls {
-            width: 100%;
-            max-width: 300px;
-            display: flex;
-            justify-content: space-around;
-            align-items: center;
-            display: none;
-        }
-        #choosing-controls {
-            display: flex;
-            align-items: center;
-            gap: 15px;
-            display: none;
-        }
-        #scale-slider-container {
-            position: absolute;
-            bottom: 170px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60%;
-            max-width: 200px;
-            height: 40px;
-            display: none;
-            align-items: center;
-            justify-content: center;
-            pointer-events: auto;
-        }
-        #slider-track {
-            width: 100%;
-            height: 8px;
-            background-color: rgba(255, 255, 255, 0.3);
-            border-radius: 4px;
-            position: relative;
-        }
-        #slider-handle {
-            width: 32px;
-            height: 32px;
-            background-color: white;
-            border-radius: 50%;
-            position: absolute;
-            top: 50%;
-            transform: translateY(-50%);
-            cursor: pointer;
-            border: 4px solid #4a5568;
-        }
-        .circle-button {
-            width: 64px;
-            height: 64px;
-            background-color: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            color: white;
-            border-radius: 50%;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            transition: transform 0.1s ease, background-color 0.2s ease;
-            pointer-events: auto;
-            flex-shrink: 0;
-        }
-        .circle-button:active {
-            transform: scale(0.9);
-        }
-        
-        .circle-button:disabled {
-            background-color: rgba(128, 128, 128, 0.2);
-            border-color: rgba(128, 128, 128, 0.3);
-            color: #888;
-            cursor: not-allowed;
-        }
-        #mode-switch-button {
-            background-color: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            border-radius: 9999px;
-            padding: 5px;
-            font-size: 15px;
-            cursor: pointer;
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            display: flex;
-            align-items: center;
-            gap: 5px;
-        }
-        .mode-label {
-            transition: all 0.3s ease-in-out;
-            padding: 5px 15px;
-            border-radius: 9999px;
-            font-weight: normal;
-            color: #a0aec0;
-            background-color: transparent;
-        }
-        .mode-label.active {
-            font-weight: bold;
-            color: #1A202C;
-            background-color: white;
-        }
-        #add-button, #edit-button {
-            display: none;
-        }
+        #top-bar, #top-right-controls, #bottom-bar { display: none; }
     </style>
 </head>
 <body>
@@ -274,42 +88,8 @@
         <h1>AR家具配置<br>シミュレーション</h1>
     </div>
 
-    <div id="ios-ar-container">
-        <h2>表示したい家具を選んでください</h2>
-        <div id="ios-ar-links">
-        </div>
-    </div>
-
     <div id="overlay">
         <div id="debug-info"></div>
-
-        <div id="instruction-text">
-            <span style="font-size: 1.25em; font-weight: bold;">床を認識中<span id="loading-dots"></span></span><br><br>
-            カメラをゆっくりと<br>床に向けて<br>動かしてください
-        </div>
-        
-        <div id="top-bar" style="position: absolute; top: 40px; width:100%; display: flex; justify-content: center; pointer-events: auto;">
-            <button id="mode-switch-button" style="display: none;">
-                <span id="edit-mode-label" class="mode-label">編集モード</span>
-                <span id="view-mode-label" class="mode-label">鑑賞モード</span>
-            </button>
-        </div>
-        <div id="top-right-controls" style="position: absolute; top: 20px; right: 20px; pointer-events: auto;">
-            <button id="exit-ar-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3-3-3m0 0 3-3m-3 3h12" />
-                </svg>
-            </button>
-        </div>
-        
-        <div id="scale-slider-container">
-            <div id="slider-track">
-                <div id="slider-handle"></div>
-            </div>
-        </div>
-
-        <div id="bottom-bar">
-            </div>
     </div>
 
     <script type="importmap">
@@ -324,28 +104,34 @@
     <script type="module">
         import * as THREE from 'three';
         import { ARButton } from 'three/addons/webxr/ARButton.js';
-        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
         function main() {
-            // iOS向けの処理は簡略化のため一旦コメントアウト
-            // const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
-            // if (isIOS) {
-            //     setupIOS();
-            //     return;
-            // }
             setupWebXR();
+
+            // ★★★ 新しいテスト: 3秒後に強制的に文字を書き換える ★★★
+            setTimeout(() => {
+                const debugArea = document.getElementById('debug-info');
+                if (debugArea) {
+                    // textContent の方が確実な場合がある
+                    debugArea.textContent = "タイマーによる強制書き込みテスト"; 
+                    
+                    // 念のためサイズと枠線も強制指定して、変化を分かりやすくする
+                    debugArea.style.width = '200px';
+                    debugArea.style.height = 'auto'; // 高さは自動
+                    debugArea.style.border = '2px solid red'; // 赤い枠線
+                } else {
+                    alert('タイマーがデバッグエリアを見つけられませんでした');
+                }
+            }, 3000); // 3秒後に実行
         }
 
-        // function setupIOS() { ... } // 省略
 
         function setupWebXR() {
             let renderer;
-            let debugInfo;
-
+            
             init();
             
             function init() {
-                // シーンやカメラのセットアップはARに必須なので残す
                 const scene = new THREE.Scene();
                 const camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
                 
@@ -358,33 +144,18 @@
                 renderer.xr.enabled = true;
                 document.body.appendChild(renderer.domElement);
 
-                // ★★★ 修正: ここからがテストの核心 ★★★
-                debugInfo = document.getElementById('debug-info');
-
                 // ARセッションが始まったときの処理
                 renderer.xr.addEventListener('sessionstart', () => {
-                    // 他の処理は一旦すべてコメントアウト
-                    // document.getElementById('title-container').style.display = 'none';
-                    
-                    // デバッグエリアを表示し、文字を設定する、ただそれだけ！
+                    const debugInfo = document.getElementById('debug-info');
                     if (debugInfo) {
+                        // ここでは表示するだけに徹する
                         debugInfo.style.display = 'block'; 
-                        debugInfo.innerText = 'デバッグ準備OK';
-                    } else {
-                        // もしdebugInfoが取得できていなければアラートを出す
-                        alert('デバッグエリアが見つかりません');
                     }
-                    
-                    // initializeARExperience(); // 他の初期化処理は呼ばない
                 });
 
-                // ARセッション終了時の処理（念のため残す）
-                renderer.xr.addEventListener('sessionend', () => {
-                    if(debugInfo) debugInfo.style.display = 'none';
-                });
-                
                 // レンダリングループを設定
                 renderer.setAnimationLoop(() => {
+                    if(!renderer.xr.isPresenting) return;
                     renderer.render(scene, camera);
                 });
 
