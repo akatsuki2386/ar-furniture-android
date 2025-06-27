@@ -308,7 +308,7 @@
             width: 90%;
             max-width: 400px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            position: relative; /* ★★★ 変更 ★★★ ボタンの位置の基準にする */
+            position: relative;
             user-select: none;
         }
         .help-pages-wrapper {
@@ -702,7 +702,7 @@
             }
 
             /**************************************************/
-            /****************** 修正箇所 2/2 ******************/
+            /****************** 【検証コード】******************/
             /**************************************************/
             function setupHelpModal() {
                 const helpButton = document.getElementById('help-button');
@@ -718,27 +718,34 @@
                 const totalPages = pages.length;
                 let currentPage = 0;
 
-                const openHelp = () => helpModal.style.display = 'flex';
+                const openHelp = () => {
+                    console.log("✅ openHelp 関数が呼ばれました！");
+                    helpModal.style.display = 'flex';
+                }
                 const closeHelp = () => helpModal.style.display = 'none';
 
-                // clickイベントの代わりに touchend で発火させる
-                helpButton.addEventListener('touchend', (e) => {
-                    // イベントが #overlay に伝わらないようにする
-                    e.stopPropagation();
-                    // 後続のclickイベントやその他のデフォルト動作を防ぐ
-                    e.preventDefault(); 
-                    openHelp();
-                });
+                // --- ここから検証用のリスナー ---
                 
-                // touchendだけだと、ボタン上でスワイプした場合にも発火してしまうため、
-                // touchstartとtouchmoveでも伝播を止めて、意図しない動作を防いでおく
+                console.log("イベントリスナーを設定します。");
+
                 helpButton.addEventListener('touchstart', (e) => {
                     e.stopPropagation();
-                });
-                helpButton.addEventListener('touchmove', (e) => {
-                    e.stopPropagation();
+                    console.log("🔴 touchstart イベントを検知しました。");
                 });
                 
+                helpButton.addEventListener('touchend', (e) => {
+                    e.stopPropagation();
+                    console.log("🔵 touchend イベントを検知しました。");
+                });
+
+                helpButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    console.log("🟢 click イベントを検知しました。");
+                    openHelp(); // clickイベントで開く処理も残しておく
+                });
+
+                // --- ここまで検証用のリスナー ---
+
                 closeButton.addEventListener('click', (e) => {
                     e.stopPropagation();
                     closeHelp();
@@ -783,11 +790,9 @@
                     handleSwipe();
                 });
                 
-                // スワイプ中の意図しない動作を防ぐ
                 helpContent.addEventListener('touchmove', (e) => {
                     e.stopPropagation();
                 });
-
 
                 function handleSwipe() {
                     const swipeThreshold = 50; 
@@ -891,18 +896,8 @@ Interacting: ${gestureState.isInteracting}`;
                 return Math.sqrt(dx * dx + dy * dy);
             }
             
-            /**************************************************/
-            /****************** 修正箇所 1/2 ******************/
-            /**************************************************/
             function handleTouchStart(event) {
-                const tappedElement = event.target;
-                // UI要素（ボタンやスライダー、ヘルプモーダルなど）の上でタッチが開始された場合は、
-                // ARジェスチャーとして扱わず、以降の処理を中断する
-                if (tappedElement.closest('#help-button, #exit-ar-button, #mode-switch-button, .circle-button, .furniture-button, #scale-slider-container, .help-content')) {
-                    return;
-                }
-                
-                // AR空間の操作の場合、デフォルトのブラウザ動作（スクロールなど）を防ぐ
+                if (event.target !== event.currentTarget) return;
                 event.preventDefault();
 
                 const activeObject = (appState === 'PLACING' || appState === 'EDITING') ? (previewObject || selectedObject) : null;
