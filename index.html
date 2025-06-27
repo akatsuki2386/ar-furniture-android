@@ -5,7 +5,7 @@
     <title>AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
-        /* (CSSは変更なしのため省略) */
+        /* (既存のCSSは省略) */
         body { 
             margin: 0;
             background-color: #1A202C;
@@ -308,7 +308,7 @@
             width: 90%;
             max-width: 400px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            position: relative;
+            position: relative; /* ★★★ 変更 ★★★ ボタンの位置の基準にする */
             user-select: none;
         }
         .help-pages-wrapper {
@@ -442,8 +442,8 @@
                 </div>
                 <button class="nav-button" id="next-page-button">&gt;</button>
             </div>
+            <button class="help-close-button">×</button>
         </div>
-        <button class="help-close-button">×</button>
     </div>
 
 
@@ -529,7 +529,6 @@
     </script>
     
     <script type="module">
-        // (JavaScriptは変更なしのため省略)
         import * as THREE from 'three';
         import { ARButton } from 'three/addons/webxr/ARButton.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -539,6 +538,7 @@
         }
 
         function setupWebXR() {
+            // (既存の変数は省略)
             let camera, scene, renderer, controller;
             let hitTestSource = null;
             let hitTestSourceRequested = false;
@@ -658,7 +658,7 @@
 
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
-                    document.getElementById('help-button').style.display = 'flex';
+                    document.getElementById('help-button').style.display = 'flex'; 
                     appState = 'IDLE';
                     isEditMode = true; 
                     updateUI();
@@ -668,7 +668,7 @@
 
                 renderer.xr.addEventListener('sessionend', () => {
                     document.getElementById('title-container').style.display = 'block';
-                    document.getElementById('help-button').style.display = 'none';
+                    document.getElementById('help-button').style.display = 'none'; 
                     if(debugInfo) debugInfo.style.display = 'none';
                     debugDisplayInitialized = false;
                     Object.keys(gestureState).forEach(key => gestureState[key] = (typeof gestureState[key] === 'boolean' ? false : (key === 'originalMultiplier' ? 1.0 : 0)));
@@ -718,10 +718,18 @@
                 const openHelp = () => helpModal.style.display = 'flex';
                 const closeHelp = () => helpModal.style.display = 'none';
 
-                helpButton.addEventListener('click', openHelp);
-                closeButton.addEventListener('click', closeHelp);
+                // ★★★ 変更 ★★★ イベントの伝播を止める処理を追加
+                helpButton.addEventListener('click', (e) => {
+                    e.stopPropagation(); // 他のイベントとの競合を防ぐ
+                    openHelp();
+                });
+                closeButton.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    closeHelp();
+                });
                 helpModal.addEventListener('click', (e) => {
                     if (e.target === helpModal) {
+                        e.stopPropagation();
                         closeHelp();
                     }
                 });
@@ -746,16 +754,24 @@
                 let isSwiping = false;
 
                 helpContent.addEventListener('touchstart', (e) => {
+                    e.stopPropagation(); // 背景のジェスチャーと競合しないように
                     touchStartX = e.changedTouches[0].screenX;
                     isSwiping = true;
                 });
 
                 helpContent.addEventListener('touchend', (e) => {
+                    e.stopPropagation();
                     if (!isSwiping) return;
                     isSwiping = false;
                     touchEndX = e.changedTouches[0].screenX;
                     handleSwipe();
                 });
+                
+                // スワイプ中の意図しない動作を防ぐ
+                helpContent.addEventListener('touchmove', (e) => {
+                    e.stopPropagation();
+                });
+
 
                 function handleSwipe() {
                     const swipeThreshold = 50; 
