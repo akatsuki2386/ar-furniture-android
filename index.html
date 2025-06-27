@@ -575,8 +575,6 @@
                 originalMultiplier: 1.0
             };
             
-            let debugDisplayInitialized = false;
-
             init();
             
             function createCrossMark() {
@@ -659,6 +657,9 @@
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
                     document.getElementById('help-button').style.display = 'flex'; 
+                    if (debugInfo) {
+                        debugInfo.style.display = 'block'; // デバッグ情報を表示
+                    }
                     appState = 'IDLE';
                     isEditMode = true; 
                     updateUI();
@@ -670,7 +671,6 @@
                     document.getElementById('title-container').style.display = 'block';
                     document.getElementById('help-button').style.display = 'none'; 
                     if(debugInfo) debugInfo.style.display = 'none';
-                    debugDisplayInitialized = false;
                     Object.keys(gestureState).forEach(key => gestureState[key] = (typeof gestureState[key] === 'boolean' ? false : (key === 'originalMultiplier' ? 1.0 : 0)));
                     document.getElementById('exit-ar-button').style.display = 'none';
                     document.getElementById('mode-switch-button').style.display = 'none';
@@ -702,7 +702,7 @@
             }
 
             /**************************************************/
-            /****************** 【検証コード】******************/
+            /****************** 修正箇所 2/2 ******************/
             /**************************************************/
             function setupHelpModal() {
                 const helpButton = document.getElementById('help-button');
@@ -719,32 +719,34 @@
                 let currentPage = 0;
 
                 const openHelp = () => {
-                    console.log("✅ openHelp 関数が呼ばれました！");
                     helpModal.style.display = 'flex';
                 }
                 const closeHelp = () => helpModal.style.display = 'none';
 
-                // --- ここから検証用のリスナー ---
+                // --- 画面上デバッグのためのイベントリスナー ---
+                const logEvent = (eventName) => {
+                    if (debugInfo) {
+                        // 既存のログに追記するのではなく、最新のイベントで上書きする
+                        debugInfo.dataset.lastEvent = `${eventName} @ ${new Date().toLocaleTimeString()}`;
+                    }
+                };
                 
-                console.log("イベントリスナーを設定します。");
-
                 helpButton.addEventListener('touchstart', (e) => {
                     e.stopPropagation();
-                    console.log("🔴 touchstart イベントを検知しました。");
+                    logEvent('🔴 helpButton: touchstart');
                 });
                 
                 helpButton.addEventListener('touchend', (e) => {
                     e.stopPropagation();
-                    console.log("🔵 touchend イベントを検知しました。");
+                    logEvent('🔵 helpButton: touchend');
                 });
 
                 helpButton.addEventListener('click', (e) => {
                     e.stopPropagation();
-                    console.log("🟢 click イベントを検知しました。");
-                    openHelp(); // clickイベントで開く処理も残しておく
+                    logEvent('🟢 helpButton: click');
+                    openHelp(); 
                 });
-
-                // --- ここまで検証用のリスナー ---
+                // --- ここまで ---
 
                 closeButton.addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -760,11 +762,9 @@
                 function goToPage(pageIndex) {
                     currentPage = Math.max(0, Math.min(pageIndex, totalPages - 1));
                     pagesContainer.style.transform = `translateX(-${currentPage * 100}%)`;
-
                     dots.forEach((dot, index) => {
                         dot.classList.toggle('active', index === currentPage);
                     });
-
                     prevButton.disabled = currentPage === 0;
                     nextButton.disabled = currentPage === totalPages - 1;
                 }
@@ -777,7 +777,7 @@
                 let isSwiping = false;
 
                 helpContent.addEventListener('touchstart', (e) => {
-                    e.stopPropagation(); // 背景のジェスチャーと競合しないように
+                    e.stopPropagation();
                     touchStartX = e.changedTouches[0].screenX;
                     isSwiping = true;
                 });
@@ -882,12 +882,17 @@
             }
             
             function updateDebugDisplay() {
-                if (!debugInfo) return;
-                const debugText = `[Debug Info]
-Touches:  ${gestureState.touchCount}
-Distance: ${gestureState.initialDistance.toFixed(2)}
-Interacting: ${gestureState.isInteracting}`;
-                debugInfo.innerText = debugText;
+                 if (!debugInfo || !renderer.xr.isPresenting) return;
+        
+                const stateText = `[App State]
+Mode: ${isEditMode ? 'EDIT' : 'VIEW'}
+State: ${appState}
+Hovered: ${!!hoveredObject}
+Selected: ${!!selectedObject}`;
+
+                const lastEventLog = debugInfo.dataset.lastEvent || 'No event yet.';
+
+                debugInfo.innerText = `--- Last Event ---\n${lastEventLog}\n\n--- App Status ---\n${stateText}`;
             }
 
             function getDistance(touches) {
@@ -912,7 +917,6 @@ Interacting: ${gestureState.isInteracting}`;
                     gestureState.initialDistance = getDistance(event.touches);
                     gestureState.originalMultiplier = activeObject.userData.scaleMultiplier || 1.0; 
                 }
-                updateDebugDisplay();
             }
 
             function handleTouchMove(event) {
@@ -943,7 +947,6 @@ Interacting: ${gestureState.isInteracting}`;
                     const percent = (newMultiplier - 0.5) / 1.5;
                     updateSliderHandlePosition(percent);
                 }
-                updateDebugDisplay();
             }
 
             function handleTouchEnd(event) {
@@ -954,8 +957,6 @@ Interacting: ${gestureState.isInteracting}`;
                      handleTouchStart(event);
                 }
                 gestureState.touchCount = event.touches.length;
-
-                updateDebugDisplay();
             }
 
             function updateSliderForObject(object) {
@@ -1212,23 +1213,17 @@ Interacting: ${gestureState.isInteracting}`;
                 renderer.setAnimationLoop(render);
             }
 
+            /**************************************************/
+            /****************** 修正箇所 1/2 ******************/
+            /**************************************************/
             function render() {
                 if (!renderer.xr.isPresenting) {
-                    if(debugDisplayInitialized) {
-                        debugInfo.style.display = 'none';
-                        debugDisplayInitialized = false;
-                    }
+                    // ARが終了したら何もしない
                     return;
                 }
 
-                if (!debugDisplayInitialized) {
-                    document.getElementById('title-container').style.display = 'none';
-                    if(debugInfo) {
-                        debugInfo.style.display = 'block';
-                        updateDebugDisplay();
-                    }
-                    debugDisplayInitialized = true;
-                }
+                // デバッグ情報を毎フレーム更新
+                updateDebugDisplay();
 
                 handleHover();
                 
