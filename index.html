@@ -311,12 +311,12 @@
         <div id="bottom-bar">
             <button id="add-button" class="circle-button">
                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
-                     <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                  </svg>
             </button>
             <button id="edit-button" class="circle-button">
                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;">
-                     <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
                  </svg>
             </button>
             
@@ -398,19 +398,19 @@
             let isEditMode = false; 
 
             let debugInfo;
+            // ★★★ 変更点1：gestureStateにoriginalMultiplierを追加 ★★★
             const gestureState = {
                 touchCount: 0,
                 initialDistance: 0.0,
                 lastX: 0,
                 isInteracting: false,
-                originalScale: null
+                originalMultiplier: 1.0 // ジェスチャー開始時の拡大率を保存
             };
             
             let debugDisplayInitialized = false;
 
             init();
             
-            // ★★★ 変更なし：ここから下の関数は全て復活させました ★★★
             function createCrossMark() {
                 const canvas = document.createElement('canvas');
                 const size = 256;
@@ -501,7 +501,7 @@
                     document.getElementById('title-container').style.display = 'block';
                     if(debugInfo) debugInfo.style.display = 'none';
                     debugDisplayInitialized = false;
-                    Object.keys(gestureState).forEach(key => gestureState[key] = (typeof gestureState[key] === 'boolean' ? false : 0));
+                    Object.keys(gestureState).forEach(key => gestureState[key] = (typeof gestureState[key] === 'boolean' ? false : (key === 'originalMultiplier' ? 1.0 : 0)));
                     document.getElementById('exit-ar-button').style.display = 'none';
                     document.getElementById('mode-switch-button').style.display = 'none';
                     document.getElementById('bottom-bar').style.display = 'none';
@@ -620,6 +620,8 @@ Interacting: ${gestureState.isInteracting}`;
                 return Math.sqrt(dx * dx + dy * dy);
             }
             
+            // ★★★ 変更点2：handleTouchStartを修正 ★★★
+            // 拡大縮小ジェスチャー開始時に、スケール値の代わりに現在の拡大率(multiplier)を保存するようにします。
             function handleTouchStart(event) {
                 if (event.target !== event.currentTarget) return;
                 event.preventDefault();
@@ -634,11 +636,14 @@ Interacting: ${gestureState.isInteracting}`;
                     gestureState.lastX = event.touches[0].clientX;
                 } else if (gestureState.touchCount === 2) {
                     gestureState.initialDistance = getDistance(event.touches);
-                    gestureState.originalScale = activeObject.scale.clone();
+                    // ジェスチャー開始時のオブジェクトの拡大率を保存
+                    gestureState.originalMultiplier = activeObject.userData.scaleMultiplier || 1.0; 
                 }
                 updateDebugDisplay();
             }
 
+            // ★★★ 変更点3：handleTouchMoveを修正 ★★★
+            // ジェスチャー中の処理を、上限・下限を考慮し、スライダーと連動するように変更します。
             function handleTouchMove(event) {
                 if (!gestureState.isInteracting) return;
                 event.preventDefault();
@@ -647,16 +652,31 @@ Interacting: ${gestureState.isInteracting}`;
                 if (!activeObject || !isEditMode) return;
                 
                 if (gestureState.touchCount === 1 && event.touches.length === 1) {
+                    // 回転処理 (変更なし)
                     const currentX = event.touches[0].clientX;
                     const deltaX = currentX - gestureState.lastX;
                     activeObject.rotation.y += deltaX * 0.01;
                     gestureState.lastX = currentX;
 
                 } else if (gestureState.touchCount === 2 && event.touches.length === 2) {
+                    // 拡大縮小処理 (ここからが修正箇所)
                     if (gestureState.initialDistance === 0) return; // 安全対策
                     const currentDistance = getDistance(event.touches);
                     const scaleRatio = currentDistance / gestureState.initialDistance;
-                    activeObject.scale.copy(gestureState.originalScale).multiplyScalar(scaleRatio);
+                    
+                    // 保存した開始時の拡大率に、現在のジェスチャーの変化率を掛ける
+                    let newMultiplier = gestureState.originalMultiplier * scaleRatio;
+
+                    // 拡大率を 0.5倍 ～ 2.0倍 の範囲に制限（クランプ）
+                    newMultiplier = Math.max(0.5, Math.min(2.0, newMultiplier));
+
+                    // オブジェクトのスケールとuserDataを更新
+                    activeObject.scale.copy(activeObject.userData.initialScale).multiplyScalar(newMultiplier);
+                    activeObject.userData.scaleMultiplier = newMultiplier;
+
+                    // スライダーの表示を更新
+                    const percent = (newMultiplier - 0.5) / 1.5;
+                    updateSliderHandlePosition(percent);
                 }
                 updateDebugDisplay();
             }
@@ -665,6 +685,7 @@ Interacting: ${gestureState.isInteracting}`;
                 if (event.touches.length === 0) {
                     gestureState.isInteracting = false;
                 }
+                // 指の数が変わった場合は、再度touchstartの処理を呼び出す
                 if (event.touches.length > 0 && event.touches.length !== gestureState.touchCount) {
                      handleTouchStart(event);
                 }
@@ -676,6 +697,7 @@ Interacting: ${gestureState.isInteracting}`;
             function updateSliderForObject(object) {
                 if (!object) return;
                 const multiplier = object.userData.scaleMultiplier || 1.0;
+                // multiplier(0.5-2.0)をパーセント(0-1)に変換
                 const percent = (multiplier - 0.5) / 1.5;
                 updateSliderHandlePosition(percent);
             }
@@ -683,6 +705,7 @@ Interacting: ${gestureState.isInteracting}`;
             function updateSliderHandlePosition(percent) {
                 const handleWidth = sliderHandle.offsetWidth;
                 const trackWidth = sliderTrack.offsetWidth;
+                // ハンドルの中心がパーセントの位置に来るように調整
                 sliderHandle.style.left = `calc(${percent * 100}% - ${handleWidth * percent}px)`;
             }
 
@@ -690,6 +713,7 @@ Interacting: ${gestureState.isInteracting}`;
                 const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
                 if (!activeObject) return;
                 
+                // パーセント(0-1)をmultiplier(0.5-2.0)に変換
                 const multiplier = 0.5 + percent * 1.5;
                 activeObject.userData.scaleMultiplier = multiplier;
                 
@@ -718,6 +742,7 @@ Interacting: ${gestureState.isInteracting}`;
                 const scaleFactor = currentFurniture.height / size.y;
                 previewObject.scale.set(scaleFactor, scaleFactor, scaleFactor);
                 
+                // 初期スケールと拡大率をuserDataに保存
                 previewObject.userData.initialScale = previewObject.scale.clone();
                 previewObject.userData.scaleMultiplier = 1.0;
                 previewObject.userData.centerOffset = initialCenter.multiplyScalar(scaleFactor);
