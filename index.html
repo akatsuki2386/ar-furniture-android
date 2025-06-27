@@ -165,7 +165,7 @@
             justify-content: center;
             align-items: center;
             gap: 15px;
-            pointer-events: auto;
+            pointer-events: none; /* 下の階層のボタンが押せるように */
         }
         #action-controls {
             width: 100%;
@@ -174,12 +174,14 @@
             justify-content: space-around;
             align-items: center;
             display: none;
+            pointer-events: auto;
         }
         #choosing-controls {
             display: flex;
             align-items: center;
             gap: 15px;
             display: none;
+            pointer-events: auto;
         }
         #scale-slider-container {
             position: absolute;
@@ -289,13 +291,13 @@
             カメラをゆっくりと<br>床に向けて<br>動かしてください
         </div>
         
-        <div id="top-bar" style="position: absolute; top: 40px; width:100%; display: flex; justify-content: center;">
+        <div id="top-bar" style="position: absolute; top: 40px; width:100%; display: flex; justify-content: center; pointer-events: none;">
             <button id="mode-switch-button" style="display: none;">
                 <span id="edit-mode-label" class="mode-label">編集モード</span>
                 <span id="view-mode-label" class="mode-label">鑑賞モード</span>
             </button>
         </div>
-        <div id="top-right-controls" style="position: absolute; top: 20px; right: 20px;">
+        <div id="top-right-controls" style="position: absolute; top: 20px; right: 20px; pointer-events: none;">
             <button id="exit-ar-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3-3-3m0 0 3-3m-3 3h12" />
@@ -404,36 +406,72 @@
                 initialDistance: 0.0,
                 lastX: 0,
                 isInteracting: false,
-                initialScaleMultiplier: 1.0 // ★★★ 変更: ピンチ開始時の倍率を保存 ★★★
+                initialScaleMultiplier: 1.0
             };
             
             let debugDisplayInitialized = false;
 
             init();
             
-            function createCrossMark() { /* (変更なし) */ }
-            function preloadModels() { /* (変更なし) */ }
+            function createCrossMark() {
+                const canvas = document.createElement('canvas');
+                const size = 256;
+                canvas.width = size;
+                canvas.height = size;
+                const context = canvas.getContext('2d');
+                context.fillStyle = 'rgba(204, 0, 0, 0.8)';
+                context.beginPath();
+                context.arc(size / 2, size / 2, size / 2, 0, 2 * Math.PI);
+                context.fill();
+                context.strokeStyle = 'white';
+                context.lineWidth = size * 0.1;
+                context.lineCap = 'round';
+                context.beginPath();
+                const margin = size * 0.25;
+                context.moveTo(margin, margin);
+                context.lineTo(size - margin, size - margin);
+                context.moveTo(size - margin, margin);
+                context.lineTo(margin, size - margin);
+                context.stroke();
+                const texture = new THREE.CanvasTexture(canvas);
+                const material = new THREE.MeshBasicMaterial({ map: texture, transparent: true, depthTest: false });
+                const geometry = new THREE.PlaneGeometry(1, 1);
+                const plane = new THREE.Mesh(geometry, material);
+                plane.renderOrder = 999;
+                plane.visible = false;
+                return plane;
+            }
+
+            function preloadModels() {
+                const loadingPromises = furnitureData.map(item => {
+                    return new Promise((resolve, reject) => {
+                        loader.load(item.file, (gltf) => {
+                            preloadedModels.set(item.file, gltf);
+                            resolve();
+                        }, undefined, reject);
+                    });
+                });
+                Promise.all(loadingPromises)
+                    .then(() => console.log("すべてのモデルの事前読み込みが完了しました！"))
+                    .catch(error => console.error("モデルの事前読み込み中にエラーが発生しました。", error));
+            }
 
             function init() {
                 scene = new THREE.Scene();
                 camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
                 scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, 3));
-                
                 crossMark = createCrossMark();
                 scene.add(crossMark);
-                
                 renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
                 renderer.setPixelRatio(window.devicePixelRatio);
                 renderer.setSize(window.innerWidth, window.innerHeight);
                 renderer.xr.enabled = true;
                 document.body.appendChild(renderer.domElement);
-
                 debugInfo = document.getElementById('debug-info');
                 const overlay = document.getElementById('overlay');
                 overlay.addEventListener('touchstart', handleTouchStart, { passive: false });
                 overlay.addEventListener('touchmove', handleTouchMove, { passive: false });
                 overlay.addEventListener('touchend', handleTouchEnd);
-
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
                     appState = 'IDLE';
@@ -442,7 +480,6 @@
                     initializeARExperience();
                     preloadModels();
                 });
-
                 renderer.xr.addEventListener('sessionend', () => {
                     document.getElementById('title-container').style.display = 'block';
                     if(debugInfo) debugInfo.style.display = 'none';
@@ -455,9 +492,7 @@
                     stopDotAnimation(); 
                     floorY = null; 
                 });
-                
                 animate();
-
                 document.body.appendChild(ARButton.createButton(renderer, {
                     requiredFeatures: ['hit-test'],
                     optionalFeatures: ['dom-overlay'],
@@ -529,12 +564,10 @@
                     if (!isDraggingSlider) return;
                     event.stopPropagation();
                     event.preventDefault();
-                    
                     const clientX = event.clientX || event.touches[0].clientX;
                     const rect = sliderTrack.getBoundingClientRect();
                     let percent = (clientX - rect.left) / rect.width;
                     percent = Math.max(0, Math.min(1, percent));
-                    
                     updateScaleFromSlider(percent);
                 };
                 
@@ -546,86 +579,67 @@
                 document.addEventListener('touchend', onSliderDragEnd);
             }
             
-            function updateDebugDisplay() { /* (変更なし) */ }
-            function getDistance(touches) { /* (変更なし) */ }
-            
-            // ★★★ ここからが今回の修正のメインです ★★★
+            function updateDebugDisplay() {
+                if (!debugInfo) return;
+                const debugText = `[Debug Info]
+Touches:  ${gestureState.touchCount}
+Distance: ${gestureState.initialDistance.toFixed(2)}
+Interacting: ${gestureState.isInteracting}`;
+                debugInfo.innerText = debugText;
+            }
 
-            /**
-             * オブジェクトのスケールと、連動するスライダーUIをまとめて更新する関数
-             * @param {THREE.Object3D} activeObject - 対象の3Dオブジェクト
-             * @param {number} newMultiplier - 設定したい新しいスケール倍率
-             */
+            function getDistance(touches) {
+                const dx = touches[0].clientX - touches[1].clientX;
+                const dy = touches[0].clientY - touches[1].clientY;
+                return Math.sqrt(dx * dx + dy * dy);
+            }
+            
             function setObjectScale(activeObject, newMultiplier) {
                 if (!activeObject) return;
-
-                // 1. スケール倍率を0.5倍から2倍の間に制限する
                 const clampedMultiplier = THREE.MathUtils.clamp(newMultiplier, 0.5, 2.0);
-
-                // 2. 計算結果をオブジェクトのデータとして保存
                 activeObject.userData.scaleMultiplier = clampedMultiplier;
-
-                // 3. 3Dモデルに実際のスケールを適用
                 activeObject.scale.copy(activeObject.userData.initialScale).multiplyScalar(clampedMultiplier);
-
-                // 4. 倍率からスライダーのパーセンテージ（0.0〜1.0）を逆算
                 const percent = (clampedMultiplier - 0.5) / 1.5;
-
-                // 5. スライダーのツマミの位置を更新
                 updateSliderHandlePosition(percent);
             }
 
-            // スライダーを動かした時の処理
             function updateScaleFromSlider(percent) {
                 const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
                 const multiplier = 0.5 + percent * 1.5;
-                setObjectScale(activeObject, multiplier); // 新しい中央関数を呼び出す
+                setObjectScale(activeObject, multiplier);
             }
 
-            // ジェスチャー開始
             function handleTouchStart(event) {
-                if (event.target !== event.currentTarget) return;
+                if (event.target.closest('.circle-button, .furniture-button, #mode-switch-button')) return;
                 event.preventDefault();
-
                 const activeObject = (appState === 'PLACING' || appState === 'EDITING') ? (previewObject || selectedObject) : null;
                 if (!activeObject || !isEditMode) return;
-
                 gestureState.isInteracting = true;
                 gestureState.touchCount = event.touches.length;
-
                 if (gestureState.touchCount === 1) {
                     gestureState.lastX = event.touches[0].clientX;
                 } else if (gestureState.touchCount === 2) {
                     gestureState.initialDistance = getDistance(event.touches);
-                    // ★★★ ピンチ開始時の、現在のスケール倍率を記憶 ★★★
                     gestureState.initialScaleMultiplier = activeObject.userData.scaleMultiplier;
                 }
                 updateDebugDisplay();
             }
 
-            // ジェスチャー中
             function handleTouchMove(event) {
                 if (!gestureState.isInteracting) return;
                 event.preventDefault();
-                
                 const activeObject = (appState === 'PLACING' || appState === 'EDITING') ? (previewObject || selectedObject) : null;
                 if (!activeObject || !isEditMode) return;
-                
-                if (gestureState.touchCount === 1 && event.touches.length === 1) { // 1本指スワイプ (回転)
+                if (gestureState.touchCount === 1 && event.touches.length === 1) {
                     const currentX = event.touches[0].clientX;
                     const deltaX = currentX - gestureState.lastX;
                     activeObject.rotation.y += deltaX * 0.01;
                     gestureState.lastX = currentX;
-
-                } else if (gestureState.touchCount === 2 && event.touches.length === 2) { // 2本指ピンチ (拡縮)
+                } else if (gestureState.touchCount === 2 && event.touches.length === 2) {
                     if (gestureState.initialDistance === 0) return;
                     const currentDistance = getDistance(event.touches);
                     const scaleRatio = currentDistance / gestureState.initialDistance;
-                    
-                    // ★★★ 開始時の倍率に、現在のジェスチャーの比率を掛ける ★★★
                     const newMultiplier = gestureState.initialScaleMultiplier * scaleRatio;
-                    
-                    // ★★★ 新しい中央関数を呼び出してスケールとUIを更新 ★★★
                     setObjectScale(activeObject, newMultiplier);
                 }
                 updateDebugDisplay();
@@ -642,21 +656,181 @@
                 updateDebugDisplay();
             }
 
-            // ... (これより下の関数は変更なし)
-            function updateSliderHandlePosition(percent) { /* (変更なし) */ }
-            function updatePreviewObject() { /* (変更なし) */ }
-            function onSelect() { /* (変更なし) */ }
+            function updateSliderHandlePosition(percent) {
+                if(!sliderHandle || !sliderTrack) return;
+                const handleWidth = sliderHandle.offsetWidth;
+                const trackWidth = sliderTrack.offsetWidth;
+                sliderHandle.style.left = `calc(${percent * 100}% - ${handleWidth * percent}px)`;
+            }
+
+            function updatePreviewObject() { 
+                if (previewObject) {
+                    scene.remove(previewObject);
+                    previewObject = null;
+                }
+                const gltf = preloadedModels.get(currentFurniture.file);
+                if (!gltf) return;
+                previewObject = gltf.scene.clone();
+                setObjectTransparency(previewObject, true);
+                const initialBox = new THREE.Box3().setFromObject(previewObject);
+                const initialCenter = new THREE.Vector3();
+                initialBox.getCenter(initialCenter);
+                const size = initialBox.getSize(new THREE.Vector3());
+                const scaleFactor = currentFurniture.height / size.y;
+                previewObject.scale.set(scaleFactor, scaleFactor, scaleFactor);
+                previewObject.userData.initialScale = previewObject.scale.clone();
+                previewObject.userData.scaleMultiplier = 1.0;
+                previewObject.userData.centerOffset = initialCenter.multiplyScalar(scaleFactor);
+                previewObject.userData.crossMarkScale = Math.max(size.x, size.z) * scaleFactor;
+                previewObject.visible = false;
+                scene.add(previewObject);
+                updateSliderForObject(previewObject);
+            }
+            
+            function onSelect() {
+                if (gestureState.isInteracting) return;
+                if (isEditMode && appState === 'IDLE' && hoveredObject) {
+                    if (selectedObject) setObjectTransparency(selectedObject, false);
+                    selectedObject = hoveredObject;
+                    hoveredObject = null;
+                    setObjectTransparency(selectedObject, true);
+                    appState = 'EDITING';
+                    updateUI();
+                    updateSliderForObject(selectedObject);
+                }
+            }
+
             function onConfirm() { /* (変更なし) */ }
             function onRotate() { /* (変更なし) */ }
             function onDelete() { /* (変更なし) */ }
-            function placeNewObject() { /* (変更なし) */ }
+
+            function placeNewObject() { 
+                if (!previewObject) return;
+                const solidObject = previewObject.clone();
+                setObjectTransparency(solidObject, false);
+                solidObject.position.copy(previewObject.position);
+                solidObject.rotation.copy(previewObject.rotation);
+                solidObject.scale.copy(previewObject.scale);
+                // ★★★ ここがバグ修正の最重要ポイント ★★★
+                // userDataを正しくコピーする
+                solidObject.userData = { ...previewObject.userData };
+                if(previewObject.userData.initialScale) {
+                    solidObject.userData.initialScale = previewObject.userData.initialScale.clone();
+                }
+                if(previewObject.userData.centerOffset) {
+                    solidObject.userData.centerOffset = previewObject.userData.centerOffset.clone();
+                }
+
+                scene.add(solidObject);
+                placedObjects.push(solidObject);
+                scene.remove(previewObject);
+                previewObject = null;
+                appState = 'IDLE';
+                updateUI();
+            }
+            
             function setObjectTransparency(object, isTransparent) { /* (変更なし) */ }
             function updateUI() { /* (変更なし) */ }
             function handleHover() { /* (変更なし) */ }
             function startDotAnimation() { /* (変更なし) */ }
             function stopDotAnimation() { /* (変更なし) */ }
-            function animate() { /* (変更なし) */ }
-            function render() { /* (変更なし) */ }
+
+            function animate() {
+                renderer.setAnimationLoop(render);
+            }
+
+            function render() {
+                if (!renderer.xr.isPresenting) {
+                    if(debugDisplayInitialized) {
+                        debugInfo.style.display = 'none';
+                        debugDisplayInitialized = false;
+                    }
+                    return;
+                }
+                if (!debugDisplayInitialized) {
+                    document.getElementById('title-container').style.display = 'none';
+                    if(debugInfo) {
+                        debugInfo.style.display = 'block';
+                        updateDebugDisplay();
+                    }
+                    debugDisplayInitialized = true;
+                }
+                handleHover();
+                const confirmButton = document.getElementById('confirm-button');
+                const instructionText = document.getElementById('instruction-text');
+                let isPlaceable = false;
+                const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
+                if (renderer.xr.getFrame()) {
+                    const frame = renderer.xr.getFrame();
+                    const referenceSpace = renderer.xr.getReferenceSpace();
+                    if (hitTestSource) {
+                        const hitTestResults = frame.getHitTestResults(hitTestSource);
+                        if (hitTestResults.length > 0) {
+                            const hit = hitTestResults[0];
+                            const hitPose = hit.getPose(referenceSpace);
+                            const hitY = hitPose.transform.position.y;
+                            if (floorY === null) floorY = hitY;
+                            const Y_TOLERANCE = 0.2;
+                            isPlaceable = Math.abs(hitY - floorY) < Y_TOLERANCE;
+                            reticle.matrix.fromArray(hitPose.transform.matrix);
+                            if (instructionText.style.display !== 'none') {
+                                instructionText.style.display = 'none';
+                                stopDotAnimation();
+                            }
+                            if (isEditMode) {
+                                if (activeObject && !gestureState.isInteracting) { 
+                                    activeObject.position.setFromMatrixPosition(reticle.matrix);
+                                }
+                                if(activeObject) activeObject.visible = true;
+                                if (appState === 'PLACING' || appState === 'EDITING') {
+                                    reticle.visible = isPlaceable;
+                                    crossMark.visible = !isPlaceable;
+                                    if (crossMark.visible && activeObject) {
+                                        crossMark.position.copy(activeObject.position).add(activeObject.userData.centerOffset);
+                                        const scale = activeObject.userData.crossMarkScale * 0.6; 
+                                        crossMark.scale.set(scale, scale, scale);
+                                        crossMark.quaternion.copy(camera.quaternion);
+                                    }
+                                } else {
+                                    reticle.visible = true;
+                                    crossMark.visible = false;
+                                }
+                            } else { 
+                                reticle.visible = false;
+                                crossMark.visible = false;
+                            }
+                        } else {
+                            isPlaceable = false;
+                            reticle.visible = false;
+                            crossMark.visible = false;
+                            if (activeObject) activeObject.visible = false;
+                            if (instructionText.style.display !== 'block') {
+                                instructionText.style.display = 'block';
+                                startDotAnimation();
+                            }
+                        }
+                    }
+                }
+                
+                if (isEditMode && (appState === 'PLACING' || appState === 'EDITING')) {
+                    if(confirmButton) confirmButton.disabled = !isPlaceable;
+                }
+                
+                if (!hitTestSourceRequested && renderer.xr.getSession()) {
+                    const session = renderer.xr.getSession();
+                    session.requestReferenceSpace('viewer').then((referenceSpace) => {
+                        session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+                            hitTestSource = source;
+                        });
+                    });
+                    session.addEventListener('end', () => {
+                        hitTestSourceRequested = false; hitTestSource = null;
+                    });
+                    hitTestSourceRequested = true;
+                }
+                
+                renderer.render(scene, camera);
+            }
         }
         main();
     </script>
