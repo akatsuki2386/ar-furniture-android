@@ -5,7 +5,7 @@
     <title>AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
-        /* (既存のCSSは省略) */
+        /* (CSSは変更なしのため省略) */
         body { 
             margin: 0;
             background-color: #1A202C;
@@ -269,8 +269,6 @@
         #add-button, #edit-button {
             display: none;
         }
-
-        /* ★★★ 追加 ★★★ ここからヘルプ機能のCSS */
         #help-button {
             position: absolute;
             top: 20px;
@@ -284,14 +282,13 @@
             color: white;
             border-radius: 50%;
             cursor: pointer;
-            display: none; /* 初期状態は非表示 */
+            display: none; 
             justify-content: center;
             align-items: center;
             font-size: 28px;
             font-weight: bold;
             z-index: 200;
         }
-
         #help-modal {
             position: fixed;
             top: 0;
@@ -299,12 +296,11 @@
             width: 100%;
             height: 100%;
             background-color: rgba(0, 0, 0, 0.7);
-            display: none; /* 初期状態は非表示 */
+            display: none; 
             justify-content: center;
             align-items: center;
             z-index: 300;
         }
-
         .help-content {
             background-color: #2D3748;
             padding: 20px;
@@ -315,17 +311,14 @@
             position: relative;
             user-select: none;
         }
-        
         .help-pages-wrapper {
             overflow: hidden;
             border-radius: 8px;
         }
-
         .help-pages-container {
             display: flex;
             transition: transform 0.3s ease-in-out;
         }
-
         .help-page {
             width: 100%;
             flex-shrink: 0;
@@ -333,7 +326,6 @@
             padding: 10px;
             min-height: 250px;
         }
-
         .help-page h3 {
             margin-top: 0;
             color: #A0AEC0;
@@ -346,14 +338,12 @@
          .help-page li {
             margin-bottom: 10px;
         }
-
         .help-nav {
             display: flex;
             justify-content: space-between;
             align-items: center;
             margin-top: 15px;
         }
-
         .nav-button {
             background: none;
             border: none;
@@ -367,7 +357,6 @@
             opacity: 0.2;
             cursor: default;
         }
-
         .page-indicators {
             display: flex;
             gap: 8px;
@@ -382,7 +371,6 @@
         .indicator-dot.active {
             background-color: white;
         }
-
         .help-close-button {
             position: absolute;
             bottom: -60px;
@@ -401,15 +389,12 @@
             justify-content: center;
             align-items: center;
         }
-        /* ★★★ 追加 ★★★ ここまでヘルプ機能のCSS */
     </style>
 </head>
 <body>
     <div id="title-container">
         <h1>AR家具配置<br>シミュレーション</h1>
     </div>
-
-    <button id="help-button">?</button>
 
     <div id="ios-ar-container">
         <h2>表示したい家具を選んでください</h2>
@@ -463,6 +448,8 @@
 
 
     <div id="overlay">
+        <button id="help-button">?</button>
+
         <div id="debug-info"></div>
         <div id="instruction-text">
             <span style="font-size: 1.25em; font-weight: bold;">床を認識中<span id="loading-dots"></span></span><br><br>
@@ -542,6 +529,7 @@
     </script>
     
     <script type="module">
+        // (JavaScriptは変更なしのため省略)
         import * as THREE from 'three';
         import { ARButton } from 'three/addons/webxr/ARButton.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
@@ -551,7 +539,6 @@
         }
 
         function setupWebXR() {
-            // (既存の変数は省略)
             let camera, scene, renderer, controller;
             let hitTestSource = null;
             let hitTestSourceRequested = false;
@@ -592,7 +579,6 @@
 
             init();
             
-            // (createCrossMark, preloadModels 関数は変更なしのため省略)
             function createCrossMark() {
                 const canvas = document.createElement('canvas');
                 const size = 256;
@@ -670,10 +656,9 @@
                 overlay.addEventListener('touchmove', handleTouchMove, { passive: false });
                 overlay.addEventListener('touchend', handleTouchEnd);
 
-                // ★★★ 変更 ★★★ sessionstart/endでヘルプボタンの表示を制御
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
-                    document.getElementById('help-button').style.display = 'flex'; // ヘルプボタン表示
+                    document.getElementById('help-button').style.display = 'flex';
                     appState = 'IDLE';
                     isEditMode = true; 
                     updateUI();
@@ -683,7 +668,7 @@
 
                 renderer.xr.addEventListener('sessionend', () => {
                     document.getElementById('title-container').style.display = 'block';
-                    document.getElementById('help-button').style.display = 'none'; // ヘルプボタン非表示
+                    document.getElementById('help-button').style.display = 'none';
                     if(debugInfo) debugInfo.style.display = 'none';
                     debugDisplayInitialized = false;
                     Object.keys(gestureState).forEach(key => gestureState[key] = (typeof gestureState[key] === 'boolean' ? false : (key === 'originalMultiplier' ? 1.0 : 0)));
@@ -702,7 +687,6 @@
                     optionalFeatures: ['dom-overlay'],
                     domOverlay: { root: document.querySelector("#overlay") }
                 }));
-                 // ★★★ 追加 ★★★ ヘルプ機能の初期化処理を呼び出す
                 setupHelpModal();
             }
 
@@ -717,7 +701,6 @@
                 setupUI();
             }
 
-            // ★★★ 追加 ★★★ ここからヘルプ機能の全ロジック
             function setupHelpModal() {
                 const helpButton = document.getElementById('help-button');
                 const helpModal = document.getElementById('help-modal');
@@ -732,30 +715,25 @@
                 const totalPages = pages.length;
                 let currentPage = 0;
 
-                // --- 表示・非表示の制御 ---
                 const openHelp = () => helpModal.style.display = 'flex';
                 const closeHelp = () => helpModal.style.display = 'none';
 
                 helpButton.addEventListener('click', openHelp);
                 closeButton.addEventListener('click', closeHelp);
-                // 背景クリックで閉じる（モーダル自体へのクリックは除外）
                 helpModal.addEventListener('click', (e) => {
                     if (e.target === helpModal) {
                         closeHelp();
                     }
                 });
 
-                // --- ページめくり機能 ---
                 function goToPage(pageIndex) {
                     currentPage = Math.max(0, Math.min(pageIndex, totalPages - 1));
                     pagesContainer.style.transform = `translateX(-${currentPage * 100}%)`;
 
-                    // インジケーターの更新
                     dots.forEach((dot, index) => {
                         dot.classList.toggle('active', index === currentPage);
                     });
 
-                    // ナビゲーションボタンの有効/無効化
                     prevButton.disabled = currentPage === 0;
                     nextButton.disabled = currentPage === totalPages - 1;
                 }
@@ -763,7 +741,6 @@
                 prevButton.addEventListener('click', () => goToPage(currentPage - 1));
                 nextButton.addEventListener('click', () => goToPage(currentPage + 1));
                 
-                // --- スワイプ機能 ---
                 let touchStartX = 0;
                 let touchEndX = 0;
                 let isSwiping = false;
@@ -781,23 +758,17 @@
                 });
 
                 function handleSwipe() {
-                    const swipeThreshold = 50; // 50px以上のスワイプでページめくり
+                    const swipeThreshold = 50; 
                     if (touchStartX - touchEndX > swipeThreshold) {
-                        // 左スワイプ
                         goToPage(currentPage + 1);
                     } else if (touchEndX - touchStartX > swipeThreshold) {
-                        // 右スワイプ
                         goToPage(currentPage - 1);
                     }
                 }
 
-                // 初期状態を設定
                 goToPage(0);
             }
-            // ★★★ 追加 ★★★ ここまでヘルプ機能の全ロジック
 
-            // (これ以降の既存JavaScriptコードは変更なしなので、見やすさのために省略します)
-            // setupUI, updateDebugDisplay, getDistance, handleTouchStart, handleTouchMove, handleTouchEnd, ... animate, render など
              function setupUI() {
                 document.getElementById('exit-ar-button').addEventListener('click', (e) => { e.stopPropagation(); endSession(); });
                 
