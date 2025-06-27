@@ -257,19 +257,34 @@
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
             display: flex;
-            gap: 8px; /* 文字間の隙間 */
+            gap: 12px; /* 文字間の隙間 */
             align-items: center;
         }
         
-        #mode-switch-button span {
+        #mode-switch-button > span { /* ボタン直下の子span要素に適用 */
             transition: all 0.3s ease-in-out;
             font-weight: normal;
             color: #a0aec0; /* 非アクティブ時の色 (少しグレーがかった白) */
         }
 
-        #mode-switch-button span.active {
+        #mode-switch-button > span.separator {
+             color: #6c757d; /* 区切り文字の色 */
+        }
+
+        #mode-switch-button > span.active {
             font-weight: bold;
             color: white; /* アクティブ時の色 */
+        }
+
+        /* ★★★ 追加: 括弧を表示するための疑似要素 ★★★ */
+        #mode-switch-button > span.active::before {
+            content: '(';
+            margin-right: 0.2em;
+        }
+
+        #mode-switch-button > span.active::after {
+            content: ')';
+            margin-left: 0.2em;
         }
 
         #add-button, #edit-button {
@@ -297,7 +312,7 @@
         <div id="top-bar" style="position: absolute; top: 40px; width:100%; display: flex; justify-content: center; pointer-events: auto;">
             <button id="mode-switch-button" style="display: none;">
                 <span id="edit-mode-label">編集モード</span>
-                <span>/</span>
+                <span class="separator">|</span>
                 <span id="view-mode-label">鑑賞モード</span>
             </button>
         </div>
@@ -761,7 +776,6 @@
                 });
             }
 
-            // ★★★ 変更: updateUI関数でトグルボタンの表示を制御 ★★★
             function updateUI() {
                 const bottomBar = document.getElementById('bottom-bar');
                 const addButton = document.getElementById('add-button');
@@ -775,7 +789,7 @@
 
                 
                 document.getElementById('exit-ar-button').style.display = 'flex';
-                modeSwitchButton.style.display = 'flex'; // flexに変更
+                modeSwitchButton.style.display = 'flex';
 
                 if (isEditMode) {
                     // 編集モードのラベルをアクティブに
@@ -852,9 +866,7 @@
             }
             
             function onTouchStart(event) {
-                // UI要素上のタッチは、ジェスチャーとして扱わない
                 if (event.target !== renderer.domElement) return;
-                // ジェスチャー操作の対象外のモードなら何もしない
                 if (!isEditMode || (appState !== 'PLACING' && appState !== 'EDITING')) return;
                 
                 if (event.touches.length === 1) {
