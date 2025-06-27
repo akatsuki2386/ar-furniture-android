@@ -5,6 +5,7 @@
     <title>AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
+        /* CSSは変更ありません */
         body { 
             margin: 0;
             background-color: #1A202C;
@@ -329,6 +330,9 @@
         import { ARButton } from 'three/addons/webxr/ARButton.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+        // ★★★ このファイル内のJavaScriptは、エラーを修正し、
+        //      デバッグ機能を強化した完全版です ★★★
+
         function main() {
             setupWebXR();
         }
@@ -343,10 +347,8 @@
             let floorY = null;
             let crossMark;
             let scaleSliderContainer, sliderTrack, sliderHandle;
-            
             let isDraggingSlider = false; 
             let dotAnimationTimer = null;
-            
             const furnitureData = [
                 { name: 'イス', file: 'chair.glb', height: 0.79 },
                 { name: '本棚', file: 'bookshelf.glb', height: 1.8 }, 
@@ -367,7 +369,8 @@
                 initialDistance: 0.0,
                 lastX: 0,
                 isInteracting: false,
-                initialScaleMultiplier: 1.0
+                initialScaleMultiplier: 1.0,
+                hitTestFound: false // ★★★ デバッグ項目を追加 ★★★
             };
             
             let debugDisplayInitialized = false;
@@ -445,7 +448,10 @@
                     document.getElementById('title-container').style.display = 'block';
                     if(debugInfo) debugInfo.style.display = 'none';
                     debugDisplayInitialized = false;
-                    Object.keys(gestureState).forEach(key => gestureState[key] = (typeof gestureState[key] === 'boolean' ? false : 0));
+                    Object.keys(gestureState).forEach(key => {
+                        if (typeof gestureState[key] === 'boolean') gestureState[key] = false;
+                        else if (typeof gestureState[key] === 'number') gestureState[key] = 0;
+                    });
                     document.getElementById('exit-ar-button').style.display = 'none';
                     document.getElementById('mode-switch-button').style.display = 'none';
                     document.getElementById('bottom-bar').style.display = 'none';
@@ -545,7 +551,8 @@
                 const debugText = `[Debug Info]
 Touches:  ${gestureState.touchCount}
 Distance: ${gestureState.initialDistance.toFixed(2)}
-Interacting: ${gestureState.isInteracting}`;
+Interacting: ${gestureState.isInteracting}
+Hit-Test: ${gestureState.hitTestFound ? 'Found' : 'Searching...'}`;
                 debugInfo.innerText = debugText;
             }
 
@@ -566,13 +573,14 @@ Interacting: ${gestureState.isInteracting}`;
             }
 
             function updateScaleFromSlider(percent) {
-                const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
+                const activeObject = (appState === 'PLACING' ? previewObject : selectedObject);
+                if (!activeObject) return;
                 const multiplier = 0.5 + percent * 1.5;
                 setObjectScale(activeObject, multiplier);
             }
 
             function handleTouchStart(event) {
-                if (event.target !== event.currentTarget) return;
+                if (event.target.closest('.circle-button, .furniture-button, #mode-switch-button, #slider-handle')) return;
                 event.preventDefault();
                 const activeObject = (appState === 'PLACING' || appState === 'EDITING') ? (previewObject || selectedObject) : null;
                 if (!activeObject || !isEditMode) return;
@@ -631,7 +639,11 @@ Interacting: ${gestureState.isInteracting}`;
                     previewObject = null;
                 }
                 const gltf = preloadedModels.get(currentFurniture.file);
-                if (!gltf) return;
+                // ★★★ アラート機能を追加 ★★★
+                if (!gltf) {
+                    alert(`エラー: モデル '${currentFurniture.file}' が見つかりません！\nモデルが正しく読み込まれているか確認してください。`);
+                    return;
+                }
                 previewObject = gltf.scene.clone();
                 setObjectTransparency(previewObject, true);
                 const initialBox = new THREE.Box3().setFromObject(previewObject);
@@ -673,8 +685,6 @@ Interacting: ${gestureState.isInteracting}`;
                 solidObject.position.copy(previewObject.position);
                 solidObject.rotation.copy(previewObject.rotation);
                 solidObject.scale.copy(previewObject.scale);
-                
-                // ★★★ ここがバグ修正の最重要ポイント ★★★
                 solidObject.userData = { ...previewObject.userData };
                 if(previewObject.userData.initialScale) {
                     solidObject.userData.initialScale = previewObject.userData.initialScale.clone();
@@ -682,7 +692,6 @@ Interacting: ${gestureState.isInteracting}`;
                 if(previewObject.userData.centerOffset) {
                     solidObject.userData.centerOffset = previewObject.userData.centerOffset.clone();
                 }
-
                 scene.add(solidObject);
                 placedObjects.push(solidObject);
                 scene.remove(previewObject);
@@ -711,10 +720,8 @@ Interacting: ${gestureState.isInteracting}`;
                 const modeSwitchButton = document.getElementById('mode-switch-button');
                 const editModeLabel = document.getElementById('edit-mode-label');
                 const viewModeLabel = document.getElementById('view-mode-label');
-
                 document.getElementById('exit-ar-button').style.display = 'flex';
                 modeSwitchButton.style.display = 'flex';
-
                 if (isEditMode) {
                     editModeLabel.classList.add('active');
                     viewModeLabel.classList.remove('active');
@@ -724,7 +731,6 @@ Interacting: ${gestureState.isInteracting}`;
                     choosingControls.style.display = 'none';
                     actionControls.style.display = 'none';
                     scaleSlider.style.display = 'none';
-
                     switch (appState) {
                         case 'IDLE':
                             addButton.style.display = 'flex';
@@ -815,7 +821,7 @@ Interacting: ${gestureState.isInteracting}`;
             function render() {
                 if (!renderer.xr.isPresenting) {
                     if(debugDisplayInitialized) {
-                        debugInfo.style.display = 'none';
+                        if(debugInfo) debugInfo.style.display = 'none';
                         debugDisplayInitialized = false;
                     }
                     return;
@@ -838,7 +844,8 @@ Interacting: ${gestureState.isInteracting}`;
                     const referenceSpace = renderer.xr.getReferenceSpace();
                     if (hitTestSource) {
                         const hitTestResults = frame.getHitTestResults(hitTestSource);
-                        if (hitTestResults.length > 0) {
+                        gestureState.hitTestFound = hitTestResults.length > 0; // ★★★ デバッグ情報を更新 ★★★
+                        if (gestureState.hitTestFound) {
                             const hit = hitTestResults[0];
                             const hitPose = hit.getPose(referenceSpace);
                             const hitY = hitPose.transform.position.y;
@@ -884,6 +891,7 @@ Interacting: ${gestureState.isInteracting}`;
                         }
                     }
                 }
+                updateDebugDisplay(); // ★★★ 常にデバッグ情報を更新 ★★★
                 if (isEditMode && (appState === 'PLACING' || appState === 'EDITING')) {
                     if(confirmButton) confirmButton.disabled = !isPlaceable;
                 }
