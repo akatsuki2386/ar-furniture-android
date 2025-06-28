@@ -142,7 +142,7 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 220px; /* ★ 高さを確保 */
+            height: 220px;
             pointer-events: none;
             display: flex;
             flex-direction: column;
@@ -152,9 +152,8 @@
             box-sizing: border-box;
         }
 
-        /* ★★★ 新しいUIコントロールのCSS ★★★ */
         #transform-controls, #decision-controls {
-            display: none; /* 基本は非表示 */
+            display: none;
             align-items: center;
             pointer-events: auto;
             width: 90%;
@@ -177,16 +176,24 @@
         }
 
         #scale-slider-container {
-            flex-grow: 1; /* ★ 幅を自動調整 */
+            width: 50%; /* ★★★ バーの幅を短く変更 ★★★ */
             display: flex;
             align-items: center;
             justify-content: center;
-            height: 48px; /* ★ 高さを指定 */
+            height: 48px;
             background-color: rgba(255, 255, 255, 0.2);
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 9999px;
-            padding: 0 15px;
+            padding: 0 10px; /* ★★★ パディングを調整 ★★★ */
         }
+        /* ★★★ 「ー」「＋」記号のスタイルを追加 ★★★ */
+        .slider-icon {
+            font-size: 24px;
+            font-weight: bold;
+            color: rgba(255, 255, 255, 0.7);
+            padding: 0 8px;
+        }
+
         #slider-track {
             width: 100%;
             height: 6px;
@@ -207,13 +214,7 @@
             display: flex;
             align-items: center;
             justify-content: center;
-            transition: transform 0.1s ease; /* ★ サイズ変更を滑らかに */
-        }
-        #slider-handle svg {
-            width: 20px;
-            height: 20px;
-            stroke: #4a5568;
-            stroke-width: 2;
+            transition: transform 0.1s ease;
         }
 
         .rotation-button-group {
@@ -227,7 +228,7 @@
             background: none;
             border: none;
             color: white;
-            padding: 12px 16px; /* ★ 少し小さく調整 */
+            padding: 12px 16px;
             cursor: pointer;
             display: flex;
             align-items: center;
@@ -240,7 +241,7 @@
         }
         
         #delete-button, #confirm-button {
-             padding: 16px 28px; /* ★ 少し広めに */
+             padding: 16px 28px;
         }
         #delete-button {
              border-right: 1px solid rgba(255, 255, 255, 0.3);
@@ -354,13 +355,11 @@
 
             <div id="transform-controls">
                 <div id="scale-slider-container">
+                    <span class="slider-icon">-</span>
                     <div id="slider-track">
-                        <div id="slider-handle">
-                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9M20.25 20.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
-                            </svg>
-                        </div>
+                        <div id="slider-handle"></div>
                     </div>
+                    <span class="slider-icon">+</span>
                 </div>
                 <div class="rotation-button-group">
                     <button id="rotate-left-button" class="group-button"></button>
@@ -509,7 +508,6 @@
                 overlay.addEventListener('touchmove', handleTouchMove, { passive: false });
                 overlay.addEventListener('touchend', handleTouchEnd);
                 
-                // ★★★ 各UI要素にアイコンを設定 ★★★
                 document.getElementById('add-button').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>`;
                 document.getElementById('edit-button').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>`;
                 document.getElementById('back-button').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>`;
@@ -740,8 +738,7 @@
                 const trackWidth = sliderTrack.offsetWidth;
                 sliderHandle.style.left = `calc(${percent * 100}% - ${handleWidth * percent}px)`;
                 
-                // ★★★ つまみのサイズを更新 ★★★
-                const scale = 0.8 + 0.4 * percent; // 0.8倍から1.2倍の範囲で大きさを変更
+                const scale = 0.8 + 0.4 * percent;
                 sliderHandle.style.transform = `translateY(-50%) scale(${scale})`;
             }
 
@@ -1063,7 +1060,8 @@
                 }
                 
                 if (isEditMode && (appState === 'PLACING' || appState === 'EDITING')) {
-                    confirmButton.disabled = !isPlaceable;
+                    const decisionConfirmButton = document.querySelector('#decision-controls #confirm-button');
+                    decisionConfirmButton.disabled = !isPlaceable;
                 }
                 
                 if (!hitTestSourceRequested && renderer.xr.getSession()) {
