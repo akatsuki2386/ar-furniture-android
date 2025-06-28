@@ -108,22 +108,6 @@
             min-width: 260px;
             box-sizing: border-box;
         }
-        #debug-info {
-            position: fixed;
-            top: 80px;
-            left: 10px;
-            color: white;
-            background: rgba(0, 0, 0, 0.6);
-            padding: 8px;
-            border-radius: 5px;
-            z-index: 999;
-            font-family: monospace;
-            font-size: 12px;
-            line-height: 1.5;
-            white-space: pre;
-            display: none;
-            pointer-events: none;
-        }
         #furniture-palette {
             display: flex;
             flex-direction: row;
@@ -269,126 +253,6 @@
         #add-button, #edit-button {
             display: none;
         }
-        #help-button {
-            position: absolute;
-            top: 20px;
-            left: 20px;
-            width: 56px;
-            height: 56px;
-            background-color: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            color: white;
-            border-radius: 50%;
-            cursor: pointer;
-            display: none; 
-            justify-content: center;
-            align-items: center;
-            font-size: 28px;
-            font-weight: bold;
-            z-index: 200;
-        }
-        #help-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            display: none; 
-            justify-content: center;
-            align-items: center;
-            z-index: 300;
-        }
-        .help-content {
-            background-color: #2D3748;
-            padding: 20px;
-            border-radius: 16px;
-            width: 90%;
-            max-width: 400px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            position: relative; /* ★★★ 変更 ★★★ ボタンの位置の基準にする */
-            user-select: none;
-        }
-        .help-pages-wrapper {
-            overflow: hidden;
-            border-radius: 8px;
-        }
-        .help-pages-container {
-            display: flex;
-            transition: transform 0.3s ease-in-out;
-        }
-        .help-page {
-            width: 100%;
-            flex-shrink: 0;
-            box-sizing: border-box;
-            padding: 10px;
-            min-height: 250px;
-        }
-        .help-page h3 {
-            margin-top: 0;
-            color: #A0AEC0;
-            text-align: center;
-        }
-        .help-page ul {
-            padding-left: 20px;
-            line-height: 1.8;
-        }
-         .help-page li {
-            margin-bottom: 10px;
-        }
-        .help-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-top: 15px;
-        }
-        .nav-button {
-            background: none;
-            border: none;
-            color: white;
-            font-size: 36px;
-            font-weight: bold;
-            cursor: pointer;
-            padding: 0 15px;
-        }
-        .nav-button:disabled {
-            opacity: 0.2;
-            cursor: default;
-        }
-        .page-indicators {
-            display: flex;
-            gap: 8px;
-        }
-        .indicator-dot {
-            width: 10px;
-            height: 10px;
-            background-color: #718096;
-            border-radius: 50%;
-            transition: background-color 0.3s;
-        }
-        .indicator-dot.active {
-            background-color: white;
-        }
-        .help-close-button {
-            position: absolute;
-            bottom: -60px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 50px;
-            height: 50px;
-            background-color: rgba(255, 255, 255, 0.8);
-            color: #1A202C;
-            border: none;
-            border-radius: 50%;
-            font-size: 24px;
-            font-weight: bold;
-            cursor: pointer;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
     </style>
 </head>
 <body>
@@ -402,55 +266,8 @@
         </div>
     </div>
     
-    <div id="help-modal">
-        <div class="help-content">
-            <div class="help-pages-wrapper">
-                <div class="help-pages-container">
-                    <div class="help-page" id="page-1">
-                        <h3>基本操作</h3>
-                        <ul>
-                            <li><b>モード切替:</b> 画面上部のボタンで「編集」「鑑賞」を切り替えます。</li>
-                            <li><b>床の認識:</b> カメラを床に向け、ゆっくり動かすと空間を認識します。</li>
-                            <li><b>家具の配置:</b> 編集モードで「+」を押し、置きたい家具を選んで配置します。</li>
-                        </ul>
-                    </div>
-                    <div class="help-page" id="page-2">
-                        <h3>ボタン説明</h3>
-                        <ul>
-                            <li><b>＋:</b> 家具選択リストを開きます。</li>
-                            <li><b>✓:</b> 家具の配置や編集を確定します。</li>
-                            <li><b>🗑️:</b> 選択中の家具を削除します。</li>
-                            <li><b>🔄:</b> 選択中の家具を45度回転します。</li>
-                        </ul>
-                    </div>
-                    <div class="help-page" id="page-3">
-                        <h3>ジェスチャー説明</h3>
-                         <ul>
-                            <li><b>移動:</b> 家具を置きたい場所をタップします。</li>
-                            <li><b>回転:</b> 1本指で左右にドラッグします。</li>
-                            <li><b>拡縮:</b> 2本指を広げたり狭めたりします（ピンチ操作）。</li>
-                        </ul>
-                    </div>
-                </div>
-            </div>
-            <div class="help-nav">
-                <button class="nav-button" id="prev-page-button">&lt;</button>
-                <div class="page-indicators">
-                    <div class="indicator-dot active"></div>
-                    <div class="indicator-dot"></div>
-                    <div class="indicator-dot"></div>
-                </div>
-                <button class="nav-button" id="next-page-button">&gt;</button>
-            </div>
-            <button class="help-close-button">×</button>
-        </div>
-    </div>
-
-
     <div id="overlay">
-        <button id="help-button">?</button>
-
-        <div id="debug-info"></div>
+        
         <div id="instruction-text">
             <span style="font-size: 1.25em; font-weight: bold;">床を認識中<span id="loading-dots"></span></span><br><br>
             カメラをゆっくりと<br>床に向けて<br>動かしてください
@@ -566,7 +383,6 @@
             let appState = 'IDLE';
             let isEditMode = false; 
 
-            let debugInfo;
             const gestureState = {
                 touchCount: 0,
                 initialDistance: 0.0,
@@ -575,8 +391,6 @@
                 originalMultiplier: 1.0
             };
             
-            let debugDisplayInitialized = false;
-
             init();
             
             function createCrossMark() {
@@ -650,7 +464,6 @@
                 renderer.xr.enabled = true;
                 document.body.appendChild(renderer.domElement);
 
-                debugInfo = document.getElementById('debug-info');
                 const overlay = document.getElementById('overlay');
                 overlay.addEventListener('touchstart', handleTouchStart, { passive: false });
                 overlay.addEventListener('touchmove', handleTouchMove, { passive: false });
@@ -658,7 +471,6 @@
 
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
-                    document.getElementById('help-button').style.display = 'flex'; 
                     appState = 'IDLE';
                     isEditMode = true; 
                     updateUI();
@@ -668,9 +480,6 @@
 
                 renderer.xr.addEventListener('sessionend', () => {
                     document.getElementById('title-container').style.display = 'block';
-                    document.getElementById('help-button').style.display = 'none'; 
-                    if(debugInfo) debugInfo.style.display = 'none';
-                    debugDisplayInitialized = false;
                     Object.keys(gestureState).forEach(key => gestureState[key] = (typeof gestureState[key] === 'boolean' ? false : (key === 'originalMultiplier' ? 1.0 : 0)));
                     document.getElementById('exit-ar-button').style.display = 'none';
                     document.getElementById('mode-switch-button').style.display = 'none';
@@ -687,7 +496,6 @@
                     optionalFeatures: ['dom-overlay'],
                     domOverlay: { root: document.querySelector("#overlay") }
                 }));
-                setupHelpModal();
             }
 
             function initializeARExperience() {
@@ -701,91 +509,7 @@
                 setupUI();
             }
 
-            function setupHelpModal() {
-                const helpButton = document.getElementById('help-button');
-                const helpModal = document.getElementById('help-modal');
-                const helpContent = document.querySelector('.help-content');
-                const closeButton = document.querySelector('.help-close-button');
-                
-                const pagesContainer = document.querySelector('.help-pages-container');
-                const pages = document.querySelectorAll('.help-page');
-                const prevButton = document.getElementById('prev-page-button');
-                const nextButton = document.getElementById('next-page-button');
-                const dots = document.querySelectorAll('.indicator-dot');
-                const totalPages = pages.length;
-                let currentPage = 0;
-
-                const openHelp = () => helpModal.style.display = 'flex';
-                const closeHelp = () => helpModal.style.display = 'none';
-
-                // ★★★ 変更 ★★★ イベントの伝播を止める処理を追加
-                helpButton.addEventListener('click', (e) => {
-                    e.stopPropagation(); // 他のイベントとの競合を防ぐ
-                    openHelp();
-                });
-                closeButton.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    closeHelp();
-                });
-                helpModal.addEventListener('click', (e) => {
-                    if (e.target === helpModal) {
-                        e.stopPropagation();
-                        closeHelp();
-                    }
-                });
-
-                function goToPage(pageIndex) {
-                    currentPage = Math.max(0, Math.min(pageIndex, totalPages - 1));
-                    pagesContainer.style.transform = `translateX(-${currentPage * 100}%)`;
-
-                    dots.forEach((dot, index) => {
-                        dot.classList.toggle('active', index === currentPage);
-                    });
-
-                    prevButton.disabled = currentPage === 0;
-                    nextButton.disabled = currentPage === totalPages - 1;
-                }
-
-                prevButton.addEventListener('click', () => goToPage(currentPage - 1));
-                nextButton.addEventListener('click', () => goToPage(currentPage + 1));
-                
-                let touchStartX = 0;
-                let touchEndX = 0;
-                let isSwiping = false;
-
-                helpContent.addEventListener('touchstart', (e) => {
-                    e.stopPropagation(); // 背景のジェスチャーと競合しないように
-                    touchStartX = e.changedTouches[0].screenX;
-                    isSwiping = true;
-                });
-
-                helpContent.addEventListener('touchend', (e) => {
-                    e.stopPropagation();
-                    if (!isSwiping) return;
-                    isSwiping = false;
-                    touchEndX = e.changedTouches[0].screenX;
-                    handleSwipe();
-                });
-                
-                // スワイプ中の意図しない動作を防ぐ
-                helpContent.addEventListener('touchmove', (e) => {
-                    e.stopPropagation();
-                });
-
-
-                function handleSwipe() {
-                    const swipeThreshold = 50; 
-                    if (touchStartX - touchEndX > swipeThreshold) {
-                        goToPage(currentPage + 1);
-                    } else if (touchEndX - touchStartX > swipeThreshold) {
-                        goToPage(currentPage - 1);
-                    }
-                }
-
-                goToPage(0);
-            }
-
-             function setupUI() {
+            function setupUI() {
                 document.getElementById('exit-ar-button').addEventListener('click', (e) => { e.stopPropagation(); endSession(); });
                 
                 function endSession() {
@@ -860,15 +584,6 @@
                 document.addEventListener('touchend', onSliderDragEnd);
             }
             
-            function updateDebugDisplay() {
-                if (!debugInfo) return;
-                const debugText = `[Debug Info]
-Touches:  ${gestureState.touchCount}
-Distance: ${gestureState.initialDistance.toFixed(2)}
-Interacting: ${gestureState.isInteracting}`;
-                debugInfo.innerText = debugText;
-            }
-
             function getDistance(touches) {
                 const dx = touches[0].clientX - touches[1].clientX;
                 const dy = touches[0].clientY - touches[1].clientY;
@@ -891,7 +606,6 @@ Interacting: ${gestureState.isInteracting}`;
                     gestureState.initialDistance = getDistance(event.touches);
                     gestureState.originalMultiplier = activeObject.userData.scaleMultiplier || 1.0; 
                 }
-                updateDebugDisplay();
             }
 
             function handleTouchMove(event) {
@@ -922,7 +636,6 @@ Interacting: ${gestureState.isInteracting}`;
                     const percent = (newMultiplier - 0.5) / 1.5;
                     updateSliderHandlePosition(percent);
                 }
-                updateDebugDisplay();
             }
 
             function handleTouchEnd(event) {
@@ -933,8 +646,6 @@ Interacting: ${gestureState.isInteracting}`;
                      handleTouchStart(event);
                 }
                 gestureState.touchCount = event.touches.length;
-
-                updateDebugDisplay();
             }
 
             function updateSliderForObject(object) {
@@ -1193,20 +904,7 @@ Interacting: ${gestureState.isInteracting}`;
 
             function render() {
                 if (!renderer.xr.isPresenting) {
-                    if(debugDisplayInitialized) {
-                        debugInfo.style.display = 'none';
-                        debugDisplayInitialized = false;
-                    }
                     return;
-                }
-
-                if (!debugDisplayInitialized) {
-                    document.getElementById('title-container').style.display = 'none';
-                    if(debugInfo) {
-                        debugInfo.style.display = 'block';
-                        updateDebugDisplay();
-                    }
-                    debugDisplayInitialized = true;
                 }
 
                 handleHover();
