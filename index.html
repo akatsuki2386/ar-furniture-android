@@ -152,7 +152,7 @@
         }
         #action-controls {
             width: 100%;
-            max-width: 400px; /* ★ ボタンが増えたため少し広げます */
+            max-width: 400px;
             display: flex;
             justify-content: space-around;
             align-items: center;
@@ -211,7 +211,7 @@
             transition: transform 0.1s ease, background-color 0.2s ease;
             pointer-events: auto;
             flex-shrink: 0;
-            user-select: none; /* ★ 長押し時のテキスト選択を防ぐ */
+            user-select: none;
             -webkit-user-select: none;
         }
         .circle-button:active {
@@ -254,7 +254,6 @@
         #add-button, #edit-button {
             display: none;
         }
-        /* ★ 左回転ボタンのSVGを反転させる */
         #rotate-left-button svg {
             transform: scaleX(-1);
         }
@@ -332,7 +331,8 @@
                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5" />
                     </svg>
                 </button>
-                <button id="confirm-button" class="circle-button" style="background-color: #007AFF;"> <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
+                <button id="confirm-button" class="circle-button" style="background-color: #007AFF;">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
                         <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
                     </svg>
                 </button>
@@ -400,9 +400,8 @@
                 originalMultiplier: 1.0
             };
             
-            // ★★★ 長押し連続回転のための変数を追加 ★★★
             let isRotatingContinuously = false;
-            let continuousRotationDirection = 0; // -1: 左, 1: 右
+            let continuousRotationDirection = 0;
             let longPressTimer = null;
             
             init();
@@ -567,12 +566,11 @@
                     palette.appendChild(button);
                 });
                 
-                // ★★★ 新しい回転ボタンのイベントを設定 ★★★
                 const rotateLeftButton = document.getElementById('rotate-left-button');
                 const rotateRightButton = document.getElementById('rotate-right-button');
 
-                setupRotationButtonEvents(rotateLeftButton, -1); // -1 は左回転
-                setupRotationButtonEvents(rotateRightButton, 1);  // 1 は右回転
+                setupRotationButtonEvents(rotateLeftButton, -1);
+                setupRotationButtonEvents(rotateRightButton, 1);
 
                 document.getElementById('delete-button').addEventListener('click', (e) => { e.stopPropagation(); onDelete(); });
                 document.getElementById('confirm-button').addEventListener('click', (e) => { e.stopPropagation(); onConfirm(); });
@@ -604,11 +602,9 @@
                 document.addEventListener('touchend', onSliderDragEnd);
             }
 
-            // ★★★ 回転ボタンのイベントをセットアップする共通関数 ★★★
             function setupRotationButtonEvents(button, direction) {
                 const pressStart = (e) => {
                     e.preventDefault();
-                    // 300ミリ秒後に連続回転を開始するタイマー
                     longPressTimer = setTimeout(() => {
                         isRotatingContinuously = true;
                         continuousRotationDirection = direction;
@@ -616,15 +612,10 @@
                 };
 
                 const pressEnd = () => {
-                    // タイマーを解除
                     clearTimeout(longPressTimer);
-                    
-                    // もし連続回転が始まっていなければ（＝クリックだったら）
                     if (!isRotatingContinuously) {
-                        onRotate(direction); // 45度回転を実行
+                        onRotate(direction);
                     }
-                    
-                    // 連続回転を停止
                     isRotatingContinuously = false;
                 };
 
@@ -633,7 +624,7 @@
 
                 button.addEventListener('mouseup', pressEnd);
                 button.addEventListener('touchend', pressEnd);
-                button.addEventListener('mouseleave', pressEnd); // ボタンから指が離れた場合も止める
+                button.addEventListener('mouseleave', pressEnd);
             }
             
             function getDistance(touches) {
@@ -781,11 +772,10 @@
                 }
             }
             
-            // ★★★ 方向を指定して45度回転させるように変更 ★★★
             function onRotate(direction) {
                 const target = (appState === 'PLACING') ? previewObject : selectedObject;
                 if (target) {
-                    target.rotation.y += (Math.PI / 4) * direction; // 45度 * 方向
+                    target.rotation.y += (Math.PI / 4) * direction;
                 }
             }
             
@@ -889,7 +879,7 @@
             }
 
             function handleHover() {
-                if (gestureState.isInteracting || isRotatingContinuously) { // ★ 連続回転中もホバーを無効化
+                if (gestureState.isInteracting || isRotatingContinuously) {
                     if(hoveredObject) {
                          setObjectTransparency(hoveredObject, false);
                          hoveredObject = null;
@@ -959,11 +949,10 @@
                     return;
                 }
                 
-                // ★★★ 連続回転の処理を毎フレーム実行 ★★★
                 if (isRotatingContinuously && (appState === 'PLACING' || appState === 'EDITING')) {
                     const target = (appState === 'PLACING') ? previewObject : selectedObject;
                     if (target) {
-                        const rotationSpeed = 0.02; // 回転速度
+                        const rotationSpeed = 0.02;
                         target.rotation.y += rotationSpeed * continuousRotationDirection;
                     }
                 }
@@ -1006,7 +995,8 @@
                                 
                                 if (appState === 'PLACING' || appState === 'EDITING') {
                                     reticle.visible = isPlaceable;
-                                    crossMark.visible = !isPlaceeable;
+                                    // ★★★ ここがタイプミスでした！修正済み ★★★
+                                    crossMark.visible = !isPlaceable;
                                     if (crossMark.visible && activeObject) {
                                         crossMark.position.copy(activeObject.position).add(activeObject.userData.centerOffset);
                                         const scale = activeObject.userData.crossMarkScale * 0.6; 
