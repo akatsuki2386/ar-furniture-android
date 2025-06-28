@@ -5,19 +5,6 @@
     <title>AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
-        /* ★★★ デバッグ用の赤い点のスタイルを追加 ★★★ */
-        #debug-tap-indicator {
-            position: fixed;
-            width: 20px;
-            height: 20px;
-            background-color: red;
-            border-radius: 50%;
-            pointer-events: none;
-            display: none;
-            z-index: 9999;
-            transform: translate(-50%, -50%);
-        }
-        
         body { 
             margin: 0;
             background-color: #1A202C;
@@ -34,13 +21,6 @@
             text-align: center;
             z-index: 5;
             width: 90%;
-        }
-        #title-container h1 {
-            font-size: 2.2rem;
-            font-weight: bold;
-            line-height: 1.4;
-            color: white;
-            text-shadow: 0 2px 8px rgba(0,0,0,0.5);
         }
         #ARButton {
             color: white !important;
@@ -60,7 +40,6 @@
             left: 50% !important;
             transform: translateX(-50%) !important;
             z-index: 100 !important;
-            white-space: nowrap !important;
         }
         #overlay {
             position: fixed;
@@ -84,8 +63,6 @@
             line-height: 1.7;
             display: none;
             pointer-events: none;
-            min-width: 260px;
-            box-sizing: border-box;
         }
         #bottom-bar {
             position: absolute;
@@ -102,18 +79,7 @@
             box-sizing: border-box;
         }
 
-        #decision-controls {
-            display: none;
-            align-items: center;
-            pointer-events: auto;
-            width: auto;
-            position: absolute;
-            bottom: 90px;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        
-        #add-button {
+        #decision-controls, #add-button {
             position: absolute;
             bottom: 90px;
             left: 50%;
@@ -157,10 +123,8 @@
             display: none;
             align-items: center;
             gap: 5px;
-            pointer-events: auto;
         }
         .mode-label {
-            transition: all 0.3s ease-in-out;
             padding: 5px 15px;
             border-radius: 9999px;
             font-weight: normal;
@@ -180,34 +144,35 @@
             width: 56px;
             height: 56px;
         }
-        #calibrate-modal {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background-color: rgba(0, 0, 0, 0.7);
-            z-index: 200;
+
+        /* ★★★ 新しい校正入力UIのスタイル ★★★ */
+        #calibration-input-ui {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
             display: none;
-            justify-content: center;
+            flex-direction: column;
             align-items: center;
-        }
-        .modal-content {
-            background-color: #2D3748;
-            padding: 25px;
+            gap: 15px;
+            background-color: rgba(0,0,0,0.6);
+            padding: 20px;
             border-radius: 16px;
             width: 90%;
-            max-width: 300px;
-            box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            text-align: center;
+            max-width: 320px;
+            pointer-events: auto;
         }
-        .modal-content h3 {
-            margin-top: 0;
-            margin-bottom: 20px;
+        #calibration-input-ui label {
             color: #A0AEC0;
+            font-size: 14px;
         }
-        .modal-content input {
-            width: 80%;
+        .input-row {
+            display: flex;
+            gap: 10px;
+            width: 100%;
+        }
+        #height-input {
+            flex-grow: 1;
             padding: 12px;
             border-radius: 8px;
             border: 2px solid #4A5568;
@@ -215,28 +180,16 @@
             color: white;
             font-size: 18px;
             text-align: center;
-            margin-bottom: 20px;
+            min-width: 0; /* flexアイテムの縮小を許可 */
         }
-        .modal-buttons {
-            display: flex;
-            justify-content: space-between;
-            gap: 15px;
-        }
-        .modal-buttons button {
-            flex-grow: 1;
-            padding: 12px;
+        #calibration-input-ui button {
+            padding: 12px 20px;
             border-radius: 8px;
             border: none;
             font-size: 16px;
             font-weight: bold;
             cursor: pointer;
-        }
-        #modal-confirm {
             background-color: #007AFF;
-            color: white;
-        }
-        #modal-cancel {
-            background-color: #4A5568;
             color: white;
         }
     </style>
@@ -247,8 +200,6 @@
     </div>
     
     <div id="overlay">
-        <div id="debug-tap-indicator"></div>
-
         <div id="instruction-text"></div>
         
         <button id="mode-switch-button">
@@ -261,28 +212,27 @@
         
         <div id="bottom-bar">
             <button id="add-button" class="circle-button"></button>
+            
             <div id="decision-controls">
                  <button id="confirm-button" class="circle-button" style="background-color: #007AFF;"></button>
+            </div>
+
+            <div id="calibration-input-ui">
+                <label for="height-input">ロックした地点の床からの高さを入力</label>
+                <div class="input-row">
+                    <input type="number" id="height-input" placeholder="例: 90" />
+                    <span>cm</span>
+                    <button id="modal-confirm">決定</button>
+                </div>
             </div>
         </div>
         
         <button id="calibrate-button" class="circle-button">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 32px; height: 32px;">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M12 3v18M3 12h18" />
-                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 20.25h-9M12 3.75v.008m0 16.492v.008" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75L19.5 19.5M3.75 19.5L19.5 3.75" />
+                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15M4.5 12h15" />
             </svg>
         </button>
-
-        <div id="calibrate-modal">
-            <div class="modal-content">
-                <h3>基準点の高さを入力</h3>
-                <input type="number" id="height-input" placeholder="例: 90 (cm)">
-                <div class="modal-buttons">
-                    <button id="modal-cancel">キャンセル</button>
-                    <button id="modal-confirm">決定</button>
-                </div>
-            </div>
-        </div>
     </div>
 
     <script type="importmap">
@@ -304,7 +254,7 @@
         }
 
         function setupWebXR() {
-            let camera, scene, renderer, controller; // ★ controllerを追加
+            let camera, scene, renderer, controller;
             let hitTestSource = null;
             let reticle;
             const loader = new GLTFLoader();
@@ -317,11 +267,11 @@
             let previewObject = null;
             const placedObjects = [];
             
-            let appState = 'IDLE';
+            let appState = 'IDLE'; // IDLE, PLACING, CALIBRATING_TARGETING, CALIBRATING_INPUT
             let isEditMode = true; 
             
             let scaleCorrectionFactor = 1.0;
-            let calibrationTargetPoint = null;
+            let lockedHitMatrix = null;
             
             init();
 
@@ -336,7 +286,6 @@
                 renderer.xr.enabled = true;
                 document.body.appendChild(renderer.domElement);
 
-                // ★★★ ARコントローラー（タップ検知用）をセットアップ ★★★
                 controller = renderer.xr.getController(0);
                 controller.addEventListener('select', onXRSelect);
                 scene.add(controller);
@@ -354,8 +303,9 @@
                     preloadModels();
 
                     const session = renderer.xr.getSession();
-                    session.requestReferenceSpace('viewer').then((referenceSpace) => {
-                        session.requestHitTestSource({ space: referenceSpace }).then((source) => {
+                    const referenceSpace = renderer.xr.getReferenceSpace();
+                    session.requestReferenceSpace('viewer').then((refSpace) => {
+                        session.requestHitTestSource({ space: refSpace }).then((source) => {
                             hitTestSource = source;
                         });
                     });
@@ -378,24 +328,12 @@
                     optionalFeatures: ['dom-overlay'],
                     domOverlay: { root: document.querySelector("#overlay") }
                 }));
-
-                // デバッグ用のタップインジケーターのイベントリスナー
-                document.getElementById('overlay').addEventListener('click', (event) => {
-                    if (event.target.closest('button')) return;
-                    const indicator = document.getElementById('debug-tap-indicator');
-                    indicator.style.left = `${event.clientX}px`;
-                    indicator.style.top = `${event.clientY}px`;
-                    indicator.style.display = 'block';
-                    setTimeout(() => {
-                        indicator.style.display = 'none';
-                    }, 500);
-                });
             }
 
             function initializeARExperience() {
                 reticle = new THREE.Mesh( 
                     new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2), 
-                    new THREE.MeshBasicMaterial()
+                    new THREE.MeshBasicMaterial({ color: 0x007AFF }) // レティクルの色を変更
                 );
                 reticle.matrixAutoUpdate = false;
                 reticle.visible = false;
@@ -409,6 +347,7 @@
                 document.getElementById('mode-switch-button').addEventListener('click', (e) => {
                     e.stopPropagation();
                     isEditMode = !isEditMode;
+                    appState = 'IDLE'; // モード切替時は必ずIDLEに
                     updateUI();
                 });
 
@@ -426,54 +365,36 @@
                 
                 document.getElementById('calibrate-button').addEventListener('click', startCalibration);
                 document.getElementById('modal-confirm').addEventListener('click', finishCalibration);
-                document.getElementById('modal-cancel').addEventListener('click', cancelCalibration);
             }
             
-            // ★★★ タップ処理を onXRSelect に集約 ★★★
             function onXRSelect() {
-                if (reticle.visible) {
-                    if (appState === 'CALIBRATING') {
-                         handleCalibrationTap(reticle.matrix);
-                    }
+                if (reticle.visible && appState === 'CALIBRATING_TARGETING') {
+                     // 位置をロックして入力ステップへ
+                     lockedHitMatrix = reticle.matrix.clone();
+                     appState = 'CALIBRATING_INPUT';
+                     updateUI();
                 }
             }
 
             function startCalibration(e) {
                 e.stopPropagation();
                 if (isEditMode) return;
-                appState = 'CALIBRATING';
-                showInstruction('高さが分かっている場所を<br>レティクル(輪)で狙ってタップ');
+                appState = 'CALIBRATING_TARGETING';
+                updateUI();
             }
             
-            function cancelCalibration() {
-                document.getElementById('calibrate-modal').style.display = 'none';
-                hideInstruction();
-                appState = 'IDLE';
-            }
-
-            function handleCalibrationTap(hitMatrix) {
-                if (floorY === null) {
-                    showInstruction('先に床を認識してください');
-                    setTimeout(hideInstruction, 2000);
-                    appState = 'IDLE';
-                    return;
-                }
-                const position = new THREE.Vector3().setFromMatrixPosition(hitMatrix);
-                calibrationTargetPoint = position;
-                document.getElementById('calibrate-modal').style.display = 'flex';
-                hideInstruction();
-            }
-
             function finishCalibration() {
                 const heightInput = document.getElementById('height-input');
                 const realHeightMeters = parseFloat(heightInput.value) / 100;
 
-                if (!realHeightMeters || !calibrationTargetPoint) {
+                if (!realHeightMeters || !lockedHitMatrix) {
                     cancelCalibration();
                     return;
                 }
                 
-                const arHeight = calibrationTargetPoint.y - floorY;
+                const lockedPosition = new THREE.Vector3().setFromMatrixPosition(lockedHitMatrix);
+                const arHeight = lockedPosition.y - floorY;
+
                 if (arHeight <= 0) {
                     cancelCalibration();
                     return;
@@ -484,15 +405,22 @@
                 
                 cancelCalibration();
             }
+            
+            function cancelCalibration() {
+                lockedHitMatrix = null;
+                appState = 'IDLE';
+                updateUI();
+            }
 
             function applyScaleCorrection() {
-                const allObjects = [...placedObjects];
-                if (previewObject) {
-                    allObjects.push(previewObject);
-                }
+                const allObjects = [...placedObjects, previewObject].filter(Boolean);
                 allObjects.forEach(obj => {
                     if (obj.userData.initialScale) {
                         const newScale = obj.userData.initialScale.clone().multiplyScalar(scaleCorrectionFactor);
+                        // 拡縮操作中のスケールも考慮に入れる
+                        if (obj.userData.scaleMultiplier) {
+                            newScale.multiplyScalar(obj.userData.scaleMultiplier);
+                        }
                         obj.scale.copy(newScale);
                     }
                 });
@@ -509,10 +437,8 @@
             }
             
             function updatePreviewObject(furniture) { 
-                if (previewObject) {
-                    scene.remove(previewObject);
-                    previewObject = null;
-                }
+                if (previewObject) scene.remove(previewObject);
+                
                 const gltf = preloadedModels.get(furniture.file);
                 if (!gltf) return;
                 
@@ -550,23 +476,28 @@
                 const addButton = document.getElementById('add-button');
                 const decisionControls = document.getElementById('decision-controls');
                 const calibrateButton = document.getElementById('calibrate-button');
+                const calibrationInputUI = document.getElementById('calibration-input-ui');
                 const modeSwitchButton = document.getElementById('mode-switch-button');
                 const editModeLabel = document.getElementById('edit-mode-label');
                 const viewModeLabel = document.getElementById('view-mode-label');
                 
                 const session = renderer.xr.getSession();
                 if (!session) {
-                    const allButtons = document.querySelectorAll('#overlay button');
+                    const allButtons = document.querySelectorAll('#overlay button, #overlay div[id$="-controls"], #overlay div[id$="-ui"]');
                     allButtons.forEach(b => b.style.display = 'none');
+                    document.getElementById('title-container').style.display = 'block';
                     return;
                 }
                 
                 document.getElementById('exit-ar-button').style.display = 'flex';
                 modeSwitchButton.style.display = 'flex';
 
+                // 全ての操作UIを一旦非表示
                 addButton.style.display = 'none';
                 decisionControls.style.display = 'none';
                 calibrateButton.style.display = 'none';
+                calibrationInputUI.style.display = 'none';
+                hideInstruction();
 
                 if (isEditMode) {
                     editModeLabel.classList.add('active');
@@ -580,7 +511,14 @@
                 } else { // 鑑賞モード
                     editModeLabel.classList.remove('active');
                     viewModeLabel.classList.add('active');
-                    calibrateButton.style.display = 'flex';
+                    
+                    if (appState === 'IDLE') {
+                         calibrateButton.style.display = 'flex';
+                    } else if (appState === 'CALIBRATING_TARGETING') {
+                        showInstruction('高さを測りたい場所を<br>〇印に合わせてタップ');
+                    } else if (appState === 'CALIBRATING_INPUT') {
+                        calibrationInputUI.style.display = 'flex';
+                    }
                 }
             }
 
@@ -595,27 +533,32 @@
                 if (!frame) return;
 
                 const referenceSpace = renderer.xr.getReferenceSpace();
+                const session = frame.session;
                 
-                if (hitTestSource) {
+                // レティクル（〇印）の表示ロジック
+                if (hitTestSource && (appState === 'PLACING' || appState === 'CALIBRATING_TARGETING')) {
                     const hitTestResults = frame.getHitTestResults(hitTestSource);
                     if (hitTestResults.length > 0) {
                         const hit = hitTestResults[0];
                         const hitPose = hit.getPose(referenceSpace);
                         
-                        if (floorY === null) {
-                            floorY = hitPose.transform.position.y;
-                        }
+                        if (floorY === null) floorY = hitPose.transform.position.y;
                         
                         reticle.visible = true;
                         reticle.matrix.fromArray(hitPose.transform.matrix);
-                        
-                        if (appState === 'PLACING' && previewObject) {
-                            previewObject.visible = true;
-                            previewObject.position.setFromMatrixPosition(reticle.matrix);
-                        }
                     } else {
                         reticle.visible = false;
                     }
+                } else {
+                    reticle.visible = false;
+                }
+                
+                // プレビューオブジェクトの表示ロジック
+                if (appState === 'PLACING' && previewObject && reticle.visible) {
+                    previewObject.visible = true;
+                    previewObject.position.setFromMatrixPosition(reticle.matrix);
+                } else if (previewObject) {
+                    previewObject.visible = false;
                 }
                 
                 renderer.render(scene, camera);
