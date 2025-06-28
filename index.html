@@ -139,13 +139,12 @@
         }
         #bottom-bar {
             position: absolute;
-            bottom: 0; /* ★ 基準点として利用 */
+            bottom: 0;
             left: 0;
             width: 100%;
-            height: 200px; /* ★ 操作エリアの高さを確保 */
-            pointer-events: none; /* ★ 子要素のイベントを妨げない */
+            height: 200px;
+            pointer-events: none;
         }
-        /* ★★★ 新しいボタン配置のためのCSS ★★★ */
         #left-action-controls, 
         #center-action-controls, 
         #right-action-controls,
@@ -154,9 +153,9 @@
         #edit-button {
             position: absolute;
             bottom: 90px;
-            display: none; /* 基本は非表示 */
+            display: none;
             align-items: center;
-            pointer-events: auto; /* ★ 操作できるように */
+            pointer-events: auto;
         }
         #add-button, #edit-button {
              left: 50%;
@@ -265,6 +264,36 @@
             color: #1A202C;
             background-color: white;
         }
+        
+        /* ★★★ 回転ボタングループの新しいCSS ★★★ */
+        .rotation-button-group {
+            display: flex;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 9999px; /* ピル形状 */
+            overflow: hidden; /* 角丸を内側にも適用 */
+            user-select: none;
+            -webkit-user-select: none;
+        }
+        .group-button {
+            background: none;
+            border: none;
+            color: white;
+            padding: 16px 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .group-button:active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        /* 右ボタンの左側に仕切り線を追加 */
+        #rotate-right-button {
+            border-left: 1px solid rgba(255, 255, 255, 0.3);
+        }
         #rotate-left-button svg {
             transform: scaleX(-1);
         }
@@ -345,18 +374,20 @@
                 </button>
             </div>
             <div id="right-action-controls">
-                <button id="rotate-left-button" class="circle-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.092 1.21-.138 2.43-.138 3.662s.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.092-1.21.138-2.43.138-3.662Z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5" />
-                    </svg>
-                </button>
-                <button id="rotate-right-button" class="circle-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.092 1.21-.138 2.43-.138 3.662s.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.092-1.21.138-2.43.138-3.662Z" />
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5" />
-                    </svg>
-                </button>
+                <div class="rotation-button-group">
+                    <button id="rotate-left-button" class="group-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.092 1.21-.138 2.43-.138 3.662s.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.092-1.21.138-2.43.138-3.662Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5" />
+                        </svg>
+                    </button>
+                    <button id="rotate-right-button" class="group-button">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.092 1.21-.138 2.43-.138 3.662s.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.092-1.21.138-2.43.138-3.662Z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5" />
+                        </svg>
+                    </button>
+                </div>
             </div>
         </div>
     </div>
@@ -848,7 +879,6 @@
                 const editModeLabel = document.getElementById('edit-mode-label');
                 const viewModeLabel = document.getElementById('view-mode-label');
                 
-                // ★★★ 新しいボタン配置用の変数を取得 ★★★
                 const leftActionControls = document.getElementById('left-action-controls');
                 const centerActionControls = document.getElementById('center-action-controls');
                 const rightActionControls = document.getElementById('right-action-controls');
@@ -860,7 +890,6 @@
                     editModeLabel.classList.add('active');
                     viewModeLabel.classList.remove('active');
 
-                    // 全てのボトムUIを一旦非表示に
                     addButton.style.display = 'none';
                     editButton.style.display = 'none';
                     choosingControls.style.display = 'none';
@@ -881,7 +910,6 @@
                             break;
                         case 'PLACING':
                         case 'EDITING':
-                            // 配置/編集モードのボタンを表示
                             leftActionControls.style.display = 'flex';
                             centerActionControls.style.display = 'flex';
                             rightActionControls.style.display = 'flex';
@@ -892,7 +920,6 @@
                     editModeLabel.classList.remove('active');
                     viewModeLabel.classList.add('active');
                     
-                    // 全てのボトムUIを非表示に
                     addButton.style.display = 'none';
                     editButton.style.display = 'none';
                     choosingControls.style.display = 'none';
@@ -977,7 +1004,6 @@
                 if (isRotatingContinuously && (appState === 'PLACING' || appState === 'EDITING')) {
                     const target = (appState === 'PLACING') ? previewObject : selectedObject;
                     if (target) {
-                        // ★★★ 回転速度を2倍に変更 ★★★
                         const rotationSpeed = 0.04;
                         target.rotation.y += rotationSpeed * continuousRotationDirection;
                     }
@@ -1050,7 +1076,8 @@
                 }
                 
                 if (isEditMode && (appState === 'PLACING' || appState === 'EDITING')) {
-                    confirmButton.disabled = !isPlaceable;
+                    const centerConfirmButton = document.querySelector('#center-action-controls button');
+                    centerConfirmButton.disabled = !isPlaceable;
                 }
                 
                 if (!hitTestSourceRequested && renderer.xr.getSession()) {
