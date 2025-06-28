@@ -309,7 +309,7 @@
             background-color: white;
         }
         
-        /* ★★★ ヘルプ機能用のCSS（全機能対応版） ★★★ */
+        /* ★★★ ヘルプ機能用のCSS（最終版） ★★★ */
         #top-left-controls {
             position: absolute;
             top: 20px;
@@ -426,15 +426,15 @@
             gap: 8px;
         }
         .help-card .icon-container {
-            width: 40px;
-            height: 40px;
+            width: 48px;
+            height: 48px;
             display: flex;
             justify-content: center;
             align-items: center;
             color: #CBD5E0;
             margin-bottom: 5px;
         }
-        .help-card .icon-container svg, .help-card .icon-container img {
+        .help-card .icon-container svg {
             width: 100%;
             height: 100%;
         }
@@ -452,14 +452,14 @@
         }
         .gesture-svg {
             stroke: #CBD5E0;
-            stroke-width: 2;
-            stroke-linecap: round;
-            stroke-linejoin: round;
             fill: none;
         }
         .gesture-svg .finger {
             fill: #CBD5E0;
             stroke: none;
+        }
+        .gesture-svg .arrow {
+            fill: #CBD5E0;
         }
     </style>
 </head>
@@ -490,17 +490,17 @@
                             <div class="help-grid">
                                 <div class="help-card">
                                     <div class="icon-container">
-                                        <img src="data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40'%3e%3crect x='1' y='1' width='98' height='38' rx='19' fill='rgba(0,0,0,0.5)' stroke='rgba(255,255,255,0.3)' stroke-width='2'/%3e%3crect x='3' y='3' width='46' height='34' rx='17' fill='white'/%3e%3ctext x='26' y='26' font-family='sans-serif' font-size='12' fill='black' font-weight='bold' text-anchor='middle'%3e編集%3c/text%3e%3ctext x='72' y='26' font-family='sans-serif' font-size='12' fill='%23a0aec0' text-anchor='middle'%3e鑑賞%3c/text%3e%3c/svg%3e" alt="Mode Switch"/>
+                                        <svg viewBox="0 0 100 40"><rect x="1" y="1" width="98" height="38" rx="19" fill="rgba(0,0,0,0.5)" stroke="rgba(255,255,255,0.3)" stroke-width="2"/><rect x="3" y="3" width="46" height="34" rx="17" fill="white"/><text x="26" y="26" font-family="sans-serif" font-size="12" fill="black" font-weight="bold" text-anchor="middle">編集</text><text x="72" y="26" font-family="sans-serif" font-size="12" fill="#a0aec0" text-anchor="middle">鑑賞</text></svg>
                                     </div>
                                     <h4>モード切替</h4>
-                                    <p>画面上部のスイッチで「編集」「鑑賞」を切り替えます。</p>
+                                    <p>「編集」「鑑賞」を切り替えます。</p>
                                 </div>
                                 <div class="help-card">
                                     <div class="icon-container">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>
+                                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3-3-3m0 0 3-3m-3 3h12" /></svg>
                                     </div>
-                                    <h4>鑑賞モード</h4>
-                                    <p>ボタンが全て消え、配置した家具をじっくり鑑賞できます。</p>
+                                    <h4>AR終了</h4>
+                                    <p>AR体験を終了し、タイトル画面に戻ります。</p>
                                 </div>
                             </div>
                         </div>
@@ -509,29 +509,24 @@
                             <div class="help-grid">
                                 <div class="help-card">
                                     <div class="icon-container">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
+                                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>
                                     </div>
                                     <h4>家具の追加</h4>
                                     <p>「+」ボタンから配置したい家具を選択します。</p>
                                 </div>
                                 <div class="help-card">
                                     <div class="icon-container">
-                                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+                                       <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
                                     </div>
                                     <h4>家具の編集</h4>
-                                    <p>家具を狙うと出る編集ボタンで再選択できます。</p>
+                                    <p>家具を狙うと出るボタンで再選択できます。</p>
                                 </div>
-                            </div>
-                        </div>
-                         <div class="help-section">
-                            <h3>その他</h3>
-                            <div class="help-grid">
-                                <div class="help-card">
+                                 <div class="help-card">
                                     <div class="icon-container">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3-3-3m0 0 3-3m-3 3h12" /></svg>
+                                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
                                     </div>
-                                    <h4>AR終了</h4>
-                                    <p>AR体験を終了し、タイトル画面に戻ります。</p>
+                                    <h4>一覧に戻る</h4>
+                                    <p>家具選択画面に戻ります。</p>
                                 </div>
                             </div>
                         </div>
@@ -542,17 +537,17 @@
                             <div class="help-grid">
                                 <div class="help-card">
                                     <div class="icon-container">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"><circle cx="12" cy="12" r="7.5" /></svg>
+                                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><circle cx="12" cy="12" r="7.5" /></svg>
                                     </div>
                                     <h4>配置できます</h4>
-                                    <p>地面に輪が表示されている場所に家具を置けます。</p>
+                                    <p>地面に輪が表示されている場所に置けます。</p>
                                 </div>
                                 <div class="help-card">
                                     <div class="icon-container" style="color: #f56565;">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" /></svg>
+                                        <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" /></svg>
                                     </div>
                                     <h4>配置できません</h4>
-                                    <p>❌印の場所には置けません。確定ボタンも押せません。</p>
+                                    <p>❌印の場所には置けません。</p>
                                 </div>
                             </div>
                         </div>
@@ -562,9 +557,11 @@
                                 <div class="help-card">
                                     <div class="icon-container">
                                         <svg viewBox="0 0 48 48" class="gesture-svg">
-                                            <path d="M4,24 A20,20 0 0,1 24,4" /> <path d="M24,4 l-6,0 l0,-6" />
-                                            <path d="M44,24 A20,20 0 0,0 24,4" />
-                                            <circle cx="24" cy="24" r="5" class="finger"/>
+                                            <defs><path id="arc-path" d="M8,34 A16,16 0 0,1 40,34" fill="none"/></defs>
+                                            <path d="M12,12 h24 v24 h-24z" stroke-width="1" opacity="0.5"/>
+                                            <use href="#arc-path" stroke-dasharray="4 4" stroke-width="1.5" opacity="0.7"/>
+                                            <circle cx="24" cy="23" r="5" class="finger" />
+                                            <path d="M7 32 L10 35 L13 32 Z" class="arrow"/>
                                         </svg>
                                     </div>
                                     <h4>回転</h4>
@@ -572,15 +569,17 @@
                                 </div>
                                  <div class="help-card">
                                     <div class="icon-container">
-                                       <svg viewBox="0 0 48 48" class="gesture-svg">
-                                           <path d="M10,38 L2,46" /> <path d="M2,46 l8,0 l0,-8" />
-                                           <path d="M38,10 L46,2" /> <path d="M46,2 l-8,0 l0,8" />
-                                           <circle cx="16" cy="32" r="5" class="finger"/>
-                                           <circle cx="32" cy="16" r="5" class="finger"/>
+                                        <svg viewBox="0 0 48 48" class="gesture-svg">
+                                           <circle cx="18" cy="30" r="5" class="finger"/>
+                                           <circle cx="30" cy="18" r="5" class="finger"/>
+                                           <path d="M21,27 l-4,-4" stroke-width="1.5" stroke-dasharray="3 3"/>
+                                           <path d="M15,21 l-3,-1 l2,3" class="arrow" />
+                                           <path d="M27,21 l4,4" stroke-width="1.5" stroke-dasharray="3 3"/>
+                                           <path d="M33,27 l3,1 l-2,-3" class="arrow"/>
                                        </svg>
                                     </div>
                                     <h4>拡大・縮小</h4>
-                                    <p>2本指で広げたり、つまんだりしてサイズ変更。</p>
+                                    <p>2本指で広げたりつまんでサイズ変更。</p>
                                 </div>
                             </div>
                         </div>
@@ -588,29 +587,22 @@
                             <h3>ボタン操作</h3>
                             <div class="help-grid">
                                 <div class="help-card">
-                                    <div class="icon-container" style="padding: 5px;">
-                                        <img src="data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 40'%3e%3cg fill='none' stroke='%23CBD5E0' stroke-width='2'%3e%3crect x='1' y='1' width='98' height='38' rx='19'/%3e%3cpath d='M30 20 L 70 20'/%3e%3c/g%3e%3ccircle cx='50' cy='20' r='10' fill='%23CBD5E0'/%3e%3c/svg%3e" alt="Scale Slider"/>
-                                    </div>
-                                    <h4>サイズ変更</h4>
-                                    <p>スライダーでも大きさを調整できます。</p>
-                                </div>
-                                <div class="help-card">
                                     <div class="icon-container">
-                                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.092 1.21-.138 2.43-.138 3.662s.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.092-1.21.138-2.43.138-3.662Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5" /></svg>
+                                       <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.092 1.21-.138 2.43-.138 3.662s.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.092-1.21.138-2.43.138-3.662Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5" /></svg>
                                     </div>
                                     <h4>回転</h4>
                                     <p>タップで45度、長押しで連続回転します。</p>
                                 </div>
                                 <div class="help-card">
                                     <div class="icon-container">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                                        <svg fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
                                     </div>
                                     <h4>配置の確定</h4>
                                     <p>家具の位置や向き、大きさを決定します。</p>
                                 </div>
                                  <div class="help-card">
                                     <div class="icon-container">
-                                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 0 0-2.09 2.134v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+                                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 0 0-2.09 2.134v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
                                     </div>
                                     <h4>削除</h4>
                                     <p>選択中の家具をシーンから削除します。</p>
@@ -690,7 +682,7 @@
         import { ARButton } from 'three/addons/webxr/ARButton.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-        // ... 他のJavaScriptコードは変更なし ...
+        // ... (JavaScriptコードは前回の回答から変更ありません) ...
         function main() {
             setupWebXR();
         }
@@ -710,7 +702,6 @@
             let dotAnimationTimer = null;
             
             let helpModal, closeHelpButton;
-            // ★ 追加: タブ関連の要素を格納する変数を宣言
             let tabButtons, helpPages;
 
             const furnitureData = [
@@ -884,7 +875,6 @@
                     }
                 });
                 
-                // ★★★ タブ切り替えのロジックを追加 ★★★
                 tabButtons = document.querySelectorAll('.help-tab-button');
                 helpPages = document.querySelectorAll('.help-page');
 
@@ -1370,7 +1360,7 @@
                                 
                                 if (appState === 'PLACING' || appState === 'EDITING') {
                                     reticle.visible = isPlaceable;
-                                    crossMark.visible = !isPlaceeable;
+                                    crossMark.visible = !isPlaceable;
                                     if (crossMark.visible && activeObject) {
                                         crossMark.position.copy(activeObject.position).add(activeObject.userData.centerOffset);
                                         const scale = activeObject.userData.crossMarkScale * 0.6; 
