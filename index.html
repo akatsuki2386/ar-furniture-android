@@ -238,10 +238,10 @@
             background-color: rgba(255, 255, 255, 0.2);
         }
         #delete-button, #confirm-button {
-             padding: 16px 28px;
+            padding: 16px 28px;
         }
         #delete-button {
-             border-right: 1px solid rgba(255, 255, 255, 0.3);
+            border-right: 1px solid rgba(255, 255, 255, 0.3);
         }
         #rotate-right-button {
             border-left: 1px solid rgba(255, 255, 255, 0.3);
@@ -294,6 +294,7 @@
             align-items: center;
             gap: 5px;
             pointer-events: auto;
+            white-space: nowrap; /* ★ この行を追加 */
         }
         .mode-label {
             transition: all 0.3s ease-in-out;
@@ -570,13 +571,13 @@
                                  <div class="help-card">
                                     <div class="icon-container">
                                         <svg viewBox="0 0 48 48" class="gesture-svg">
-                                           <circle cx="18" cy="30" r="5" class="finger"/>
-                                           <circle cx="30" cy="18" r="5" class="finger"/>
-                                           <path d="M21,27 l-4,-4" stroke-width="1.5" stroke-dasharray="3 3"/>
-                                           <path d="M15,21 l-3,-1 l2,3" class="arrow" />
-                                           <path d="M27,21 l4,4" stroke-width="1.5" stroke-dasharray="3 3"/>
-                                           <path d="M33,27 l3,1 l-2,-3" class="arrow"/>
-                                       </svg>
+                                            <circle cx="18" cy="30" r="5" class="finger"/>
+                                            <circle cx="30" cy="18" r="5" class="finger"/>
+                                            <path d="M21,27 l-4,-4" stroke-width="1.5" stroke-dasharray="3 3"/>
+                                            <path d="M15,21 l-3,-1 l2,3" class="arrow" />
+                                            <path d="M27,21 l4,4" stroke-width="1.5" stroke-dasharray="3 3"/>
+                                            <path d="M33,27 l3,1 l-2,-3" class="arrow"/>
+                                        </svg>
                                     </div>
                                     <h4>拡大・縮小</h4>
                                     <p>2本指で広げたりつまんでサイズ変更。</p>
@@ -626,9 +627,9 @@
 
         <div id="top-left-controls">
              <button id="help-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
-                </svg>
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                 </svg>
             </button>
         </div>
         <div id="top-right-controls">
