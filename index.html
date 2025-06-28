@@ -37,7 +37,7 @@
         <button id="add-button" class="circle-button"></button>
         <button id="confirm-button" class="circle-button" style="background-color: #007AFF;"></button>
         <div id="calibration-input-ui">
-            <label for="height-input">ロックした地点の床からの高さを入力</label>
+            <label for="height-input">タップした場所の実際の高さを入力</label>
             <div class="input-row">
                 <input type="number" id="height-input" placeholder="例: 90" />
                 <span>cm</span>
@@ -113,12 +113,7 @@
                 });
                 
                 animate();
-
-                document.body.appendChild(ARButton.createButton(renderer, {
-                    requiredFeatures: ['hit-test'],
-                    optionalFeatures: ['dom-overlay'],
-                    domOverlay: { root: document.querySelector("#overlay") }
-                }));
+                document.body.appendChild(ARButton.createButton(renderer, { requiredFeatures: ['hit-test'] }));
             }
 
             function initializeARExperience() {
@@ -170,31 +165,25 @@
             function finishCalibration(e) {
                 e.preventDefault();
                 e.stopPropagation();
-
                 const heightInput = document.getElementById('height-input');
                 const realHeightMeters = parseFloat(heightInput.value) / 100;
                 logDebug(`入力された高さ: ${realHeightMeters}m`);
-
                 if (!realHeightMeters || !lockedHitMatrix || !isFinite(realHeightMeters)) {
                     logDebug("エラー: 高さ入力またはロック位置が無効");
                     cancelCalibration();
                     return;
                 }
-                
                 const lockedPosition = new THREE.Vector3().setFromMatrixPosition(lockedHitMatrix);
                 const arHeight = lockedPosition.y - floorY;
                 logDebug(`AR空間での高さ: ${arHeight.toFixed(3)}m`);
-
                 if (!isFinite(arHeight) || arHeight <= 0) {
                     logDebug("エラー: AR空間での高さ計算に失敗");
                     cancelCalibration();
                     return;
                 }
-                
                 scaleCorrectionFactor = realHeightMeters / arHeight;
                 logDebug(`新補正率: ${scaleCorrectionFactor.toFixed(4)}`);
                 applyScaleCorrection();
-                
                 cancelCalibration();
             }
             
@@ -225,7 +214,6 @@
                 if (previewObject) scene.remove(previewObject);
                 const gltf = preloadedModels.get(furniture.file);
                 if (!gltf) return;
-                
                 logDebug("プレビューオブジェクトを作成");
                 previewObject = gltf.scene.clone();
                 const box = new THREE.Box3().setFromObject(previewObject);
@@ -295,7 +283,7 @@
                     if (appState === 'IDLE') {
                          calibrateButton.style.display = 'flex';
                     } else if (appState === 'CALIBRATING_TARGETING') {
-                        showInstruction('高さを測りたい場所を<br>〇印に合わせてタップ');
+                        showInstruction('床からの高さがわかっている「机の天板」や「ドアノブ」などを<br>〇印に合わせてタップしてください');
                     } else if (appState === 'CALIBRATING_INPUT') {
                         calibrationInputUI.style.display = 'flex';
                     }
@@ -325,10 +313,10 @@
                     if (hitTestResults.length > 0) {
                         const hit = hitTestResults[0];
                         const hitPose = hit.getPose(referenceSpace);
-                        if (floorY === null) {
-                            floorY = hitPose.transform.position.y;
-                            logDebug(`床を検知 (Y: ${floorY.toFixed(3)})`);
-                        }
+                        // ★★★ 床の高さを継続的に更新して精度を上げる ★★★
+                        floorY = hitPose.transform.position.y;
+                        if(debugLogMessages.indexOf("床を検知") === -1) logDebug(`床を検知 (Y: ${floorY.toFixed(3)})`);
+                        
                         reticle.visible = true;
                         reticle.matrix.fromArray(hitPose.transform.matrix);
                     } else {
@@ -369,6 +357,7 @@ ${debugLogMessages.map(m => `> ${m}`).join('\n')}
 
             function preloadModels(){furnitureData.forEach(item=>{loader.load(item.file,gltf=>preloadedModels.set(item.file,gltf))})}
         }
+        
         main();
     </script>
 </body>
