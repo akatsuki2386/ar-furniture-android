@@ -109,24 +109,25 @@
         }
         #furniture-palette {
             display: flex;
+            align-items: center; /* 区切り線を中央揃え */
             flex-direction: row;
-            gap: 10px; /* 少し狭く */
-            padding: 8px; /* 少し狭く */
-            background-color: rgba(255, 255, 255, 0.2); /* ★変更 */
-            border: 1px solid rgba(255, 255, 255, 0.3); /* ★追加 */
-            backdrop-filter: blur(10px); /* ★追加 */
-            -webkit-backdrop-filter: blur(10px); /* ★追加 */
-            border-radius: 9999px; /* ★変更 */
+            gap: 10px;
+            padding: 8px;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 9999px;
             pointer-events: auto;
         }
         .furniture-button {
-            width: 56px; /* ★変更 */
-            height: 56px; /* ★変更 */
-            background-color: transparent; /* ★変更 */
+            width: 56px;
+            height: 56px;
+            background-color: transparent;
             color: white;
-            border: 2px solid transparent; /* ★変更 */
-            border-radius: 50%; /* ★変更 */
-            font-size: 13px; /* 少し小さく */
+            border: 2px solid transparent;
+            border-radius: 50%;
+            font-size: 13px;
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s ease-in-out;
@@ -134,12 +135,20 @@
             justify-content: center;
             align-items: center;
             pointer-events: auto;
+            flex-shrink: 0; /* ボタンが縮まないように */
         }
         .furniture-button.selected {
-            background-color: white; /* ★変更 */
-            color: #1A202C; /* ★追加 */
-            border-color: transparent; /* ★変更 */
-            transform: scale(1.05); /* 少し控えめに */
+            background-color: white;
+            color: #1A202C;
+            border-color: transparent;
+            transform: scale(1.05);
+        }
+        /* ★ 区切り線のスタイルを追加 */
+        .palette-divider {
+            width: 1px;
+            height: 25px;
+            background-color: rgba(255, 255, 255, 0.3);
+            flex-shrink: 0; /* 区切り線が縮まないように */
         }
         #bottom-bar {
             position: absolute;
@@ -287,8 +296,8 @@
             top: 40px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.3); /* ★変更 */
-            border: 1px solid rgba(255, 255, 255, 0.2); /* ★変更 */
+            background-color: rgba(0, 0, 0, 0.3);
+            border: 1px solid rgba(255, 255, 255, 0.2);
             border-radius: 9999px;
             padding: 5px;
             font-size: 15px;
@@ -354,9 +363,9 @@
             pointer-events: auto;
         }
         #help-content-container {
-            background-color: rgba(45, 55, 72, 0.85); /* ★変更 */
-            backdrop-filter: blur(15px); /* ★追加 */
-            -webkit-backdrop-filter: blur(15px); /* ★追加 */
+            background-color: rgba(45, 55, 72, 0.85);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
             padding: 20px;
             border-radius: 20px;
             width: 90%;
@@ -391,7 +400,7 @@
             display: flex;
             gap: 10px;
             margin-bottom: 15px;
-            border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* ★変更 */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
             padding-bottom: 15px;
             flex-shrink: 0;
         }
@@ -399,7 +408,7 @@
             flex-grow: 1;
             padding: 10px;
             background-color: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.2); /* ★変更 */
+            border: 1px solid rgba(255, 255, 255, 0.2);
             color: #A0AECB;
             border-radius: 8px;
             cursor: pointer;
@@ -408,7 +417,7 @@
             transition: all 0.2s ease;
         }
         .help-tab-button.active {
-            background-color: rgba(255, 255, 255, 0.15); /* ★変更 */
+            background-color: rgba(255, 255, 255, 0.15);
             color: white;
         }
         .help-page-content {
@@ -440,8 +449,8 @@
             gap: 15px;
         }
         .help-card {
-            background-color: rgba(255, 255, 255, 0.08); /* ★変更 */
-            border: 1px solid rgba(255, 255, 255, 0.1); /* ★追加 */
+            background-color: rgba(255, 255, 255, 0.08);
+            border: 1px solid rgba(255, 255, 255, 0.1);
             border-radius: 12px;
             padding: 15px 10px;
             display: flex;
@@ -709,7 +718,6 @@
         import { ARButton } from 'three/addons/webxr/ARButton.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-        // ...(JavaScriptは変更ありません)...
         function main() {
             setupWebXR();
         }
@@ -945,7 +953,7 @@
 
                 const palette = document.getElementById('furniture-palette');
                 palette.innerHTML = '';
-                furnitureData.forEach((item) => {
+                furnitureData.forEach((item, index) => { // ★ index を受け取る
                     const button = document.createElement('button');
                     button.className = 'furniture-button';
                     button.textContent = item.name;
@@ -959,6 +967,13 @@
                         }
                     });
                     palette.appendChild(button);
+
+                    // ★ 最後のボタン以外の場合、区切り線を追加
+                    if (index < furnitureData.length - 1) {
+                        const divider = document.createElement('div');
+                        divider.className = 'palette-divider';
+                        palette.appendChild(divider);
+                    }
                 });
                 
                 const rotateLeftButton = document.getElementById('rotate-left-button');
