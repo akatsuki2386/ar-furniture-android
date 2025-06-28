@@ -294,7 +294,7 @@
             align-items: center;
             gap: 5px;
             pointer-events: auto;
-            white-space: nowrap; /* ★ この行を追加 */
+            white-space: nowrap; 
         }
         .mode-label {
             transition: all 0.3s ease-in-out;
@@ -310,16 +310,16 @@
             background-color: white;
         }
         
-        /* ★★★ ヘルプ機能用のCSS（最終版） ★★★ */
+        /* ★★★ ヘルプ機能用のCSS ★★★ */
         #top-left-controls {
             position: absolute;
-            top: 20px;
+            top: 40px; /* ★ 20pxから40pxに修正 */
             left: 20px;
             z-index: 11;
         }
         #top-right-controls {
             position: absolute; 
-            top: 20px; 
+            top: 40px; /* ★ 20pxから40pxに修正 */
             right: 20px;
             z-index: 11;
         }
@@ -683,7 +683,7 @@
         import { ARButton } from 'three/addons/webxr/ARButton.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-        // ... (JavaScriptコードは前回の回答から変更ありません) ...
+        // ... (JavaScriptコードは変更ありません) ...
         function main() {
             setupWebXR();
         }
