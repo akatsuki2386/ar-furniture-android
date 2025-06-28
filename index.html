@@ -935,8 +935,8 @@
                 const rotateLeftButton = document.getElementById('rotate-left-button');
                 const rotateRightButton = document.getElementById('rotate-right-button');
 
-                setupRotationButtonEvents(rotateLeftButton, -1);
-                setupRotationButtonEvents(rotateRightButton, 1);
+                setupRotationButtonEvents(rotateLeftButton, 1);
+                setupRotationButtonEvents(rotateRightButton, -1);
 
                 document.getElementById('delete-button').addEventListener('click', (e) => { e.stopPropagation(); onDelete(); });
                 document.getElementById('confirm-button').addEventListener('click', (e) => { e.stopPropagation(); onConfirm(); });
