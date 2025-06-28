@@ -246,7 +246,6 @@
             border-left: 1px solid rgba(255, 255, 255, 0.3);
         }
         
-        /* ★ このルールを追加 */
         .rotation-button-group .group-button svg {
             transform: rotate(180deg);
         }
@@ -607,7 +606,9 @@
                             <div class="help-grid">
                                 <div class="help-card">
                                     <div class="icon-container">
-                                       <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.092 1.21-.138 2.43-.138 3.662s.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.092-1.21.138-2.43.138-3.662Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5" /></svg>
+                                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="transform: rotate(180deg);">
+                                           <path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" />
+                                        </svg>
                                     </div>
                                     <h4>回転</h4>
                                     <p>タップで45度、長押しで連続回転します。</p>
