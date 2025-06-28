@@ -143,7 +143,6 @@
             border-color: transparent;
             transform: scale(1.05);
         }
-        /* ★ 区切り線のスタイルを追加 */
         .palette-divider {
             width: 1px;
             height: 25px;
@@ -757,7 +756,11 @@
                 initialDistance: 0.0,
                 lastX: 0,
                 isInteracting: false,
-                originalMultiplier: 1.0
+                originalMultiplier: 1.0,
+                // ★ タップ判定用のプロパティを追加
+                startTime: 0,
+                startX: 0,
+                startY: 0,
             };
             
             let isRotatingContinuously = false;
@@ -952,7 +955,7 @@
 
                 const palette = document.getElementById('furniture-palette');
                 palette.innerHTML = '';
-                furnitureData.forEach((item, index) => { // ★ index を受け取る
+                furnitureData.forEach((item, index) => {
                     const button = document.createElement('button');
                     button.className = 'furniture-button';
                     button.textContent = item.name;
@@ -967,7 +970,6 @@
                     });
                     palette.appendChild(button);
 
-                    // ★ 最後のボタン以外の場合、区切り線を追加
                     if (index < furnitureData.length - 1) {
                         const divider = document.createElement('div');
                         divider.className = 'palette-divider';
@@ -1038,16 +1040,51 @@
                 const dy = touches[0].clientY - touches[1].clientY;
                 return Math.sqrt(dx * dx + dy * dy);
             }
+
+            // ★★★ タップイベントのロジックをここから修正 ★★★
             
+            function onObjectTap(event) {
+                const touch = event.changedTouches[0];
+                const tapPosition = new THREE.Vector2(
+                    (touch.clientX / window.innerWidth) * 2 - 1,
+                    - (touch.clientY / window.innerHeight) * 2 + 1
+                );
+                
+                raycaster.setFromCamera(tapPosition, camera);
+
+                if (appState === 'PLACING' || appState === 'EDITING') {
+                    const activeObject = appState === 'PLACING' ? previewObject : selectedObject;
+                    const intersects = raycaster.intersectObject(activeObject, true);
+                    if (intersects.length > 0) {
+                        onConfirm();
+                    }
+                } else if (appState === 'IDLE') {
+                    const intersects = raycaster.intersectObjects(placedObjects, true);
+                    if (intersects.length > 0) {
+                        let targetObject = intersects[0].object;
+                        while(targetObject.parent && !placedObjects.includes(targetObject)) {
+                            targetObject = targetObject.parent;
+                        }
+                        if (placedObjects.includes(targetObject)) {
+                            selectAndEditObject(targetObject);
+                        }
+                    }
+                }
+            }
+
             function handleTouchStart(event) {
                 if (event.target !== event.currentTarget) return;
                 event.preventDefault();
+
+                gestureState.touchCount = event.touches.length;
+                gestureState.startTime = Date.now();
+                gestureState.startX = event.touches[0].clientX;
+                gestureState.startY = event.touches[0].clientY;
 
                 const activeObject = (appState === 'PLACING' || appState === 'EDITING') ? (previewObject || selectedObject) : null;
                 if (!activeObject || !isEditMode) return;
 
                 gestureState.isInteracting = true;
-                gestureState.touchCount = event.touches.length;
 
                 if (gestureState.touchCount === 1) {
                     gestureState.lastX = event.touches[0].clientX;
@@ -1058,12 +1095,14 @@
             }
 
             function handleTouchMove(event) {
-                if (!gestureState.isInteracting) return;
+                if (event.target !== event.currentTarget) return;
                 event.preventDefault();
                 
                 const activeObject = (appState === 'PLACING' || appState === 'EDITING') ? (previewObject || selectedObject) : null;
                 if (!activeObject || !isEditMode) return;
                 
+                if (!gestureState.isInteracting) return;
+
                 if (gestureState.touchCount === 1 && event.touches.length === 1) {
                     const currentX = event.touches[0].clientX;
                     const deltaX = currentX - gestureState.lastX;
@@ -1087,6 +1126,21 @@
             }
 
             function handleTouchEnd(event) {
+                if (event.target !== event.currentTarget) return;
+                
+                const touchDuration = Date.now() - gestureState.startTime;
+                const touchEndX = event.changedTouches[0].clientX;
+                const touchEndY = event.changedTouches[0].clientY;
+                const distanceMoved = Math.sqrt(
+                    Math.pow(touchEndX - gestureState.startX, 2) + 
+                    Math.pow(touchEndY - gestureState.startY, 2)
+                );
+
+                // タップ操作の判定 (短時間かつ移動が少ない)
+                if (touchDuration < 200 && distanceMoved < 10) {
+                    onObjectTap(event);
+                }
+                
                 if (event.touches.length === 0) {
                     gestureState.isInteracting = false;
                 }
@@ -1095,6 +1149,9 @@
                 }
                 gestureState.touchCount = event.touches.length;
             }
+
+            // ★★★ ここまでタップイベントのロジックを修正 ★★★
+
 
             function updateSliderForObject(object) {
                 if (!object) return;
@@ -1154,19 +1211,29 @@
                 updateSliderForObject(previewObject);
             }
             
+            // ★ onSelectを、新しく作るselectAndEditObject関数を呼び出すように変更
             function onSelect() {
-                if (gestureState.isInteracting) return;
-
-                if (isEditMode && appState === 'IDLE' && hoveredObject) {
-                    if (selectedObject) setObjectTransparency(selectedObject, false);
-
-                    selectedObject = hoveredObject;
-                    hoveredObject = null;
-                    setObjectTransparency(selectedObject, true);
-                    appState = 'EDITING';
-                    updateUI();
-                    updateSliderForObject(selectedObject);
+                if (hoveredObject) {
+                    selectAndEditObject(hoveredObject);
                 }
+            }
+            
+            // ★ オブジェクトを選択して編集状態にするロジックを関数化
+            function selectAndEditObject(objectToEdit) {
+                if (!isEditMode || appState !== 'IDLE' || !objectToEdit) return;
+                
+                if (selectedObject) {
+                    setObjectTransparency(selectedObject, false);
+                }
+                selectedObject = objectToEdit;
+                if (hoveredObject === selectedObject) {
+                    hoveredObject = null;
+                }
+                
+                setObjectTransparency(selectedObject, true);
+                appState = 'EDITING';
+                updateUI();
+                updateSliderForObject(selectedObject);
             }
 
             function onConfirm() {
@@ -1321,7 +1388,9 @@
                 
                 if (newHoveredObject !== hoveredObject) {
                     if (hoveredObject) setObjectTransparency(hoveredObject, false);
-                    if (newHoveredObject) setObjectTransparency(newHoveredObject, true);
+                    if (newHoveredObject && newHoveredObject !== selectedObject) {
+                        setObjectTransparency(newHoveredObject, true);
+                    }
                     hoveredObject = newHoveredObject;
                     updateUI();
                 }
