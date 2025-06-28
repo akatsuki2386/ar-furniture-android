@@ -20,7 +20,7 @@
         #calibration-input-ui label { color: #A0AEC0; font-size: 14px; }
         .input-row { display: flex; gap: 10px; width: 100%; align-items: center; }
         #height-input { flex-grow: 1; padding: 12px; border-radius: 8px; border: 2px solid #4A5568; background-color: #1A202C; color: white; font-size: 18px; text-align: center; min-width: 0; }
-        #calibration-input-ui button { padding: 12px 20px; border-radius: 8px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; background-color: #007AFF; color: white; }
+        #calibration-confirm-button { padding: 12px 20px; border-radius: 8px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; background-color: #007AFF; color: white; }
         #debug-display { position: fixed; top: 80px; left: 10px; background: rgba(0, 0, 0, 0.7); color: white; padding: 10px; border-radius: 8px; font-family: monospace; white-space: pre; z-index: 999; pointer-events: none; display: none; }
     </style>
 </head>
@@ -98,13 +98,17 @@
                     session.requestReferenceSpace('viewer').then((refSpace) => {
                         session.requestHitTestSource({ space: refSpace }).then((source) => { hitTestSource = source; });
                     });
-                    session.addEventListener('end', () => { hitTestSource = null; });
                     initializeARExperience();
                 });
 
                 renderer.xr.addEventListener('sessionend', () => {
                     floorY = null;
                     appState = 'IDLE';
+                    scaleCorrectionFactor = 1.0;
+                    placedObjects.forEach(obj => scene.remove(obj));
+                    placedObjects.length = 0;
+                    if(previewObject) scene.remove(previewObject);
+                    previewObject = null;
                     updateUI();
                 });
                 
@@ -190,6 +194,7 @@
                 scaleCorrectionFactor = realHeightMeters / arHeight;
                 logDebug(`新補正率: ${scaleCorrectionFactor.toFixed(4)}`);
                 applyScaleCorrection();
+                
                 cancelCalibration();
             }
             
@@ -219,7 +224,7 @@
             function updatePreviewObject(furniture) { 
                 if (previewObject) scene.remove(previewObject);
                 const gltf = preloadedModels.get(furniture.file);
-                if (!gltf) { logDebug("エラー: モデル未ロード"); return; }
+                if (!gltf) return;
                 
                 logDebug("プレビューオブジェクトを作成");
                 previewObject = gltf.scene.clone();
@@ -249,44 +254,50 @@
             }
             
             function updateUI() {
-                const allControls = document.querySelectorAll('#overlay button, #overlay div[id*="-controls"], #overlay div[id*="-ui"]');
-                allControls.forEach(b => { if(!b.id.includes("exit") && !b.id.includes("mode")) b.style.display = 'none'});
+                const addButton = document.getElementById('add-button');
+                const confirmButton = document.getElementById('confirm-button');
+                const calibrateButton = document.getElementById('calibrate-button');
+                const calibrationInputUI = document.getElementById('calibration-input-ui');
+                const modeSwitchButton = document.getElementById('mode-switch-button');
+                const editModeLabel = document.getElementById('edit-mode-label');
+                const viewModeLabel = document.getElementById('view-mode-label');
+                const exitButton = document.getElementById('exit-ar-button');
+                
+                const allControls = [addButton, confirmButton, calibrateButton, calibrationInputUI];
+                allControls.forEach(el => el.style.display = 'none');
                 hideInstruction();
 
                 const session = renderer.xr.getSession();
                 if (!session) {
                     document.getElementById('title-container').style.display = 'block';
-                    document.getElementById('exit-ar-button').style.display = 'none';
-                    document.getElementById('mode-switch-button').style.display = 'none';
+                    exitButton.style.display = 'none';
+                    modeSwitchButton.style.display = 'none';
                     debugDisplay.style.display = 'none';
                     return;
                 }
 
                 document.getElementById('title-container').style.display = 'none';
-                document.getElementById('exit-ar-button').style.display = 'flex';
-                document.getElementById('mode-switch-button').style.display = 'flex';
+                exitButton.style.display = 'flex';
+                modeSwitchButton.style.display = 'flex';
                 debugDisplay.style.display = 'block';
-                
-                const editModeLabel = document.getElementById('edit-mode-label');
-                const viewModeLabel = document.getElementById('view-mode-label');
                 
                 if (isEditMode) {
                     editModeLabel.classList.add('active');
                     viewModeLabel.classList.remove('active');
                     if (appState === 'IDLE') {
-                        document.getElementById('add-button').style.display = 'flex';
+                        addButton.style.display = 'flex';
                     } else if (appState === 'PLACING') {
-                        document.getElementById('confirm-button').style.display = 'flex';
+                        confirmButton.style.display = 'flex';
                     }
                 } else { 
                     editModeLabel.classList.remove('active');
                     viewModeLabel.classList.add('active');
                     if (appState === 'IDLE') {
-                         document.getElementById('calibrate-button').style.display = 'flex';
+                         calibrateButton.style.display = 'flex';
                     } else if (appState === 'CALIBRATING_TARGETING') {
                         showInstruction('高さを測りたい場所を<br>〇印に合わせてタップ');
                     } else if (appState === 'CALIBRATING_INPUT') {
-                        document.getElementById('calibration-input-ui').style.display = 'flex';
+                        calibrationInputUI.style.display = 'flex';
                     }
                 }
             }
@@ -303,10 +314,10 @@
                 if (!renderer.xr.isPresenting) return;
                 const frame = renderer.xr.getFrame();
                 if (!frame) return;
-                const referenceSpace = renderer.xr.getReferenceSpace();
                 
                 updateDebugDisplay();
 
+                const referenceSpace = renderer.xr.getReferenceSpace();
                 const showReticle = (appState === 'PLACING' || appState === 'CALIBRATING_TARGETING');
 
                 if (hitTestSource && showReticle) {
@@ -358,7 +369,6 @@ ${debugLogMessages.map(m => `> ${m}`).join('\n')}
 
             function preloadModels(){furnitureData.forEach(item=>{loader.load(item.file,gltf=>preloadedModels.set(item.file,gltf))})}
         }
-        
         main();
     </script>
 </body>
