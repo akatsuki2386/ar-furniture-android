@@ -142,59 +142,56 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 200px;
+            height: 220px; /* ★ 高さを確保 */
             pointer-events: none;
+            display: flex;
+            flex-direction: column;
+            justify-content: flex-end;
+            align-items: center;
+            padding-bottom: 20px;
+            box-sizing: border-box;
         }
-        #left-action-controls, 
-        #center-action-controls, 
-        #right-action-controls,
-        #choosing-controls,
-        #add-button,
-        #edit-button {
-            position: absolute;
-            bottom: 90px;
-            display: none;
+
+        /* ★★★ 新しいUIコントロールのCSS ★★★ */
+        #transform-controls, #decision-controls {
+            display: none; /* 基本は非表示 */
             align-items: center;
             pointer-events: auto;
+            width: 90%;
+            max-width: 400px;
+            justify-content: center;
         }
-        #add-button, #edit-button {
-             left: 50%;
-             transform: translateX(-50%);
-        }
-        #choosing-controls {
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        #left-action-controls {
-            left: 30px;
-        }
-        #center-action-controls {
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        #right-action-controls {
-            right: 30px;
-            display: flex;
+
+        #transform-controls {
             gap: 15px;
+            margin-bottom: 20px;
         }
+        #decision-controls {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border-radius: 9999px;
+            overflow: hidden;
+            width: auto;
+        }
+
         #scale-slider-container {
-            position: absolute;
-            bottom: 170px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 60%;
-            max-width: 200px;
-            height: 40px;
-            display: none;
+            flex-grow: 1; /* ★ 幅を自動調整 */
+            display: flex;
             align-items: center;
             justify-content: center;
-            pointer-events: auto;
+            height: 48px; /* ★ 高さを指定 */
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 9999px;
+            padding: 0 15px;
         }
         #slider-track {
             width: 100%;
-            height: 8px;
+            height: 6px;
             background-color: rgba(255, 255, 255, 0.3);
-            border-radius: 4px;
+            border-radius: 3px;
             position: relative;
         }
         #slider-handle {
@@ -207,6 +204,62 @@
             transform: translateY(-50%);
             cursor: pointer;
             border: 4px solid #4a5568;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s ease; /* ★ サイズ変更を滑らかに */
+        }
+        #slider-handle svg {
+            width: 20px;
+            height: 20px;
+            stroke: #4a5568;
+            stroke-width: 2;
+        }
+
+        .rotation-button-group {
+            display: flex;
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 9999px;
+            overflow: hidden;
+        }
+        .group-button {
+            background: none;
+            border: none;
+            color: white;
+            padding: 12px 16px; /* ★ 少し小さく調整 */
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+        }
+        .group-button:active {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        #delete-button, #confirm-button {
+             padding: 16px 28px; /* ★ 少し広めに */
+        }
+        #delete-button {
+             border-right: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        #rotate-right-button {
+            border-left: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        #rotate-left-button svg {
+            transform: scaleX(-1);
+        }
+        
+        #choosing-controls, #add-button, #edit-button {
+            position: absolute;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            align-items: center;
+            pointer-events: auto;
         }
         .circle-button {
             width: 64px;
@@ -227,17 +280,11 @@
             user-select: none;
             -webkit-user-select: none;
         }
-        .circle-button:active {
-            transform: scale(0.9);
-        }
-        
-        .circle-button:disabled {
-            background-color: rgba(128, 128, 128, 0.2);
-            border-color: rgba(128, 128, 128, 0.3);
-            color: #888;
-            cursor: not-allowed;
-        }
         #mode-switch-button {
+            position: absolute;
+            top: 40px;
+            left: 50%;
+            transform: translateX(-50%);
             background-color: rgba(0, 0, 0, 0.5);
             border: 1px solid rgba(255, 255, 255, 0.3);
             border-radius: 9999px;
@@ -246,7 +293,7 @@
             cursor: pointer;
             backdrop-filter: blur(10px);
             -webkit-backdrop-filter: blur(10px);
-            display: flex;
+            display: none;
             align-items: center;
             gap: 5px;
             pointer-events: auto;
@@ -263,39 +310,6 @@
             font-weight: bold;
             color: #1A202C;
             background-color: white;
-        }
-        
-        /* ★★★ 回転ボタングループの新しいCSS ★★★ */
-        .rotation-button-group {
-            display: flex;
-            background-color: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3);
-            backdrop-filter: blur(10px);
-            -webkit-backdrop-filter: blur(10px);
-            border-radius: 9999px; /* ピル形状 */
-            overflow: hidden; /* 角丸を内側にも適用 */
-            user-select: none;
-            -webkit-user-select: none;
-        }
-        .group-button {
-            background: none;
-            border: none;
-            color: white;
-            padding: 16px 20px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-        }
-        .group-button:active {
-            background-color: rgba(255, 255, 255, 0.2);
-        }
-        /* 右ボタンの左側に仕切り線を追加 */
-        #rotate-right-button {
-            border-left: 1px solid rgba(255, 255, 255, 0.3);
-        }
-        #rotate-left-button svg {
-            transform: scaleX(-1);
         }
     </style>
 </head>
@@ -317,12 +331,10 @@
             カメラをゆっくりと<br>床に向けて<br>動かしてください
         </div>
         
-        <div id="top-bar" style="position: absolute; top: 40px; width:100%; display: flex; justify-content: center;">
-            <button id="mode-switch-button" style="display: none;">
-                <span id="edit-mode-label" class="mode-label">編集モード</span>
-                <span id="view-mode-label" class="mode-label">鑑賞モード</span>
-            </button>
-        </div>
+        <button id="mode-switch-button">
+            <span id="edit-mode-label" class="mode-label">編集モード</span>
+            <span id="view-mode-label" class="mode-label">鑑賞モード</span>
+        </button>
         <div id="top-right-controls" style="position: absolute; top: 20px; right: 20px;">
             <button id="exit-ar-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
@@ -331,63 +343,33 @@
             </button>
         </div>
         
-        <div id="scale-slider-container">
-            <div id="slider-track">
-                <div id="slider-handle"></div>
-            </div>
-        </div>
-
         <div id="bottom-bar">
-            <button id="add-button" class="circle-button">
-                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
-                 </svg>
-            </button>
-            <button id="edit-button" class="circle-button">
-                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
-                 </svg>
-            </button>
+            <button id="add-button" class="circle-button"></button>
+            <button id="edit-button" class="circle-button"></button>
             
             <div id="choosing-controls">
-                <button id="back-button" class="circle-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" />
-                    </svg>
-                </button>
-                <div id="furniture-palette">
-                </div>
+                <button id="back-button" class="circle-button"></button>
+                <div id="furniture-palette"></div>
             </div>
 
-            <div id="left-action-controls">
-                <button id="delete-button" class="circle-button">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 32px; height: 32px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 0 0-2.09 2.134v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" />
-                    </svg>
-                </button>
-            </div>
-            <div id="center-action-controls">
-                <button id="confirm-button" class="circle-button" style="background-color: #007AFF;">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" />
-                    </svg>
-                </button>
-            </div>
-            <div id="right-action-controls">
-                <div class="rotation-button-group">
-                    <button id="rotate-left-button" class="group-button">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.092 1.21-.138 2.43-.138 3.662s.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.092-1.21.138-2.43.138-3.662Z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5" />
-                        </svg>
-                    </button>
-                    <button id="rotate-right-button" class="group-button">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.092 1.21-.138 2.43-.138 3.662s.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.092-1.21.138-2.43.138-3.662Z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5" />
-                        </svg>
-                    </button>
+            <div id="transform-controls">
+                <div id="scale-slider-container">
+                    <div id="slider-track">
+                        <div id="slider-handle">
+                            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75v4.5m0-4.5h4.5m-4.5 0L9 9M3.75 20.25v-4.5m0 4.5h4.5m-4.5 0L9 15M20.25 3.75h-4.5m4.5 0v4.5m0-4.5L15 9M20.25 20.25h-4.5m4.5 0v-4.5m0 4.5L15 15" />
+                            </svg>
+                        </div>
+                    </div>
                 </div>
+                <div class="rotation-button-group">
+                    <button id="rotate-left-button" class="group-button"></button>
+                    <button id="rotate-right-button" class="group-button"></button>
+                </div>
+            </div>
+            <div id="decision-controls">
+                <button id="delete-button" class="group-button"></button>
+                <button id="confirm-button" class="group-button"></button>
             </div>
         </div>
     </div>
@@ -526,6 +508,17 @@
                 overlay.addEventListener('touchstart', handleTouchStart, { passive: false });
                 overlay.addEventListener('touchmove', handleTouchMove, { passive: false });
                 overlay.addEventListener('touchend', handleTouchEnd);
+                
+                // ★★★ 各UI要素にアイコンを設定 ★★★
+                document.getElementById('add-button').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>`;
+                document.getElementById('edit-button').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>`;
+                document.getElementById('back-button').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>`;
+                document.getElementById('delete-button').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 0 0-2.09 2.134v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>`;
+                document.getElementById('confirm-button').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>`;
+                const rotateIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="M19.5 12c0-1.232-.046-2.453-.138-3.662a4.006 4.006 0 0 0-3.7-3.7 48.678 48.678 0 0 0-7.324 0 4.006 4.006 0 0 0-3.7 3.7c-.092 1.21-.138 2.43-.138 3.662s.046 2.453.138 3.662a4.006 4.006 0 0 0 3.7 3.7 48.656 48.656 0 0 0 7.324 0 4.006 4.006 0 0 0 3.7-3.7c.092-1.21.138-2.43.138-3.662Z" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 6v6h4.5" /></svg>`;
+                document.getElementById('rotate-left-button').innerHTML = rotateIconSVG;
+                document.getElementById('rotate-right-button').innerHTML = rotateIconSVG;
+
 
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
@@ -541,8 +534,6 @@
                     Object.keys(gestureState).forEach(key => gestureState[key] = (typeof gestureState[key] === 'boolean' ? false : (key === 'originalMultiplier' ? 1.0 : 0)));
                     document.getElementById('exit-ar-button').style.display = 'none';
                     document.getElementById('mode-switch-button').style.display = 'none';
-                    document.getElementById('bottom-bar').style.display = 'none';
-                    document.getElementById('scale-slider-container').style.display = 'none';
                     stopDotAnimation(); 
                     floorY = null; 
                 });
@@ -748,6 +739,10 @@
                 const handleWidth = sliderHandle.offsetWidth;
                 const trackWidth = sliderTrack.offsetWidth;
                 sliderHandle.style.left = `calc(${percent * 100}% - ${handleWidth * percent}px)`;
+                
+                // ★★★ つまみのサイズを更新 ★★★
+                const scale = 0.8 + 0.4 * percent; // 0.8倍から1.2倍の範囲で大きさを変更
+                sliderHandle.style.transform = `translateY(-50%) scale(${scale})`;
             }
 
             function updateScaleFromSlider(percent) {
@@ -874,14 +869,12 @@
                 const addButton = document.getElementById('add-button');
                 const editButton = document.getElementById('edit-button');
                 const choosingControls = document.getElementById('choosing-controls');
-                const scaleSlider = document.getElementById('scale-slider-container');
                 const modeSwitchButton = document.getElementById('mode-switch-button');
                 const editModeLabel = document.getElementById('edit-mode-label');
                 const viewModeLabel = document.getElementById('view-mode-label');
                 
-                const leftActionControls = document.getElementById('left-action-controls');
-                const centerActionControls = document.getElementById('center-action-controls');
-                const rightActionControls = document.getElementById('right-action-controls');
+                const transformControls = document.getElementById('transform-controls');
+                const decisionControls = document.getElementById('decision-controls');
                 
                 document.getElementById('exit-ar-button').style.display = 'flex';
                 modeSwitchButton.style.display = 'flex';
@@ -893,10 +886,8 @@
                     addButton.style.display = 'none';
                     editButton.style.display = 'none';
                     choosingControls.style.display = 'none';
-                    scaleSlider.style.display = 'none';
-                    leftActionControls.style.display = 'none';
-                    centerActionControls.style.display = 'none';
-                    rightActionControls.style.display = 'none';
+                    transformControls.style.display = 'none';
+                    decisionControls.style.display = 'none';
 
                     switch (appState) {
                         case 'IDLE':
@@ -910,10 +901,8 @@
                             break;
                         case 'PLACING':
                         case 'EDITING':
-                            leftActionControls.style.display = 'flex';
-                            centerActionControls.style.display = 'flex';
-                            rightActionControls.style.display = 'flex';
-                            scaleSlider.style.display = 'flex';
+                            transformControls.style.display = 'flex';
+                            decisionControls.style.display = 'flex';
                             break;
                     }
                 } else { 
@@ -923,10 +912,8 @@
                     addButton.style.display = 'none';
                     editButton.style.display = 'none';
                     choosingControls.style.display = 'none';
-                    scaleSlider.style.display = 'none';
-                    leftActionControls.style.display = 'none';
-                    centerActionControls.style.display = 'none';
-                    rightActionControls.style.display = 'none';
+                    transformControls.style.display = 'none';
+                    decisionControls.style.display = 'none';
                 }
             }
 
@@ -1076,8 +1063,7 @@
                 }
                 
                 if (isEditMode && (appState === 'PLACING' || appState === 'EDITING')) {
-                    const centerConfirmButton = document.querySelector('#center-action-controls button');
-                    centerConfirmButton.disabled = !isPlaceable;
+                    confirmButton.disabled = !isPlaceable;
                 }
                 
                 if (!hitTestSourceRequested && renderer.xr.getSession()) {
