@@ -7,73 +7,47 @@
     <style>
         body { margin: 0; background-color: #1A202C; color: white; font-family: sans-serif; overflow: hidden; }
         canvas { display: block; }
-        #title-container { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); text-align: center; z-index: 5; }
         #ARButton { color: white !important; background-color: rgba(255, 255, 255, 0.2) !important; border: 1px solid rgba(255, 255, 255, 0.3) !important; backdrop-filter: blur(10px) !important; border-radius: 9999px !important; font-size: 16px !important; font-weight: bold !important; padding: 14px 24px !important; min-width: 220px !important; box-shadow: none !important; opacity: 1 !important; position: absolute !important; bottom: 15% !important; left: 50% !important; transform: translateX(-50%) !important; z-index: 100 !important; }
         #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; }
         #instruction-text { position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); color: white; font-size: 16px; text-align: center; background-color: rgba(0, 0, 0, 0.6); padding: 20px 30px; border-radius: 15px; line-height: 1.7; display: none; pointer-events: none; }
-        #bottom-bar { position: absolute; bottom: 0; left: 0; width: 100%; height: 220px; pointer-events: none; display: flex; flex-direction: column; justify-content: flex-end; align-items: center; padding-bottom: 20px; box-sizing: border-box; gap: 15px; }
-        #decision-controls, #add-button { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); display: none; align-items: center; pointer-events: auto; }
         .circle-button { width: 64px; height: 64px; background-color: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3); backdrop-filter: blur(10px); color: white; border-radius: 50%; cursor: pointer; display: flex; justify-content: center; align-items: center; user-select: none; -webkit-user-select: none; }
         #mode-switch-button { position: absolute; top: 40px; left: 50%; transform: translateX(-50%); background-color: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.3); border-radius: 9999px; padding: 5px; font-size: 15px; cursor: pointer; backdrop-filter: blur(10px); display: none; align-items: center; gap: 5px; }
         .mode-label { padding: 5px 15px; border-radius: 9999px; font-weight: normal; color: #a0aec0; }
         .mode-label.active { font-weight: bold; color: #1A202C; background-color: white; }
+        #add-button, #confirm-button { position: absolute; bottom: 90px; left: 50%; transform: translateX(-50%); display: none; }
         #calibrate-button { position: absolute; bottom: 30px; right: 30px; display: none; width: 56px; height: 56px; }
         #calibration-input-ui { position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%); display: none; flex-direction: column; align-items: center; gap: 15px; background-color: rgba(0,0,0,0.6); padding: 20px; border-radius: 16px; width: 90%; max-width: 320px; pointer-events: auto; }
         #calibration-input-ui label { color: #A0AEC0; font-size: 14px; }
         .input-row { display: flex; gap: 10px; width: 100%; align-items: center; }
         #height-input { flex-grow: 1; padding: 12px; border-radius: 8px; border: 2px solid #4A5568; background-color: #1A202C; color: white; font-size: 18px; text-align: center; min-width: 0; }
         #calibration-input-ui button { padding: 12px 20px; border-radius: 8px; border: none; font-size: 16px; font-weight: bold; cursor: pointer; background-color: #007AFF; color: white; }
-        /* ★★★ デバッグ表示用のスタイル ★★★ */
-        #debug-display {
-            position: fixed;
-            top: 80px;
-            left: 10px;
-            background: rgba(0, 0, 0, 0.7);
-            color: white;
-            padding: 10px;
-            border-radius: 8px;
-            font-family: monospace;
-            white-space: pre;
-            z-index: 999;
-            pointer-events: none;
-            display: none;
-        }
+        #debug-display { position: fixed; top: 80px; left: 10px; background: rgba(0, 0, 0, 0.7); color: white; padding: 10px; border-radius: 8px; font-family: monospace; white-space: pre; z-index: 999; pointer-events: none; display: none; }
     </style>
 </head>
 <body>
     <div id="title-container"><h1>AR家具配置<br>シミュレーション</h1></div>
     <div id="overlay">
         <div id="debug-display"></div>
-
         <div id="instruction-text"></div>
         <button id="mode-switch-button">
             <span id="edit-mode-label" class="mode-label">編集モード</span>
             <span id="view-mode-label" class="mode-label">鑑賞モード</span>
         </button>
-        <div id="top-right-controls" style="position: absolute; top: 20px; right: 20px;">
-            <button id="exit-ar-button" class="circle-button"></button>
-        </div>
-        <div id="bottom-bar">
-            <button id="add-button" class="circle-button"></button>
-            <div id="decision-controls">
-                 <button id="confirm-button" class="circle-button" style="background-color: #007AFF;"></button>
-            </div>
-            <div id="calibration-input-ui">
-                <label for="height-input">ロックした地点の床からの高さを入力</label>
-                <div class="input-row">
-                    <input type="number" id="height-input" placeholder="例: 90" />
-                    <span>cm</span>
-                    <button id="calibration-confirm-button">決定</button>
-                </div>
+        <button id="exit-ar-button" class="circle-button" style="position: absolute; top: 20px; right: 20px; display: none; width: 56px; height: 56px;"></button>
+        <button id="add-button" class="circle-button"></button>
+        <button id="confirm-button" class="circle-button" style="background-color: #007AFF;"></button>
+        <div id="calibration-input-ui">
+            <label for="height-input">ロックした地点の床からの高さを入力</label>
+            <div class="input-row">
+                <input type="number" id="height-input" placeholder="例: 90" />
+                <span>cm</span>
+                <button id="calibration-confirm-button">決定</button>
             </div>
         </div>
         <button id="calibrate-button" class="circle-button"></button>
     </div>
 
-    <script type="importmap">
-        { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
-    </script>
-    
+    <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
     <script type="module">
         import * as THREE from 'three';
         import { ARButton } from 'three/addons/webxr/ARButton.js';
@@ -95,7 +69,6 @@
             let isEditMode = true; 
             let scaleCorrectionFactor = 1.0;
             let lockedHitMatrix = null;
-            // ★★★ デバッグログ用の変数 ★★★
             const debugLogMessages = [];
             let debugDisplay;
 
@@ -116,7 +89,7 @@
                 controller.addEventListener('select', onXRSelect);
                 scene.add(controller);
 
-                debugDisplay = document.getElementById('debug-display'); // デバッグ表示要素を取得
+                debugDisplay = document.getElementById('debug-display');
 
                 renderer.xr.addEventListener('sessionstart', (e) => {
                     appState = 'IDLE';
@@ -147,7 +120,7 @@
             function initializeARExperience() {
                 reticle = new THREE.Mesh( 
                     new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2), 
-                    new THREE.MeshBasicMaterial({ color: 0x007AFF })
+                    new THREE.MeshBasicMaterial({ color: 0x007AFF, opacity: 0.5, transparent: true })
                 );
                 reticle.matrixAutoUpdate = false;
                 reticle.visible = false;
@@ -168,7 +141,7 @@
                 document.getElementById('add-button').addEventListener('click', (e) => { e.stopPropagation(); appState = 'PLACING'; updatePreviewObject(furnitureData[0]); updateUI(); });
                 document.getElementById('confirm-button').addEventListener('click', (e) => { e.stopPropagation(); onConfirm(); });
                 document.getElementById('calibrate-button').addEventListener('click', startCalibration);
-                document.getElementById('calibration-confirm-button').addEventListener('touchend', finishCalibration, { passive: false });
+                document.getElementById('calibration-confirm-button').addEventListener('click', finishCalibration);
             }
             
             function onXRSelect() {
@@ -217,7 +190,6 @@
                 scaleCorrectionFactor = realHeightMeters / arHeight;
                 logDebug(`新補正率: ${scaleCorrectionFactor.toFixed(4)}`);
                 applyScaleCorrection();
-                
                 cancelCalibration();
             }
             
@@ -247,7 +219,7 @@
             function updatePreviewObject(furniture) { 
                 if (previewObject) scene.remove(previewObject);
                 const gltf = preloadedModels.get(furniture.file);
-                if (!gltf) return;
+                if (!gltf) { logDebug("エラー: モデル未ロード"); return; }
                 
                 logDebug("プレビューオブジェクトを作成");
                 previewObject = gltf.scene.clone();
@@ -304,7 +276,7 @@
                     if (appState === 'IDLE') {
                         document.getElementById('add-button').style.display = 'flex';
                     } else if (appState === 'PLACING') {
-                        document.getElementById('decision-controls').style.display = 'flex';
+                        document.getElementById('confirm-button').style.display = 'flex';
                     }
                 } else { 
                     editModeLabel.classList.remove('active');
@@ -325,7 +297,6 @@
                 instructionText.style.display = 'block';
             }
             function hideInstruction() { document.getElementById('instruction-text').style.display = 'none'; }
-            
             function animate() { renderer.setAnimationLoop(render); }
 
             function render() {
@@ -334,7 +305,7 @@
                 if (!frame) return;
                 const referenceSpace = renderer.xr.getReferenceSpace();
                 
-                updateDebugDisplay(); // ★ デバッグ表示を毎フレーム更新
+                updateDebugDisplay();
 
                 const showReticle = (appState === 'PLACING' || appState === 'CALIBRATING_TARGETING');
 
@@ -366,13 +337,10 @@
                 renderer.render(scene, camera);
             }
 
-            // ★★★ デバッグ用の関数 ★★★
             function logDebug(message) {
                 console.log(message);
                 debugLogMessages.push(message);
-                if (debugLogMessages.length > 4) {
-                    debugLogMessages.shift(); // 古いログを削除
-                }
+                if (debugLogMessages.length > 5) debugLogMessages.shift();
             }
 
             function updateDebugDisplay() {
@@ -390,6 +358,7 @@ ${debugLogMessages.map(m => `> ${m}`).join('\n')}
 
             function preloadModels(){furnitureData.forEach(item=>{loader.load(item.file,gltf=>preloadedModels.set(item.file,gltf))})}
         }
+        
         main();
     </script>
 </body>
