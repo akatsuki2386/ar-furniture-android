@@ -110,20 +110,23 @@
         #furniture-palette {
             display: flex;
             flex-direction: row;
-            gap: 15px;
-            padding: 10px;
-            background-color: rgba(0, 0, 0, 0.5);
-            border-radius: 16px;
+            gap: 10px; /* 少し狭く */
+            padding: 8px; /* 少し狭く */
+            background-color: rgba(255, 255, 255, 0.2); /* ★変更 */
+            border: 1px solid rgba(255, 255, 255, 0.3); /* ★追加 */
+            backdrop-filter: blur(10px); /* ★追加 */
+            -webkit-backdrop-filter: blur(10px); /* ★追加 */
+            border-radius: 9999px; /* ★変更 */
             pointer-events: auto;
         }
         .furniture-button {
-            width: 60px;
-            height: 60px;
-            background-color: #6B7280;
+            width: 56px; /* ★変更 */
+            height: 56px; /* ★変更 */
+            background-color: transparent; /* ★変更 */
             color: white;
-            border: 2px solid transparent;
-            border-radius: 12px;
-            font-size: 14px;
+            border: 2px solid transparent; /* ★変更 */
+            border-radius: 50%; /* ★変更 */
+            font-size: 13px; /* 少し小さく */
             font-weight: bold;
             cursor: pointer;
             transition: all 0.2s ease-in-out;
@@ -133,9 +136,10 @@
             pointer-events: auto;
         }
         .furniture-button.selected {
-            background-color: #007AFF;
-            border-color: #FFF;
-            transform: scale(1.1);
+            background-color: white; /* ★変更 */
+            color: #1A202C; /* ★追加 */
+            border-color: transparent; /* ★変更 */
+            transform: scale(1.05); /* 少し控えめに */
         }
         #bottom-bar {
             position: absolute;
@@ -283,8 +287,8 @@
             top: 40px;
             left: 50%;
             transform: translateX(-50%);
-            background-color: rgba(0, 0, 0, 0.5);
-            border: 1px solid rgba(255, 255, 255, 0.3);
+            background-color: rgba(0, 0, 0, 0.3); /* ★変更 */
+            border: 1px solid rgba(255, 255, 255, 0.2); /* ★変更 */
             border-radius: 9999px;
             padding: 5px;
             font-size: 15px;
@@ -350,7 +354,9 @@
             pointer-events: auto;
         }
         #help-content-container {
-            background-color: #2D3748;
+            background-color: rgba(45, 55, 72, 0.85); /* ★変更 */
+            backdrop-filter: blur(15px); /* ★追加 */
+            -webkit-backdrop-filter: blur(15px); /* ★追加 */
             padding: 20px;
             border-radius: 20px;
             width: 90%;
@@ -385,7 +391,7 @@
             display: flex;
             gap: 10px;
             margin-bottom: 15px;
-            border-bottom: 1px solid #4A5568;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2); /* ★変更 */
             padding-bottom: 15px;
             flex-shrink: 0;
         }
@@ -393,7 +399,7 @@
             flex-grow: 1;
             padding: 10px;
             background-color: transparent;
-            border: 1px solid #4A5568;
+            border: 1px solid rgba(255, 255, 255, 0.2); /* ★変更 */
             color: #A0AECB;
             border-radius: 8px;
             cursor: pointer;
@@ -402,7 +408,7 @@
             transition: all 0.2s ease;
         }
         .help-tab-button.active {
-            background-color: #4A5568;
+            background-color: rgba(255, 255, 255, 0.15); /* ★変更 */
             color: white;
         }
         .help-page-content {
@@ -434,7 +440,8 @@
             gap: 15px;
         }
         .help-card {
-            background-color: #4A5568;
+            background-color: rgba(255, 255, 255, 0.08); /* ★変更 */
+            border: 1px solid rgba(255, 255, 255, 0.1); /* ★追加 */
             border-radius: 12px;
             padding: 15px 10px;
             display: flex;
@@ -702,6 +709,7 @@
         import { ARButton } from 'three/addons/webxr/ARButton.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+        // ...(JavaScriptは変更ありません)...
         function main() {
             setupWebXR();
         }
