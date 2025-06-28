@@ -310,16 +310,27 @@
             background-color: white;
         }
         
+        #choosing-controls { /* ★ この要素を修正 */
+            position: absolute;
+            bottom: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: none;
+            align-items: center;
+            pointer-events: auto;
+            gap: 15px; /* この行を追加 */
+        }
+        
         /* ★★★ ヘルプ機能用のCSS ★★★ */
         #top-left-controls {
             position: absolute;
-            top: 40px; /* ★ 20pxから40pxに修正 */
+            top: 40px; 
             left: 20px;
             z-index: 11;
         }
         #top-right-controls {
             position: absolute; 
-            top: 40px; /* ★ 20pxから40pxに修正 */
+            top: 40px;
             right: 20px;
             z-index: 11;
         }
