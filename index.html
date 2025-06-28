@@ -5,7 +5,7 @@
     <title>AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
-        /* (既存のCSSは変更なし) */
+        /* (ほとんどのCSSは変更なし) */
         body { 
             margin: 0;
             background-color: #1A202C;
@@ -308,14 +308,25 @@
             color: #1A202C;
             background-color: white;
         }
-        /* ★★★ ヘルプ機能用のCSSを追加 ★★★ */
+        
+        /* ★★★ ヘルプ機能用のCSS ★★★ */
+        
+        /* ★ 再変更: 左上コントロール用のスタイルを追加 */
+        #top-left-controls {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 11; /* 他のUIより手前に */
+        }
+
+        /* ★ 再変更: 右上コントロール用のスタイル */
         #top-right-controls {
             position: absolute; 
             top: 20px; 
             right: 20px;
-            display: flex;
-            gap: 15px;
+            z-index: 11;
         }
+
         #help-modal {
             position: fixed;
             top: 0;
@@ -426,12 +437,15 @@
             <span id="edit-mode-label" class="mode-label">編集モード</span>
             <span id="view-mode-label" class="mode-label">鑑賞モード</span>
         </button>
-        <div id="top-right-controls">
-            <button id="help-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
+
+        <div id="top-left-controls">
+             <button id="help-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
                 </svg>
             </button>
+        </div>
+        <div id="top-right-controls">
             <button id="exit-ar-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
                     <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3-3-3m0 0 3-3m-3 3h12" />
@@ -482,6 +496,8 @@
         import { ARButton } from 'three/addons/webxr/ARButton.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
+        // ... すべてのJavaScriptコードは前回の回答から変更ありません ...
+        // (省略)
         function main() {
             setupWebXR();
         }
@@ -500,7 +516,6 @@
             let isDraggingSlider = false; 
             let dotAnimationTimer = null;
             
-            // ★ 追加: ヘルプ関連のUI要素を格納する変数を宣言
             let helpButton, helpModal, closeHelpButton;
 
             const furnitureData = [
@@ -532,7 +547,6 @@
             init();
             
             function createCrossMark() {
-                // (既存のコードは変更なし)
                 const canvas = document.createElement('canvas');
                 const size = 256;
                 canvas.width = size;
@@ -566,7 +580,6 @@
             }
 
             function preloadModels() {
-                // (既存のコードは変更なし)
                 const loadingPromises = furnitureData.map(item => {
                     return new Promise((resolve, reject) => {
                         loader.load(item.file, (gltf) => {
@@ -581,7 +594,6 @@
             }
 
             function init() {
-                // (既存のコードとほぼ同じ)
                 scene = new THREE.Scene();
                 camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
                 scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, 3));
@@ -625,7 +637,6 @@
                     document.getElementById('title-container').style.display = 'block';
                     Object.keys(gestureState).forEach(key => gestureState[key] = (typeof gestureState[key] === 'boolean' ? false : (key === 'originalMultiplier' ? 1.0 : 0)));
                     document.getElementById('exit-ar-button').style.display = 'none';
-                    // ★ 変更: ヘルプボタンも非表示にする
                     document.getElementById('help-button').style.display = 'none';
                     document.getElementById('mode-switch-button').style.display = 'none';
                     stopDotAnimation(); 
@@ -642,7 +653,6 @@
             }
 
             function initializeARExperience() {
-                // (既存のコードは変更なし)
                 reticle = new THREE.Mesh( 
                     new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2), 
                     new THREE.MeshBasicMaterial()
@@ -663,7 +673,6 @@
                     }
                 }
                 
-                // ★★★ ヘルプ機能のイベントリスナーを追加 ★★★
                 helpButton = document.getElementById('help-button');
                 helpModal = document.getElementById('help-modal');
                 closeHelpButton = document.getElementById('close-help-button');
@@ -676,7 +685,6 @@
                     e.stopPropagation();
                     helpModal.style.display = 'none';
                 });
-                // 背景クリックでも閉じるようにする
                 helpModal.addEventListener('click', (e) => {
                     if (e.target === helpModal) {
                         helpModal.style.display = 'none';
@@ -684,7 +692,6 @@
                 });
 
                 document.getElementById('mode-switch-button').addEventListener('click', (e) => {
-                    // (既存のコードは変更なし)
                     e.stopPropagation();
                     isEditMode = !isEditMode;
                     if (!isEditMode) {
@@ -756,7 +763,6 @@
             }
 
             function setupRotationButtonEvents(button, direction) {
-                // (既存のコードは変更なし)
                 const pressStart = (e) => {
                     e.preventDefault();
                     longPressTimer = setTimeout(() => {
@@ -778,7 +784,6 @@
                 button.addEventListener('mouseleave', pressEnd);
             }
             
-            // ... (これ以降のJavaScript関数は、updateUI()以外は既存のままです) ...
             function getDistance(touches) {
                 const dx = touches[0].clientX - touches[1].clientX;
                 const dy = touches[0].clientY - touches[1].clientY;
@@ -986,13 +991,11 @@
                 const editModeLabel = document.getElementById('edit-mode-label');
                 const viewModeLabel = document.getElementById('view-mode-label');
                 
-                // ★ 変更: ヘルプボタンを取得
                 const helpButton = document.getElementById('help-button');
                 const transformControls = document.getElementById('transform-controls');
                 const decisionControls = document.getElementById('decision-controls');
                 
                 document.getElementById('exit-ar-button').style.display = 'flex';
-                // ★ 変更: ヘルプボタンを表示
                 helpButton.style.display = 'flex';
                 modeSwitchButton.style.display = 'flex';
 
@@ -1034,7 +1037,6 @@
                 }
             }
 
-            // ... (残りのJavaScriptコードは既存のまま) ...
             function handleHover() {
                 if (gestureState.isInteracting || isRotatingContinuously) {
                     if(hoveredObject) {
