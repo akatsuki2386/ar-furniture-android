@@ -5,6 +5,19 @@
     <title>AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
+        /* ★★★ デバッグ用の赤い点のスタイルを追加 ★★★ */
+        #debug-tap-indicator {
+            position: fixed;
+            width: 20px;
+            height: 20px;
+            background-color: red;
+            border-radius: 50%;
+            pointer-events: none;
+            display: none;
+            z-index: 9999;
+            transform: translate(-50%, -50%);
+        }
+        
         body { 
             margin: 0;
             background-color: #1A202C;
@@ -56,7 +69,6 @@
             width: 100%;
             height: 100%;
             z-index: 10;
-            pointer-events: auto;
         }
         #instruction-text {
             position: absolute;
@@ -235,6 +247,8 @@
     </div>
     
     <div id="overlay">
+        <div id="debug-tap-indicator"></div>
+
         <div id="instruction-text"></div>
         
         <button id="mode-switch-button">
@@ -247,7 +261,6 @@
         
         <div id="bottom-bar">
             <button id="add-button" class="circle-button"></button>
-            
             <div id="decision-controls">
                  <button id="confirm-button" class="circle-button" style="background-color: #007AFF;"></button>
             </div>
@@ -291,9 +304,8 @@
         }
 
         function setupWebXR() {
-            let camera, scene, renderer;
+            let camera, scene, renderer, controller; // ★ controllerを追加
             let hitTestSource = null;
-            let hitTestSourceRequested = false;
             let reticle;
             const loader = new GLTFLoader();
             const preloadedModels = new Map();
@@ -301,13 +313,11 @@
             
             const furnitureData = [
                 { name: 'イス', file: 'chair.glb', height: 0.79 },
-                { name: '本棚', file: 'bookshelf.glb', height: 1.8 }, 
-                { name: '脚立', file: 'stand.glb', height: 1.2 }, 
             ];
             let previewObject = null;
             const placedObjects = [];
             
-            let appState = 'IDLE'; // IDLE, PLACING, CALIBRATING
+            let appState = 'IDLE';
             let isEditMode = true; 
             
             let scaleCorrectionFactor = 1.0;
@@ -326,8 +336,10 @@
                 renderer.xr.enabled = true;
                 document.body.appendChild(renderer.domElement);
 
-                const overlay = document.getElementById('overlay');
-                overlay.addEventListener('click', onSelect);
+                // ★★★ ARコントローラー（タップ検知用）をセットアップ ★★★
+                controller = renderer.xr.getController(0);
+                controller.addEventListener('select', onXRSelect);
+                scene.add(controller);
 
                 document.getElementById('exit-ar-button').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3-3-3m0 0 3-3m-3 3h12" /></svg>`;
                 document.getElementById('add-button').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>`;
@@ -341,7 +353,6 @@
                     initializeARExperience();
                     preloadModels();
 
-                    // ★★★ ヒットテストの準備をここに移動 ★★★
                     const session = renderer.xr.getSession();
                     session.requestReferenceSpace('viewer').then((referenceSpace) => {
                         session.requestHitTestSource({ space: referenceSpace }).then((source) => {
@@ -357,9 +368,6 @@
                     document.getElementById('title-container').style.display = 'block';
                     floorY = null;
                     appState = 'IDLE';
-                    // セッション終了時に表示をリセット
-                    document.getElementById('exit-ar-button').style.display = 'none';
-                    document.getElementById('mode-switch-button').style.display = 'none';
                     updateUI();
                 });
                 
@@ -370,6 +378,18 @@
                     optionalFeatures: ['dom-overlay'],
                     domOverlay: { root: document.querySelector("#overlay") }
                 }));
+
+                // デバッグ用のタップインジケーターのイベントリスナー
+                document.getElementById('overlay').addEventListener('click', (event) => {
+                    if (event.target.closest('button')) return;
+                    const indicator = document.getElementById('debug-tap-indicator');
+                    indicator.style.left = `${event.clientX}px`;
+                    indicator.style.top = `${event.clientY}px`;
+                    indicator.style.display = 'block';
+                    setTimeout(() => {
+                        indicator.style.display = 'none';
+                    }, 500);
+                });
             }
 
             function initializeARExperience() {
@@ -409,31 +429,20 @@
                 document.getElementById('modal-cancel').addEventListener('click', cancelCalibration);
             }
             
-            function onSelect(event) {
-                if (event.target.tagName === 'BUTTON' || event.target.closest('button')) {
-                    return;
-                }
-
-                if (appState === 'CALIBRATING') {
-                    const frame = renderer.xr.getFrame();
-                    if (frame && hitTestSource) {
-                        const hitTestResults = frame.getHitTestResults(hitTestSource);
-                        if (hitTestResults.length > 0) {
-                            const hit = hitTestResults[0];
-                            const referenceSpace = renderer.xr.getReferenceSpace();
-                            const hitPose = hit.getPose(referenceSpace);
-                            handleCalibrationTap(hitPose);
-                        }
+            // ★★★ タップ処理を onXRSelect に集約 ★★★
+            function onXRSelect() {
+                if (reticle.visible) {
+                    if (appState === 'CALIBRATING') {
+                         handleCalibrationTap(reticle.matrix);
                     }
                 }
             }
-
 
             function startCalibration(e) {
                 e.stopPropagation();
                 if (isEditMode) return;
                 appState = 'CALIBRATING';
-                showInstruction('高さが分かっている場所を<br>タップしてください');
+                showInstruction('高さが分かっている場所を<br>レティクル(輪)で狙ってタップ');
             }
             
             function cancelCalibration() {
@@ -442,14 +451,15 @@
                 appState = 'IDLE';
             }
 
-            function handleCalibrationTap(hitPose) {
+            function handleCalibrationTap(hitMatrix) {
                 if (floorY === null) {
                     showInstruction('先に床を認識してください');
                     setTimeout(hideInstruction, 2000);
                     appState = 'IDLE';
                     return;
                 }
-                calibrationTargetPoint = hitPose.transform.position;
+                const position = new THREE.Vector3().setFromMatrixPosition(hitMatrix);
+                calibrationTargetPoint = position;
                 document.getElementById('calibrate-modal').style.display = 'flex';
                 hideInstruction();
             }
@@ -546,11 +556,8 @@
                 
                 const session = renderer.xr.getSession();
                 if (!session) {
-                    addButton.style.display = 'none';
-                    decisionControls.style.display = 'none';
-                    calibrateButton.style.display = 'none';
-                    modeSwitchButton.style.display = 'none';
-                    document.getElementById('exit-ar-button').style.display = 'none';
+                    const allButtons = document.querySelectorAll('#overlay button');
+                    allButtons.forEach(b => b.style.display = 'none');
                     return;
                 }
                 
