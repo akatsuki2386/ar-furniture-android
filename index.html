@@ -249,7 +249,8 @@
         #rotate-left-button svg {
             transform: scaleX(-1);
         }
-        #choosing-controls, #add-button, #edit-button {
+        
+        #add-button, #edit-button {
             position: absolute;
             bottom: 90px;
             left: 50%;
@@ -310,7 +311,7 @@
             background-color: white;
         }
         
-        #choosing-controls { /* ★ この要素を修正 */
+        #choosing-controls {
             position: absolute;
             bottom: 90px;
             left: 50%;
@@ -318,7 +319,7 @@
             display: none;
             align-items: center;
             pointer-events: auto;
-            gap: 15px; /* この行を追加 */
+            gap: 15px;
         }
         
         /* ★★★ ヘルプ機能用のCSS ★★★ */
@@ -349,12 +350,13 @@
             z-index: 200;
             pointer-events: auto;
         }
-        #help-content-container {
+        #help-content-container { /* ★ この要素を修正 */
             background-color: #2D3748;
             padding: 20px;
             border-radius: 20px;
             width: 90%;
             max-width: 520px;
+            height: 580px; /* ★ この行を追加 */
             max-height: 85vh;
             display: flex;
             flex-direction: column;
@@ -401,9 +403,11 @@
             background-color: #4A5568;
             color: white;
         }
-        .help-page-content {
+        .help-page-content { /* ★ この要素を修正 */
             overflow-y: auto;
-            padding-right: 10px; /* スクロールバーのスペース */
+            padding-right: 10px; 
+            flex: 1; /* ★ この行を追加 */
+            min-height: 0; /* ★ この行を追加 */
         }
         .help-page {
             display: none;
