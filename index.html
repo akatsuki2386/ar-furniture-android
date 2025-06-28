@@ -5,6 +5,7 @@
     <title>AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
+        /* (既存のCSSは省略) */
         body { 
             margin: 0;
             background-color: #1A202C;
@@ -231,7 +232,7 @@
         .circle-button:active {
             transform: scale(0.9);
         }
-       
+        
         .circle-button:disabled {
             background-color: rgba(128, 128, 128, 0.2);
             border-color: rgba(128, 128, 128, 0.3);
@@ -288,7 +289,6 @@
             font-weight: bold;
             z-index: 200;
         }
-        
         #help-modal {
             position: fixed;
             top: 0;
@@ -299,8 +299,7 @@
             display: none; 
             justify-content: center;
             align-items: center;
-            z-index: 9999;
-            pointer-events: none;
+            z-index: 300;
         }
         .help-content {
             background-color: #2D3748;
@@ -309,9 +308,8 @@
             width: 90%;
             max-width: 400px;
             box-shadow: 0 10px 25px rgba(0,0,0,0.5);
-            position: relative;
+            position: relative; /* ★★★ 変更 ★★★ ボタンの位置の基準にする */
             user-select: none;
-            pointer-events: auto;
         }
         .help-pages-wrapper {
             overflow: hidden;
@@ -403,7 +401,7 @@
         <div id="ios-ar-links">
         </div>
     </div>
-   
+    
     <div id="help-modal">
         <div class="help-content">
             <div class="help-pages-wrapper">
@@ -457,7 +455,7 @@
             <span style="font-size: 1.25em; font-weight: bold;">床を認識中<span id="loading-dots"></span></span><br><br>
             カメラをゆっくりと<br>床に向けて<br>動かしてください
         </div>
-       
+        
         <div id="top-bar" style="position: absolute; top: 40px; width:100%; display: flex; justify-content: center;">
             <button id="mode-switch-button" style="display: none;">
                 <span id="edit-mode-label" class="mode-label">編集モード</span>
@@ -471,7 +469,7 @@
                 </svg>
             </button>
         </div>
-       
+        
         <div id="scale-slider-container">
             <div id="slider-track">
                 <div id="slider-handle"></div>
@@ -481,15 +479,15 @@
         <div id="bottom-bar">
             <button id="add-button" class="circle-button">
                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
-                       <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
                  </svg>
             </button>
             <button id="edit-button" class="circle-button">
                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;">
-                       <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" />
                  </svg>
             </button>
-           
+            
             <div id="choosing-controls">
                 <button id="back-button" class="circle-button">
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;">
@@ -529,7 +527,7 @@
             }
         }
     </script>
-   
+    
     <script type="module">
         import * as THREE from 'three';
         import { ARButton } from 'three/addons/webxr/ARButton.js';
@@ -540,7 +538,8 @@
         }
 
         function setupWebXR() {
-            let camera, scene, renderer;
+            // (既存の変数は省略)
+            let camera, scene, renderer, controller;
             let hitTestSource = null;
             let hitTestSourceRequested = false;
             let reticle;
@@ -549,9 +548,10 @@
             let floorY = null;
             let crossMark;
             let scaleSliderContainer, sliderTrack, sliderHandle;
+            
             let isDraggingSlider = false; 
             let dotAnimationTimer = null;
-           
+            
             const furnitureData = [
                 { name: 'イス', file: 'chair.glb', height: 0.79 },
                 { name: '本棚', file: 'bookshelf.glb', height: 1.8 }, 
@@ -574,11 +574,11 @@
                 isInteracting: false,
                 originalMultiplier: 1.0
             };
-           
+            
             let debugDisplayInitialized = false;
 
             init();
-           
+            
             function createCrossMark() {
                 const canvas = document.createElement('canvas');
                 const size = 256;
@@ -590,11 +590,11 @@
                 context.beginPath();
                 context.arc(size / 2, size / 2, size / 2, 0, 2 * Math.PI);
                 context.fill();
-               
+                
                 context.strokeStyle = 'white';
                 context.lineWidth = size * 0.1;
                 context.lineCap = 'round';
-               
+                
                 context.beginPath();
                 const margin = size * 0.25;
                 context.moveTo(margin, margin);
@@ -602,17 +602,17 @@
                 context.moveTo(size - margin, margin);
                 context.lineTo(margin, size - margin);
                 context.stroke();
-               
+                
                 const texture = new THREE.CanvasTexture(canvas);
                 const material = new THREE.MeshBasicMaterial({ 
                     map: texture, 
                     transparent: true,
                     depthTest: false 
                 });
-               
+                
                 const geometry = new THREE.PlaneGeometry(1, 1);
                 const plane = new THREE.Mesh(geometry, material);
-               
+                
                 plane.renderOrder = 999;
                 plane.visible = false;
                 return plane;
@@ -632,14 +632,15 @@
                     .catch(error => console.error("モデルの事前読み込み中にエラーが発生しました。", error));
             }
 
+
             function init() {
                 scene = new THREE.Scene();
                 camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
                 scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, 3));
-               
+                
                 crossMark = createCrossMark();
                 scene.add(crossMark);
-               
+                
                 renderer = new THREE.WebGLRenderer({ 
                     antialias: true, 
                     alpha: true, 
@@ -651,28 +652,18 @@
 
                 debugInfo = document.getElementById('debug-info');
                 const overlay = document.getElementById('overlay');
-                // ★★★ 変更・追加箇所 ★★★ handleTouchStartを呼び出す前にヘルプ表示をチェック
-                overlay.addEventListener('touchstart', (e) => {
-                    if (document.getElementById('help-modal').style.display === 'flex') return;
-                    handleTouchStart(e);
-                }, { passive: false });
-                overlay.addEventListener('touchmove', (e) => {
-                    if (document.getElementById('help-modal').style.display === 'flex') return;
-                    handleTouchMove(e);
-                }, { passive: false });
-                overlay.addEventListener('touchend', (e) => {
-                    if (document.getElementById('help-modal').style.display === 'flex') return;
-                    handleTouchEnd(e);
-                });
+                overlay.addEventListener('touchstart', handleTouchStart, { passive: false });
+                overlay.addEventListener('touchmove', handleTouchMove, { passive: false });
+                overlay.addEventListener('touchend', handleTouchEnd);
 
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
                     document.getElementById('help-button').style.display = 'flex'; 
                     appState = 'IDLE';
                     isEditMode = true; 
+                    updateUI();
                     initializeARExperience();
                     preloadModels();
-                    setupHelpModal();
                 });
 
                 renderer.xr.addEventListener('sessionend', () => {
@@ -688,14 +679,15 @@
                     stopDotAnimation(); 
                     floorY = null; 
                 });
-               
+                
+                animate();
+
                 document.body.appendChild(ARButton.createButton(renderer, {
                     requiredFeatures: ['hit-test'],
                     optionalFeatures: ['dom-overlay'],
                     domOverlay: { root: document.querySelector("#overlay") }
                 }));
-
-                animate();
+                setupHelpModal();
             }
 
             function initializeARExperience() {
@@ -714,7 +706,7 @@
                 const helpModal = document.getElementById('help-modal');
                 const helpContent = document.querySelector('.help-content');
                 const closeButton = document.querySelector('.help-close-button');
-               
+                
                 const pagesContainer = document.querySelector('.help-pages-container');
                 const pages = document.querySelectorAll('.help-page');
                 const prevButton = document.getElementById('prev-page-button');
@@ -723,22 +715,23 @@
                 const totalPages = pages.length;
                 let currentPage = 0;
 
-                const openHelp = () => {
-                    helpModal.style.display = 'flex';
-                    updateUI(); // ★★★ 追加 ★★★ ヘルプ表示時にUIを更新
-                };
-                const closeHelp = () => {
-                    helpModal.style.display = 'none';
-                    updateUI(); // ★★★ 追加 ★★★ ヘルプ非表示時にUIを更新
-                };
+                const openHelp = () => helpModal.style.display = 'flex';
+                const closeHelp = () => helpModal.style.display = 'none';
 
-                helpButton.addEventListener('pointerdown', (e) => {
-                    e.stopPropagation();
+                // ★★★ 変更 ★★★ イベントの伝播を止める処理を追加
+                helpButton.addEventListener('click', (e) => {
+                    e.stopPropagation(); // 他のイベントとの競合を防ぐ
                     openHelp();
                 });
-                closeButton.addEventListener('pointerdown', (e) => {
+                closeButton.addEventListener('click', (e) => {
                     e.stopPropagation();
                     closeHelp();
+                });
+                helpModal.addEventListener('click', (e) => {
+                    if (e.target === helpModal) {
+                        e.stopPropagation();
+                        closeHelp();
+                    }
                 });
 
                 function goToPage(pageIndex) {
@@ -755,13 +748,13 @@
 
                 prevButton.addEventListener('click', () => goToPage(currentPage - 1));
                 nextButton.addEventListener('click', () => goToPage(currentPage + 1));
-               
+                
                 let touchStartX = 0;
                 let touchEndX = 0;
                 let isSwiping = false;
 
                 helpContent.addEventListener('touchstart', (e) => {
-                    e.stopPropagation();
+                    e.stopPropagation(); // 背景のジェスチャーと競合しないように
                     touchStartX = e.changedTouches[0].screenX;
                     isSwiping = true;
                 });
@@ -773,10 +766,12 @@
                     touchEndX = e.changedTouches[0].screenX;
                     handleSwipe();
                 });
-               
+                
+                // スワイプ中の意図しない動作を防ぐ
                 helpContent.addEventListener('touchmove', (e) => {
                     e.stopPropagation();
                 });
+
 
                 function handleSwipe() {
                     const swipeThreshold = 50; 
@@ -790,16 +785,16 @@
                 goToPage(0);
             }
 
-            function setupUI() {
+             function setupUI() {
                 document.getElementById('exit-ar-button').addEventListener('click', (e) => { e.stopPropagation(); endSession(); });
-               
+                
                 function endSession() {
                     const currentSession = renderer.xr.getSession();
                     if (currentSession) {
                         currentSession.end();
                     }
                 }
-               
+                
                 document.getElementById('mode-switch-button').addEventListener('click', (e) => {
                     e.stopPropagation();
                     isEditMode = !isEditMode;
@@ -837,7 +832,7 @@
                 document.getElementById('rotate-button').addEventListener('click', (e) => { e.stopPropagation(); onRotate(); });
                 document.getElementById('delete-button').addEventListener('click', (e) => { e.stopPropagation(); onDelete(); });
                 document.getElementById('confirm-button').addEventListener('click', (e) => { e.stopPropagation(); onConfirm(); });
-               
+                
                 scaleSliderContainer = document.getElementById('scale-slider-container');
                 sliderTrack = document.getElementById('slider-track');
                 sliderHandle = document.getElementById('slider-handle');
@@ -848,15 +843,15 @@
                     if (!isDraggingSlider) return;
                     event.stopPropagation();
                     event.preventDefault();
-                   
+                    
                     const clientX = event.clientX || event.touches[0].clientX;
                     const rect = sliderTrack.getBoundingClientRect();
                     let percent = (clientX - rect.left) / rect.width;
                     percent = Math.max(0, Math.min(1, percent));
-                   
+                    
                     updateScaleFromSlider(percent);
                 };
-               
+                
                 sliderHandle.addEventListener('mousedown', onSliderDragStart);
                 document.addEventListener('mousemove', onSliderDragMove);
                 document.addEventListener('mouseup', onSliderDragEnd);
@@ -864,7 +859,7 @@
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
             }
-           
+            
             function updateDebugDisplay() {
                 if (!debugInfo) return;
                 const debugText = `[Debug Info]
@@ -879,7 +874,7 @@ Interacting: ${gestureState.isInteracting}`;
                 const dy = touches[0].clientY - touches[1].clientY;
                 return Math.sqrt(dx * dx + dy * dy);
             }
-           
+            
             function handleTouchStart(event) {
                 if (event.target !== event.currentTarget) return;
                 event.preventDefault();
@@ -902,10 +897,10 @@ Interacting: ${gestureState.isInteracting}`;
             function handleTouchMove(event) {
                 if (!gestureState.isInteracting) return;
                 event.preventDefault();
-               
+                
                 const activeObject = (appState === 'PLACING' || appState === 'EDITING') ? (previewObject || selectedObject) : null;
                 if (!activeObject || !isEditMode) return;
-               
+                
                 if (gestureState.touchCount === 1 && event.touches.length === 1) {
                     const currentX = event.touches[0].clientX;
                     const deltaX = currentX - gestureState.lastX;
@@ -916,7 +911,7 @@ Interacting: ${gestureState.isInteracting}`;
                     if (gestureState.initialDistance === 0) return; 
                     const currentDistance = getDistance(event.touches);
                     const scaleRatio = currentDistance / gestureState.initialDistance;
-                   
+                    
                     let newMultiplier = gestureState.originalMultiplier * scaleRatio;
 
                     newMultiplier = Math.max(0.5, Math.min(2.0, newMultiplier));
@@ -958,10 +953,10 @@ Interacting: ${gestureState.isInteracting}`;
             function updateScaleFromSlider(percent) {
                 const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
                 if (!activeObject) return;
-               
+                
                 const multiplier = 0.5 + percent * 1.5;
                 activeObject.userData.scaleMultiplier = multiplier;
-               
+                
                 const initialScale = activeObject.userData.initialScale;
                 activeObject.scale.copy(initialScale).multiplyScalar(multiplier);
 
@@ -975,18 +970,18 @@ Interacting: ${gestureState.isInteracting}`;
                 }
                 const gltf = preloadedModels.get(currentFurniture.file);
                 if (!gltf) return;
-               
+                
                 previewObject = gltf.scene.clone();
                 setObjectTransparency(previewObject, true);
 
                 const initialBox = new THREE.Box3().setFromObject(previewObject);
                 const initialCenter = new THREE.Vector3();
                 initialBox.getCenter(initialCenter);
-               
+                
                 const size = initialBox.getSize(new THREE.Vector3());
                 const scaleFactor = currentFurniture.height / size.y;
                 previewObject.scale.set(scaleFactor, scaleFactor, scaleFactor);
-               
+                
                 previewObject.userData.initialScale = previewObject.scale.clone();
                 previewObject.userData.scaleMultiplier = 1.0;
                 previewObject.userData.centerOffset = initialCenter.multiplyScalar(scaleFactor);
@@ -996,7 +991,7 @@ Interacting: ${gestureState.isInteracting}`;
                 scene.add(previewObject);
                 updateSliderForObject(previewObject);
             }
-           
+            
             function onSelect() {
                 if (gestureState.isInteracting) return;
 
@@ -1022,14 +1017,14 @@ Interacting: ${gestureState.isInteracting}`;
                     updateUI();
                 }
             }
-           
+            
             function onRotate() {
                 const target = (appState === 'PLACING') ? previewObject : selectedObject;
                 if (target) {
                     target.rotation.y += Math.PI / 4;
                 }
             }
-           
+            
             function onDelete() {
                 if (appState === 'PLACING') {
                     if(previewObject) scene.remove(previewObject);
@@ -1046,7 +1041,7 @@ Interacting: ${gestureState.isInteracting}`;
                 }
                 updateUI();
             }
-           
+            
             function placeNewObject() { 
                 if (!previewObject) return;
                 const solidObject = previewObject.clone();
@@ -1064,7 +1059,7 @@ Interacting: ${gestureState.isInteracting}`;
                 appState = 'IDLE';
                 updateUI();
             }
-           
+            
             function setObjectTransparency(object, isTransparent) {
                 if (!object) return;
                 object.traverse(child => {
@@ -1076,7 +1071,6 @@ Interacting: ${gestureState.isInteracting}`;
             }
 
             function updateUI() {
-                const helpModal = document.getElementById('help-modal');
                 const bottomBar = document.getElementById('bottom-bar');
                 const addButton = document.getElementById('add-button');
                 const editButton = document.getElementById('edit-button');
@@ -1086,18 +1080,16 @@ Interacting: ${gestureState.isInteracting}`;
                 const modeSwitchButton = document.getElementById('mode-switch-button');
                 const editModeLabel = document.getElementById('edit-mode-label');
                 const viewModeLabel = document.getElementById('view-mode-label');
-               
+
+                
                 document.getElementById('exit-ar-button').style.display = 'flex';
                 modeSwitchButton.style.display = 'flex';
-
-                // ★★★ 変更・追加箇所 ★★★ ヘルプ表示中はUIを非表示にする
-                const isHelpVisible = helpModal.style.display === 'flex';
-                bottomBar.style.display = isHelpVisible ? 'none' : 'flex';
 
                 if (isEditMode) {
                     editModeLabel.classList.add('active');
                     viewModeLabel.classList.remove('active');
 
+                    bottomBar.style.display = 'flex';
                     addButton.style.display = 'none';
                     editButton.style.display = 'none';
                     choosingControls.style.display = 'none';
@@ -1124,6 +1116,7 @@ Interacting: ${gestureState.isInteracting}`;
                     editModeLabel.classList.remove('active');
                     viewModeLabel.classList.add('active');
 
+                    bottomBar.style.display = 'none';
                     addButton.style.display = 'none';
                     editButton.style.display = 'none';
                     choosingControls.style.display = 'none';
@@ -1135,9 +1128,9 @@ Interacting: ${gestureState.isInteracting}`;
             function handleHover() {
                 if (gestureState.isInteracting) {
                     if(hoveredObject) {
-                          setObjectTransparency(hoveredObject, false);
-                          hoveredObject = null;
-                          updateUI();
+                         setObjectTransparency(hoveredObject, false);
+                         hoveredObject = null;
+                         updateUI();
                     }
                     return;
                 }
@@ -1150,7 +1143,7 @@ Interacting: ${gestureState.isInteracting}`;
                     }
                     return;
                 }
-               
+                
                 raycaster.setFromCamera({ x: 0, y: 0 }, camera);
                 const intersects = raycaster.intersectObjects(placedObjects, true);
                 let newHoveredObject = null;
@@ -1164,7 +1157,7 @@ Interacting: ${gestureState.isInteracting}`;
                         currentObject = currentObject.parent;
                     }
                 }
-               
+                
                 if (newHoveredObject !== hoveredObject) {
                     if (hoveredObject) setObjectTransparency(hoveredObject, false);
                     if (newHoveredObject) setObjectTransparency(newHoveredObject, true);
@@ -1172,7 +1165,7 @@ Interacting: ${gestureState.isInteracting}`;
                     updateUI();
                 }
             }
-           
+            
             function startDotAnimation() {
                 if (dotAnimationTimer) return; 
                 const dotsElement = document.getElementById('loading-dots');
@@ -1180,7 +1173,7 @@ Interacting: ${gestureState.isInteracting}`;
 
                 let dotCount = 0;
                 const dots = ['・', '・・', '・・・'];
-               
+                
                 dotAnimationTimer = setInterval(() => {
                     dotsElement.textContent = dots[dotCount % dots.length];
                     dotCount++;
@@ -1217,7 +1210,7 @@ Interacting: ${gestureState.isInteracting}`;
                 }
 
                 handleHover();
-               
+                
                 const confirmButton = document.getElementById('confirm-button');
                 const instructionText = document.getElementById('instruction-text');
                 let isPlaceable = false;
@@ -1233,14 +1226,14 @@ Interacting: ${gestureState.isInteracting}`;
                             const hit = hitTestResults[0];
                             const hitPose = hit.getPose(referenceSpace);
                             const hitY = hitPose.transform.position.y;
-                           
+                            
                             if (floorY === null) floorY = hitY;
-                           
+                            
                             const Y_TOLERANCE = 0.2;
                             isPlaceable = Math.abs(hitY - floorY) < Y_TOLERANCE;
-                           
+                            
                             reticle.matrix.fromArray(hitPose.transform.matrix);
-                           
+                            
                             if (instructionText.style.display !== 'none') {
                                 instructionText.style.display = 'none';
                                 stopDotAnimation();
@@ -1251,7 +1244,7 @@ Interacting: ${gestureState.isInteracting}`;
                                     activeObject.position.setFromMatrixPosition(reticle.matrix);
                                 }
                                 if(activeObject) activeObject.visible = true;
-                               
+                                
                                 if (appState === 'PLACING' || appState === 'EDITING') {
                                     reticle.visible = isPlaceable;
                                     crossMark.visible = !isPlaceable;
@@ -1281,11 +1274,11 @@ Interacting: ${gestureState.isInteracting}`;
                         }
                     }
                 }
-               
+                
                 if (isEditMode && (appState === 'PLACING' || appState === 'EDITING')) {
                     confirmButton.disabled = !isPlaceable;
                 }
-               
+                
                 if (!hitTestSourceRequested && renderer.xr.getSession()) {
                     const session = renderer.xr.getSession();
                     session.requestReferenceSpace('viewer').then((referenceSpace) => {
@@ -1298,11 +1291,11 @@ Interacting: ${gestureState.isInteracting}`;
                     });
                     hitTestSourceRequested = true;
                 }
-               
+                
                 renderer.render(scene, camera);
             }
         }
-       
+        
         main();
     </script>
 </body>
