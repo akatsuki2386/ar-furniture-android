@@ -5,7 +5,6 @@
     <title>AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
-        /* (既存のCSSは省略) */
         body { 
             margin: 0;
             background-color: #1A202C;
@@ -355,7 +354,6 @@
         }
 
         function setupWebXR() {
-            // (既存の変数は省略)
             let camera, scene, renderer, controller;
             let hitTestSource = null;
             let hitTestSourceRequested = false;
@@ -390,6 +388,11 @@
                 isInteracting: false,
                 originalMultiplier: 1.0
             };
+            
+            // 回転の微調整を管理するための変数
+            let isFineRotating = false;
+            let lastDragX = 0;
+            let totalDragDistance = 0;
             
             init();
             
@@ -445,7 +448,6 @@
                     .then(() => console.log("すべてのモデルの事前読み込みが完了しました！"))
                     .catch(error => console.error("モデルの事前読み込み中にエラーが発生しました。", error));
             }
-
 
             function init() {
                 scene = new THREE.Scene();
@@ -553,7 +555,18 @@
                     });
                     palette.appendChild(button);
                 });
-                document.getElementById('rotate-button').addEventListener('click', (e) => { e.stopPropagation(); onRotate(); });
+                
+                // 回転ボタンのイベントリスナーを設定
+                const rotateButton = document.getElementById('rotate-button');
+                rotateButton.addEventListener('mousedown', handleRotateStart);
+                rotateButton.addEventListener('touchstart', handleRotateStart, { passive: false });
+                
+                document.addEventListener('mousemove', handleRotateMove);
+                document.addEventListener('touchmove', handleRotateMove, { passive: false });
+
+                document.addEventListener('mouseup', handleRotateEnd);
+                document.addEventListener('touchend', handleRotateEnd);
+
                 document.getElementById('delete-button').addEventListener('click', (e) => { e.stopPropagation(); onDelete(); });
                 document.getElementById('confirm-button').addEventListener('click', (e) => { e.stopPropagation(); onConfirm(); });
                 
@@ -582,6 +595,42 @@
                 sliderHandle.addEventListener('touchstart', onSliderDragStart, { passive: false });
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
+            }
+
+            function handleRotateStart(e) {
+                if (!e.target.closest('#rotate-button')) return;
+                
+                e.preventDefault();
+                isFineRotating = true;
+                totalDragDistance = 0;
+                lastDragX = e.clientX || e.touches[0].clientX;
+            }
+
+            function handleRotateMove(e) {
+                if (!isFineRotating) return;
+                
+                e.preventDefault();
+                const target = (appState === 'PLACING') ? previewObject : selectedObject;
+                if (!target) return;
+
+                const currentX = e.clientX || e.touches[0].clientX;
+                const deltaX = currentX - lastDragX;
+                
+                target.rotation.y += deltaX * 0.01;
+
+                lastDragX = currentX;
+                totalDragDistance += Math.abs(deltaX);
+            }
+
+            function handleRotateEnd() {
+                if (!isFineRotating) return;
+                
+                const CLICK_THRESHOLD = 10;
+                if (totalDragDistance < CLICK_THRESHOLD) {
+                    onRotate();
+                }
+
+                isFineRotating = false;
             }
             
             function getDistance(touches) {
@@ -791,7 +840,6 @@
                 const modeSwitchButton = document.getElementById('mode-switch-button');
                 const editModeLabel = document.getElementById('edit-mode-label');
                 const viewModeLabel = document.getElementById('view-mode-label');
-
                 
                 document.getElementById('exit-ar-button').style.display = 'flex';
                 modeSwitchButton.style.display = 'flex';
