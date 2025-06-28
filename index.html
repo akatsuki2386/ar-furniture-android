@@ -350,32 +350,35 @@
             z-index: 200;
             pointer-events: auto;
         }
-        #help-content-container { /* ★ この要素を修正 */
+        #help-content-container {
             background-color: #2D3748;
             padding: 20px;
             border-radius: 20px;
             width: 90%;
             max-width: 520px;
-            height: 580px; /* ★ この行を追加 */
+            height: 580px; 
             max-height: 85vh;
             display: flex;
             flex-direction: column;
             border: 1px solid rgba(255, 255, 255, 0.2);
             position: relative;
         }
-        #close-help-button {
+        #close-help-button { /* ★ この要素を修正 */
             position: absolute;
-            top: 15px;
-            right: 15px;
-            background: rgba(0,0,0,0.3);
-            border: none;
+            bottom: -70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             color: white;
             cursor: pointer;
-            width: 32px;
-            height: 32px;
+            width: 48px;
+            height: 48px;
             border-radius: 50%;
-            font-size: 20px;
-            line-height: 32px;
+            font-size: 28px;
+            line-height: 48px;
             text-align: center;
             z-index: 15;
         }
@@ -403,11 +406,11 @@
             background-color: #4A5568;
             color: white;
         }
-        .help-page-content { /* ★ この要素を修正 */
+        .help-page-content {
             overflow-y: auto;
             padding-right: 10px; 
-            flex: 1; /* ★ この行を追加 */
-            min-height: 0; /* ★ この行を追加 */
+            flex: 1; 
+            min-height: 0;
         }
         .help-page {
             display: none;
