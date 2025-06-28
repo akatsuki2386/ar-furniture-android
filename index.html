@@ -5,7 +5,6 @@
     <title>AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
-        /* (ほとんどのCSSは変更なし) */
         body { 
             margin: 0;
             background-color: #1A202C;
@@ -246,9 +245,6 @@
         #rotate-right-button {
             border-left: 1px solid rgba(255, 255, 255, 0.3);
         }
-        /* #rotate-left-button svg { ★ このルールを削除 */
-        /* transform: scaleX(-1); */
-        /* } */
         
         #add-button, #edit-button {
             position: absolute;
@@ -322,7 +318,6 @@
             gap: 15px;
         }
         
-        /* ★★★ ヘルプ機能用のCSS ★★★ */
         #top-left-controls {
             position: absolute;
             top: 40px; 
@@ -701,7 +696,6 @@
         import { ARButton } from 'three/addons/webxr/ARButton.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-        // ...
         function main() {
             setupWebXR();
         }
@@ -826,9 +820,8 @@
                 document.getElementById('delete-button').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 0 0-2.09 2.134v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>`;
                 document.getElementById('confirm-button').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>`;
                 
-                // ★★★ アイコンの定義を修正 ★★★
-                const rotateLeftIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>`;
-                const rotateRightIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>`;
+                const rotateLeftIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="M15 9 21 15m0 0-6 6M21 15H9a6 6 0 0 0 0-12h3" /></svg>`;
+                const rotateRightIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="m9 9-6 6m0 0 6 6M3 15h12a6 6 0 0 1 0-12H9" /></svg>`;
                 document.getElementById('rotate-left-button').innerHTML = rotateLeftIconSVG;
                 document.getElementById('rotate-right-button').innerHTML = rotateRightIconSVG;
 
