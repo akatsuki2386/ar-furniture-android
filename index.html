@@ -2,89 +2,229 @@
 <html lang="ja">
 <head>
     <meta charset="UTF-8">
-    <title>ARキャリブレーション（シンプル版）</title>
+    <title>AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
-        body { margin: 0; background-color: #1A202C; color: white; font-family: sans-serif; overflow: hidden; }
+        body { 
+            margin: 0;
+            background-color: #1A202C;
+            color: white;
+            font-family: sans-serif;
+            overflow: hidden;
+        }
         canvas { display: block; }
+        #title-container {
+            position: absolute;
+            top: 40%; left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+            z-index: 5;
+            width: 90%;
+        }
+        #title-container h1 {
+            font-size: 2.2rem; font-weight: bold; line-height: 1.4;
+            color: white; text-shadow: 0 2px 8px rgba(0,0,0,0.5);
+        }
         #ARButton {
             color: white !important; background-color: rgba(255, 255, 255, 0.2) !important;
             border: 1px solid rgba(255, 255, 255, 0.3) !important; backdrop-filter: blur(10px) !important;
-            border-radius: 9999px !important; font-size: 16px !important; font-weight: bold !important;
-            padding: 14px 24px !important; min-width: 220px !important; position: absolute !important;
-            bottom: 15% !important; left: 50% !important; transform: translateX(-50%) !important; z-index: 100 !important;
+            -webkit-backdrop-filter: blur(10px) !important; border-radius: 9999px !important;
+            font-size: 16px !important; font-weight: bold !important; padding: 14px 24px !important;
+            min-width: 220px !important; box-shadow: none !important; opacity: 1 !important;
+            position: absolute !important; bottom: 15% !important; left: 50% !important;
+            transform: translateX(-50%) !important; z-index: 200 !important; /* z-indexを高く設定 */
+            white-space: nowrap !important;
         }
-        #overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; }
+        #overlay {
+            position: fixed; top: 0; left: 0;
+            width: 100%; height: 100%;
+            z-index: 10;
+            pointer-events: none; /* オーバーレイ自体はクリックを透過 */
+        }
+        /* UI要素がクリックを受け取れるようにする */
+        #overlay > * {
+            pointer-events: auto;
+        }
         #instruction-text {
-            position: absolute; top: 15%; left: 50%; transform: translateX(-50%);
-            color: white; font-size: 16px; text-align: center; background-color: rgba(0, 0, 0, 0.6);
-            padding: 15px 25px; border-radius: 15px; line-height: 1.7; display: none;
-            z-index: 101; /* 他のUIとの重なりを考慮 */
+            position: absolute; top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            color: white; font-size: 16px; text-align: center;
+            background-color: rgba(0, 0, 0, 0.6); padding: 20px 30px;
+            border-radius: 15px; line-height: 1.7; display: none;
+            pointer-events: none; /* テキスト自体はクリックできないように */
+            min-width: 260px; box-sizing: border-box;
+            z-index: 150; /* z-indexを高く設定 */
         }
+        #bottom-bar {
+            position: absolute; bottom: 0; left: 0;
+            width: 100%; height: 220px;
+            pointer-events: none; /* バー自体はクリックを透過 */
+            display: flex; flex-direction: column;
+            justify-content: flex-end; align-items: center;
+            padding-bottom: 20px; box-sizing: border-box;
+        }
+        .circle-button, .rotation-button-group, #decision-controls, #choosing-controls, #transform-controls {
+            pointer-events: auto; /* 個別のUI要素はクリック可能に */
+        }
+
+        /* 他のスタイルは変更なし */
+        #transform-controls, #decision-controls {
+            display: none; align-items: center; width: 90%;
+            max-width: 400px; justify-content: center;
+        }
+        #transform-controls { gap: 15px; margin-bottom: 20px; }
+        #decision-controls, .rotation-button-group {
+            background-color: rgba(255, 255, 255, 0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            border-radius: 9999px; overflow: hidden; width: auto;
+        }
+        #choosing-controls, #add-button, #edit-button {
+            position: absolute; bottom: 90px; left: 50%;
+            transform: translateX(-50%); display: none; align-items: center;
+        }
+        .circle-button {
+            width: 64px; height: 64px; color: white; border-radius: 50%;
+            cursor: pointer; display: flex; justify-content: center; align-items: center;
+            background-color: rgba(255, 255, 255, 0.2); border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+        }
+        #mode-switch-button {
+            position: absolute; top: 40px; left: 50%; transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.5); border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 9999px; padding: 5px; font-size: 15px; cursor: pointer;
+            backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+            display: none; align-items: center; gap: 5px; z-index: 110;
+        }
+        .mode-label {
+            padding: 5px 15px; border-radius: 9999px; color: #a0aec0;
+        }
+        .mode-label.active {
+            font-weight: bold; color: #1A202C; background-color: white;
+        }
+
+        /* === キャリブレーションボタンのスタイル === */
         #calibrate-button {
-            position: absolute; bottom: 30px; right: 30px; display: none;
-            width: 64px; height: 64px; background-color: rgba(255, 255, 255, 0.2);
-            border: 1px solid rgba(255, 255, 255, 0.3); backdrop-filter: blur(10px); color: white;
-            border-radius: 50%; cursor: pointer; pointer-events: auto;
-            justify-content: center; align-items: center;
-            z-index: 101; /* ★常に最前面に表示するためのz-indexを追加 */
+            display: none; /* JavaScriptで制御 */
+            position: absolute;
+            bottom: 30px;
+            right: 30px;
+            width: 64px;
+            height: 64px;
+            z-index: 110; /* 他のボタンより手前に表示 */
         }
         #calibration-input-ui {
-            position: absolute; bottom: 30px; left: 50%; transform: translateX(-50%);
-            display: none; flex-direction: column; align-items: center; gap: 15px;
-            background-color: rgba(0,0,0,0.6); padding: 20px; border-radius: 16px;
-            width: 90%; max-width: 320px; pointer-events: auto;
-            z-index: 101; /* ★常に最前面に表示するためのz-indexを追加 */
+            display: none; /* JavaScriptで制御 */
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+            background-color: rgba(0,0,0,0.6);
+            padding: 20px;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 320px;
+            z-index: 150; /* 最前面に表示 */
         }
         #calibration-input-ui label { color: #A0AEC0; font-size: 14px; }
         .input-row { display: flex; gap: 10px; width: 100%; align-items: center; }
         #height-input {
-            flex-grow: 1; padding: 12px; border-radius: 8px; border: 2px solid #4A5568;
-            background-color: #1A202C; color: white; font-size: 18px; text-align: center; min-width: 0;
+            flex-grow: 1; padding: 12px; border-radius: 8px;
+            border: 2px solid #4A5568; background-color: #1A202C;
+            color: white; font-size: 18px; text-align: center; min-width: 0;
         }
         #calibration-confirm-button {
-            padding: 12px 20px; border-radius: 8px; border: none; font-size: 16px;
-            font-weight: bold; cursor: pointer; background-color: #007AFF; color: white;
+            padding: 12px 20px; border-radius: 8px; border: none;
+            font-size: 16px; font-weight: bold; cursor: pointer;
+            background-color: #007AFF; color: white;
         }
     </style>
 </head>
 <body>
+    <div id="title-container">
+        <h1>AR家具配置<br>シミュレーション</h1>
+    </div>
+
     <div id="overlay">
         <div id="instruction-text"></div>
-        <button id="calibrate-button">
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 32px; height: 32px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75L19.5 19.5M3.75 19.5L19.5 3.75" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15M4.5 12h15" /></svg>
+        <button id="mode-switch-button">
+            <span id="edit-mode-label" class="mode-label">編集モード</span>
+            <span id="view-mode-label" class="mode-label">鑑賞モード</span>
+        </button>
+        <div id="top-right-controls" style="position: absolute; top: 20px; right: 20px; z-index: 110;">
+            <button id="exit-ar-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3-3-3m0 0 3-3m-3 3h12" />
+                </svg>
+            </button>
+        </div>
+        
+        <div id="bottom-bar">
+            <button id="add-button" class="circle-button"></button>
+            <button id="edit-button" class="circle-button"></button>
+            <div id="choosing-controls">
+                <button id="back-button" class="circle-button"></button>
+                <div id="furniture-palette"></div>
+            </div>
+            <div id="transform-controls">
+                 </div>
+            <div id="decision-controls">
+                 </div>
+        </div>
+        
+        <button id="calibrate-button" class="circle-button">
+             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor" style="width: 32px; height: 32px;"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3.75L19.5 19.5M3.75 19.5L19.5 3.75" /><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15M4.5 12h15" /></svg>
         </button>
         <div id="calibration-input-ui">
             <label for="height-input">ロックした地点の床からの高さを入力</label>
             <div class="input-row">
-                <input type="number" id="height-input" placeholder="例: 70" />
+                <input type="number" id="height-input" placeholder="例: 90" />
                 <span>cm</span>
                 <button id="calibration-confirm-button">決定</button>
             </div>
         </div>
     </div>
 
-    <script type="importmap">{ "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }</script>
+    <script type="importmap">
+        { "imports": { "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js", "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/" } }
+    </script>
+    
     <script type="module">
         import * as THREE from 'three';
         import { ARButton } from 'three/addons/webxr/ARButton.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
         let camera, scene, renderer, controller;
-        let reticle, hitTestSource = null;
-        
+        let hitTestSource = null;
+        let hitTestSourceRequested = false;
+        let reticle;
         const loader = new GLTFLoader();
-        let preloadedChair = null;
-        let theChair = null;
-
+        const preloadedModels = new Map();
         let floorY = null;
+        
+        const furnitureData = [ /* 省略 */ ];
+        let currentFurniture = furnitureData[0];
+        let previewObject = null;
+        const placedObjects = [];
+        const raycaster = new THREE.Raycaster();
+        let selectedObject = null;
+        let hoveredObject = null;
+        let appState = 'IDLE';
+        let isEditMode = true;
+
+        // キャリブレーション関連の変数
         let scaleCorrectionFactor = 1.0;
         let lockedHitMatrix = null;
-        
-        // アプリケーションの状態を管理
-        let appState = 'INITIALIZING'; 
 
-        init();
+        // ジェスチャー関連の変数
+        const gestureState = { /* 省略 */ };
+        
+        main();
+
+        function main() { init(); }
 
         function init() {
             scene = new THREE.Scene();
@@ -97,40 +237,78 @@
             renderer.xr.enabled = true;
             document.body.appendChild(renderer.domElement);
 
-            // 画面タップ時のイベント
+            // コントローラー（画面タップ）のイベントリスナー
             controller = renderer.xr.getController(0);
             controller.addEventListener('select', onSelect);
             scene.add(controller);
 
-            // ARセッション開始/終了時の処理
-            renderer.xr.addEventListener('sessionstart', onSessionStart);
-            renderer.xr.addEventListener('sessionend', onSessionEnd);
-
             // UI要素のイベントリスナーを設定
-            document.getElementById('calibrate-button').addEventListener('click', startCalibration);
-            document.getElementById('calibration-confirm-button').addEventListener('click', finishCalibration);
+            setupUIEventListeners();
             
-            // ARボタンを作成
+            // ARButtonの作成
             document.body.appendChild(ARButton.createButton(renderer, {
-                requiredFeatures: ['hit-test'],
+                requiredFeatures: ['hit-test', 'dom-overlay'],
                 domOverlay: { root: document.querySelector("#overlay") }
             }));
 
-            loadModels();
+            preloadModels();
             animate();
         }
-        
-        function loadModels() {
-            // 椅子モデルのURL（必要に応じて変更してください）
-            const chairURL = 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/models/gltf/SheenChair.glb';
-            loader.load(chairURL, (gltf) => {
-                preloadedChair = gltf.scene;
-                console.log("椅子のモデルを読み込みました。");
+
+        function setupUIEventListeners() {
+            // ARセッションの開始・終了
+            renderer.xr.addEventListener('sessionstart', onSessionStart);
+            renderer.xr.addEventListener('sessionend', onSessionEnd);
+
+            // モード切替ボタン
+            document.getElementById('mode-switch-button').addEventListener('click', (e) => {
+                e.stopPropagation();
+                isEditMode = !isEditMode;
+                appState = 'IDLE'; // モード切替時は常にIDLEに
+                // 選択状態などを解除
+                if (selectedObject) setObjectTransparency(selectedObject, false);
+                selectedObject = null;
+                // キャリブレーション中だった場合はキャンセル
+                cancelCalibration();
+                updateUI();
             });
+
+            // キャリブレーションボタン
+            document.getElementById('calibrate-button').addEventListener('click', startCalibration);
+            document.getElementById('calibration-confirm-button').addEventListener('click', finishCalibration);
+
+            // 他のUIボタンのイベントリスナー...
+            document.getElementById('exit-ar-button').addEventListener('click', (e) => { e.stopPropagation(); renderer.xr.getSession()?.end(); });
+            // ...
+        }
+        
+        function onSessionStart() {
+            // 初期化処理
+            isEditMode = true;
+            appState = 'IDLE';
+            initializeARExperience();
+            updateUI();
         }
 
-        function onSessionStart(event) {
-            // レティクル（平面認識リング）を作成
+        function onSessionEnd() {
+            // 状態とオブジェクトをリセット
+            appState = 'IDLE';
+            placedObjects.forEach(obj => scene.remove(obj));
+            placedObjects.length = 0;
+            if (previewObject) scene.remove(previewObject);
+            previewObject = null;
+            selectedObject = null;
+            hoveredObject = null;
+            if (reticle) scene.remove(reticle);
+            reticle = null;
+            hitTestSource = null;
+            hitTestSourceRequested = false;
+            floorY = null;
+            scaleCorrectionFactor = 1.0;
+            updateUI();
+        }
+
+        function initializeARExperience() {
             reticle = new THREE.Mesh(
                 new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
                 new THREE.MeshBasicMaterial({ color: 0x007AFF, transparent: true, opacity: 0.75 })
@@ -138,49 +316,30 @@
             reticle.matrixAutoUpdate = false;
             reticle.visible = false;
             scene.add(reticle);
-            
-            // ヒットテストを開始
-            const session = event.target.getSession();
-            session.requestReferenceSpace('viewer').then((refSpace) => {
-                session.requestHitTestSource({ space: refSpace }).then((source) => {
-                    hitTestSource = source;
-                });
-            });
-        }
-
-        function onSessionEnd() {
-            // 状態とオブジェクトをリセット
-            appState = 'INITIALIZING';
-            if (theChair) scene.remove(theChair);
-            theChair = null;
-            if (reticle) scene.remove(reticle);
-            reticle = null;
-            hitTestSource = null;
-            floorY = null;
-            scaleCorrectionFactor = 1.0;
-            updateUI();
         }
 
         function onSelect() {
-            if (reticle.visible) {
-                if (appState === 'PLACING_CHAIR') {
-                    // 椅子を固定する
-                    appState = 'CHAIR_PINNED';
-                    updateUI();
-                } else if (appState === 'CALIBRATING_TARGETING') {
-                    // キャリブレーションの基準点をロックする
-                    lockedHitMatrix = reticle.matrix.clone();
-                    appState = 'CALIBRATING_INPUT';
-                    updateUI();
-                }
+            if (!reticle.visible) return;
+
+            if (appState === 'CALIBRATING_TARGETING') {
+                // キャリブレーションの基準点をロック
+                lockedHitMatrix = reticle.matrix.clone();
+                appState = 'CALIBRATING_INPUT';
+                updateUI();
+            } else if (isEditMode) {
+                // 編集モードでのタップ処理
+                // (家具の配置確定など)
             }
         }
-
-        function startCalibration() {
+        
+        // === キャリブレーション関数 ===
+        function startCalibration(e) {
+            e.stopPropagation();
+            if (isEditMode) return; // 鑑賞モードでのみ実行
             appState = 'CALIBRATING_TARGETING';
             updateUI();
         }
-        
+
         function finishCalibration() {
             const heightInput = document.getElementById('height-input');
             const realHeightMeters = parseFloat(heightInput.value) / 100;
@@ -189,7 +348,6 @@
                 cancelCalibration();
                 return;
             }
-
             const lockedPosition = new THREE.Vector3().setFromMatrixPosition(lockedHitMatrix);
             const arHeight = lockedPosition.y - floorY;
 
@@ -198,54 +356,90 @@
                 return;
             }
             
-            // 以前の補正値をリセットし、新しい補正値を計算
-            const previousCorrection = scaleCorrectionFactor;
+            // 新しい補正係数を計算
             scaleCorrectionFactor = realHeightMeters / arHeight;
-
-            if (theChair) {
-                // スケールを再適用
-                theChair.scale.divideScalar(previousCorrection); // 過去の補正を打ち消す
-                theChair.scale.multiplyScalar(scaleCorrectionFactor); // 新しい補正を適用
-            }
-
+            applyScaleCorrectionToAll(); // 全オブジェクトに適用
             cancelCalibration();
         }
-
+        
+        function applyScaleCorrectionToAll() {
+            const allObjects = [...placedObjects, previewObject].filter(Boolean);
+            allObjects.forEach(obj => {
+                if (obj.userData.baseScale) {
+                    const correctedScale = obj.userData.baseScale.clone().multiplyScalar(scaleCorrectionFactor);
+                    obj.userData.initialScale = correctedScale; // 補正後の基本スケール
+                    const userMultiplier = obj.userData.scaleMultiplier || 1.0;
+                    obj.scale.copy(correctedScale).multiplyScalar(userMultiplier);
+                }
+            });
+        }
+        
         function cancelCalibration() {
             lockedHitMatrix = null;
-            appState = 'CHAIR_PINNED'; // キャリブレーション後は椅子固定状態に戻る
+            appState = 'IDLE'; // IDLE状態に戻る
             document.getElementById('height-input').value = '';
             updateUI();
         }
-        
+
+        // === UI更新関数 ===
         function updateUI() {
-            const instructionText = document.getElementById('instruction-text');
-            const calibrateButton = document.getElementById('calibrate-button');
-            const calibrationInputUI = document.getElementById('calibration-input-ui');
+            const session = renderer.xr.getSession();
+            // 非表示にするUI要素のリスト
+            const UIsToHide = [
+                'add-button', 'edit-button', 'choosing-controls', 'transform-controls', 
+                'decision-controls', 'calibrate-button', 'calibration-input-ui'
+            ];
+            UIsToHide.forEach(id => {
+                const el = document.getElementById(id);
+                if (el) el.style.display = 'none';
+            });
+            hideInstruction();
 
-            // すべて一旦非表示
-            instructionText.style.display = 'none';
-            calibrateButton.style.display = 'none';
-            calibrationInputUI.style.display = 'none';
-
-            switch (appState) {
-                case 'PLACING_CHAIR':
-                    instructionText.innerText = '好きな場所に椅子を移動し、画面をタップして固定します';
-                    instructionText.style.display = 'block';
-                    break;
-                case 'CHAIR_PINNED':
-                    instructionText.innerText = '椅子を固定しました';
-                    instructionText.style.display = 'block';
-                    calibrateButton.style.display = 'flex';
-                    break;
-                case 'CALIBRATING_TARGETING':
-                    instructionText.innerHTML = '高さが分かっている場所（机の天板など）に<br>リングを合わせてタップしてください';
-                    instructionText.style.display = 'block';
-                    break;
-                case 'CALIBRATING_INPUT':
-                    calibrationInputUI.style.display = 'flex';
-                    break;
+            // ARセッション外ではタイトルとARボタンのみ
+            document.getElementById('title-container').style.display = session ? 'none' : 'block';
+            if (!session) {
+                document.getElementById('mode-switch-button').style.display = 'none';
+                document.getElementById('exit-ar-button').style.display = 'none';
+                return;
             }
+
+            // ARセッション中のUI制御
+            document.getElementById('mode-switch-button').style.display = 'flex';
+            document.getElementById('exit-ar-button').style.display = 'flex';
+            
+            const editModeLabel = document.getElementById('edit-mode-label');
+            const viewModeLabel = document.getElementById('view-mode-label');
+            
+            if (isEditMode) {
+                editModeLabel.classList.add('active');
+                viewModeLabel.classList.remove('active');
+                // 編集モード時のUI表示ロジック
+                // ...
+            } else { // 鑑賞モード
+                editModeLabel.classList.remove('active');
+                viewModeLabel.classList.add('active');
+                
+                switch(appState) {
+                    case 'IDLE':
+                        document.getElementById('calibrate-button').style.display = 'flex';
+                        break;
+                    case 'CALIBRATING_TARGETING':
+                        showInstruction('高さが分かる場所をタップ');
+                        break;
+                    case 'CALIBRATING_INPUT':
+                        document.getElementById('calibration-input-ui').style.display = 'flex';
+                        break;
+                }
+            }
+        }
+        
+        function showInstruction(message) {
+            const el = document.getElementById('instruction-text');
+            el.innerHTML = message;
+            el.style.display = 'block';
+        }
+        function hideInstruction() {
+            document.getElementById('instruction-text').style.display = 'none';
         }
 
         function animate() {
@@ -254,50 +448,45 @@
 
         function render(timestamp, frame) {
             if (!frame) return;
-
             const referenceSpace = renderer.xr.getReferenceSpace();
-            if (hitTestSource && reticle) {
+
+            // レティクルの表示判定
+            const shouldShowReticle = !isEditMode && appState === 'CALIBRATING_TARGETING';
+
+            if (hitTestSource && shouldShowReticle) {
                 const hitTestResults = frame.getHitTestResults(hitTestSource);
                 if (hitTestResults.length > 0) {
                     const hit = hitTestResults[0];
-                    const hitPose = hit.getPose(referenceSpace);
                     reticle.visible = true;
-                    reticle.matrix.fromArray(hitPose.transform.matrix);
-
+                    reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix);
                     if (floorY === null) {
-                        floorY = hitPose.transform.position.y;
+                        floorY = hit.getPose(referenceSpace).transform.position.y;
                     }
-
-                    if (appState === 'INITIALIZING' && preloadedChair) {
-                        // 椅子をシーンに追加
-                        theChair = preloadedChair.clone();
-                        
-                        // 初期スケールを調整
-                        const box = new THREE.Box3().setFromObject(theChair);
-                        const size = box.getSize(new THREE.Vector3());
-                        const scaleFactor = 0.8 / size.y; // 椅子の高さを約80cmに
-                        theChair.scale.set(scaleFactor, scaleFactor, scaleFactor);
-
-                        scene.add(theChair);
-                        appState = 'PLACING_CHAIR';
-                        updateUI();
-                    }
-
-                    if (appState === 'PLACING_CHAIR' && theChair) {
-                        theChair.position.setFromMatrixPosition(reticle.matrix);
-                        theChair.visible = true;
-                    }
-
                 } else {
                     reticle.visible = false;
-                    if (appState === 'PLACING_CHAIR' && theChair) {
-                        theChair.visible = false;
-                    }
                 }
+            } else {
+                if (reticle) reticle.visible = false;
             }
+            
+            // ヒットテストソースの要求
+            if (!hitTestSourceRequested) {
+                const session = renderer.xr.getSession();
+                session.requestReferenceSpace('viewer').then((refSpace) => {
+                    session.requestHitTestSource({ space: refSpace }).then((source) => {
+                        hitTestSource = source;
+                    });
+                });
+                session.addEventListener('end', () => { hitTestSourceRequested = false; hitTestSource = null; });
+                hitTestSourceRequested = true;
+            }
+            
             renderer.render(scene, camera);
         }
 
+        // このサンプルでは使用しないが、完全性のために残す関数
+        function preloadModels(){}
+        // ... 他のジェスチャー、UI関連の関数
     </script>
 </body>
 </html>
