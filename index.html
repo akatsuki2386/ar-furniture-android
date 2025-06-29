@@ -494,7 +494,7 @@
             color: white;
         }
         
-        /* ▼▼▼ モーダルのCSS（位置調整後） ▼▼▼ */
+        /* ▼▼▼ モーダルのCSS（最終調整後） ▼▼▼ */
         #furniture-modal {
             position: fixed;
             top: 0;
@@ -506,21 +506,20 @@
             -webkit-backdrop-filter: blur(8px);
             display: none;
             justify-content: center;
-            align-items: flex-end; /* 下揃えに戻す */
+            align-items: center;
             z-index: 250;
-            padding-bottom: 15vh; /* 下からの余白で位置を調整 */
-            box-sizing: border-box; /* paddingをサイズ計算に含める */
         }
         #modal-content {
             background-color: rgba(45, 55, 72, 0.85);
             width: 90%;
             max-width: 500px;
-            max-height: 70vh; /* 高さを調整 */
+            max-height: 70vh;
             border-radius: 20px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
             animation: fadeIn 0.3s ease-out;
+            position: relative; /* 閉じるボタンの基準位置にする */
         }
         #modal-header {
             padding: 15px 20px 10px;
@@ -535,11 +534,23 @@
             font-size: 1.2rem;
         }
         #close-modal-button {
-            background: none;
-            border: none;
+            /* ヘルプモーダルの閉じるボタンのスタイルを適用 */
+            position: absolute;
+            bottom: -70px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(255,255,255,0.2);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
             color: white;
-            font-size: 28px;
             cursor: pointer;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            font-size: 28px;
+            line-height: 48px;
+            text-align: center;
         }
         #furniture-grid {
             display: grid;
