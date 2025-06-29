@@ -837,6 +837,7 @@
             let hoveredObject = null;
             let appState = 'IDLE';
             let isEditMode = false; 
+            let isFloorDetected = false;
 
             const objectsToDelete = []; 
             const clock = new THREE.Clock();
@@ -955,6 +956,7 @@
                     document.getElementById('mode-switch-button').style.display = 'none';
                     stopDotAnimation(); 
                     floorY = null; 
+                    isFloorDetected = false;
                 });
                 
                 animate();
@@ -1494,7 +1496,7 @@
 
                     switch (appState) {
                         case 'IDLE':
-                            addButton.style.display = 'flex';
+                            addButton.style.display = isFloorDetected ? 'flex' : 'none';
                             if (hoveredObject) {
                                 editButton.style.display = 'flex';
                             }
@@ -1637,6 +1639,11 @@
                             
                             if (floorY === null) floorY = hitY;
                             
+                            if (!isFloorDetected) {
+                                isFloorDetected = true;
+                                updateUI();
+                            }
+                            
                             const Y_TOLERANCE = 0.2;
                             isPlaceable = Math.abs(hitY - floorY) < Y_TOLERANCE;
                             
@@ -1675,7 +1682,7 @@
                             reticle.visible = false;
                             crossMark.visible = false;
                             if (activeObject) activeObject.visible = false;
-                            if (instructionText.style.display !== 'block') {
+                            if (instructionText.style.display !== 'block' && !isFloorDetected) {
                                 instructionText.style.display = 'block';
                                 startDotAnimation();
                             }
