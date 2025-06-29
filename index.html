@@ -493,8 +493,8 @@
             background-color: #E53E3E; 
             color: white;
         }
-
-        /* ▼▼▼ ここから新規追加CSS ▼▼▼ */
+        
+        /* ▼▼▼ ここからモーダルとグリッドのCSS（変更後） ▼▼▼ */
         #furniture-modal {
             position: fixed;
             top: 0;
@@ -506,26 +506,26 @@
             -webkit-backdrop-filter: blur(8px);
             display: none;
             justify-content: center;
-            align-items: flex-end;
+            align-items: center;
             z-index: 250;
         }
         #modal-content {
             background-color: rgba(45, 55, 72, 0.85);
-            width: 100%;
-            max-height: 70vh;
-            border-top-left-radius: 20px;
-            border-top-right-radius: 20px;
+            width: 90%;
+            max-width: 500px;
+            max-height: 80vh;
+            border-radius: 20px;
             box-sizing: border-box;
             display: flex;
             flex-direction: column;
-            animation: slideUp 0.3s ease-out;
+            animation: fadeIn 0.3s ease-out;
         }
         #modal-header {
-            padding: 15px 20px;
+            padding: 15px 20px 10px;
             display: flex;
             justify-content: space-between;
             align-items: center;
-            border-bottom: 1px solid rgba(255,255,255,0.1);
+            border-bottom: none;
             flex-shrink: 0;
         }
         #modal-header h2 {
@@ -542,7 +542,7 @@
         #furniture-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-            gap: 20px;
+            gap: 15px;
             padding: 20px;
             overflow-y: auto;
         }
@@ -551,34 +551,34 @@
             text-align: center;
             background-color: rgba(255,255,255,0.05);
             border-radius: 12px;
-            padding: 10px;
+            padding: 15px 10px;
             transition: background-color 0.2s ease;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 40px;
         }
         .grid-item:hover {
             background-color: rgba(255,255,255,0.15);
         }
         .grid-item img {
-            width: 100%;
-            height: 80px;
-            object-fit: contain;
-            border-radius: 8px;
-            margin-bottom: 8px;
+            display: none;
         }
         .grid-item p {
             margin: 0;
-            font-size: 0.8rem;
+            font-size: 1rem;
             font-weight: bold;
             color: #E2E8F0;
         }
-        @keyframes slideUp {
+        @keyframes fadeIn {
             from {
-                transform: translateY(100%);
+                opacity: 0;
             }
             to {
-                transform: translateY(0);
+                opacity: 1;
             }
         }
-        /* ▲▲▲ ここまで新規追加CSS ▲▲▲ */
+        /* ▲▲▲ ここまでモーダルとグリッドのCSS ▲▲▲ */
 
     </style>
 </head>
@@ -826,7 +826,8 @@
                     </div>
             </div>
         </div>
-        </div>
+
+    </div>
 
     <script type="importmap">
         {
@@ -864,8 +865,6 @@
             let tabButtons, helpPages;
             let confirmDialog, objectPendingDeletion = null;
 
-            // ▼▼▼ 修正: furnitureDataにthumbnailプロパティを追加 ▼▼▼
-            // 【重要】これらの画像ファイル（chair.pngなど）をHTMLと同じ階層に配置してください
             const furnitureData = [
                 { name: 'イス',   file: 'chair.glb',     height: 0.79, thumbnail: 'chair.png' },
                 { name: '本棚',   file: 'bookshelf.glb', height: 1.8,  thumbnail: 'bookshelf.png' }, 
@@ -1039,27 +1038,20 @@
                 setupUI();
             }
 
-            // ▼▼▼ 修正: 新しいUIハンドリング関数 ▼▼▼
+            // ▼▼▼ 修正: UIセットアップのロジックを変更 ▼▼▼
             function setupUI() {
-                // 家具選択モーダルのセットアップ
                 const furnitureModal = document.getElementById('furniture-modal');
                 const closeModalButton = document.getElementById('close-modal-button');
                 const furnitureGrid = document.getElementById('furniture-grid');
                 
-                // グリッドを動的に生成
-                furnitureGrid.innerHTML = ''; // 初期化
+                furnitureGrid.innerHTML = '';
                 furnitureData.forEach(item => {
                     const gridItem = document.createElement('div');
                     gridItem.className = 'grid-item';
                     
-                    const img = document.createElement('img');
-                    img.src = item.thumbnail;
-                    img.alt = item.name;
-                    
                     const p = document.createElement('p');
                     p.textContent = item.name;
                     
-                    gridItem.appendChild(img);
                     gridItem.appendChild(p);
 
                     gridItem.addEventListener('click', (e) => {
@@ -1074,7 +1066,6 @@
                     furnitureGrid.appendChild(gridItem);
                 });
 
-                // 「+」ボタンでモーダルを開く
                 document.getElementById('add-button').addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (appState === 'IDLE') {
@@ -1082,7 +1073,6 @@
                     }
                 });
 
-                // 閉じるボタンと背景クリックでモーダルを閉じる
                 const closeModal = (e) => {
                     e.stopPropagation();
                     furnitureModal.style.display = 'none';
@@ -1094,7 +1084,7 @@
                     }
                 });
 
-                // --- ここから下のUIセットアップはほぼ変更なし ---
+                // --- 既存のUIセットアップ ---
                 document.getElementById('exit-ar-button').addEventListener('click', (e) => { e.stopPropagation(); endSession(); });
                 function endSession() {
                     const currentSession = renderer.xr.getSession();
@@ -1514,7 +1504,6 @@
                     updateUI();
                 } else if (appState === 'PLACING' && objectToDelete === previewObject) {
                     previewObject = null;
-                    // ▼▼▼ 修正: プレビュー削除後は何も選択していないIDLE状態に戻る ▼▼▼
                     appState = 'IDLE'; 
                     updateUI();
                 }
@@ -1594,8 +1583,6 @@
                             if (hoveredObject) {
                                 editButton.style.display = 'flex';
                             }
-                            break;
-                        case 'CHOOSING': // この状態はモーダルに移行したため実質使われない
                             break;
                         case 'PLACING':
                         case 'EDITING':
