@@ -154,18 +154,11 @@
             bottom: 0;
             left: 0;
             width: 100%;
-            height: 220px;
             pointer-events: none;
-            display: flex;
-            flex-direction: column;
-            justify-content: flex-end;
-            align-items: center;
-            padding-bottom: 20px;
-            box-sizing: border-box;
         }
 
         #transform-controls, #decision-controls {
-            display: none;
+            display: flex; 
             align-items: center;
             pointer-events: auto;
             width: 90%;
@@ -175,7 +168,6 @@
 
         #transform-controls {
             gap: 15px;
-            margin-bottom: 20px;
         }
         #decision-controls {
             background-color: rgba(255, 255, 255, 0.2);
@@ -544,7 +536,20 @@
             background-color: #E53E3E; 
             color: white;
         }
-
+        
+        #editing-controls {
+            position: absolute;
+            bottom: 90px;
+            left: 50%;
+            width: 100%;
+            transform: translateX(-50%);
+            display: none; 
+            flex-direction: column;
+            align-items: center;
+            gap: 15px; 
+            pointer-events: none; 
+        }
+        
     </style>
 </head>
 <body>
@@ -734,23 +739,26 @@
                 <div id="furniture-palette"></div>
             </div>
 
-            <div id="transform-controls">
-                <div id="scale-slider-container">
-                    <span class="slider-icon">-</span>
-                    <div id="slider-track">
-                        <div id="slider-handle"></div>
+            <div id="editing-controls">
+                <div id="transform-controls">
+                    <div id="scale-slider-container">
+                        <span class="slider-icon">-</span>
+                        <div id="slider-track">
+                            <div id="slider-handle"></div>
+                        </div>
+                        <span class="slider-icon">+</span>
                     </div>
-                    <span class="slider-icon">+</span>
+                    <div class="rotation-button-group">
+                        <button id="rotate-left-button" class="group-button"></button>
+                        <button id="rotate-right-button" class="group-button"></button>
+                    </div>
                 </div>
-                <div class="rotation-button-group">
-                    <button id="rotate-left-button" class="group-button"></button>
-                    <button id="rotate-right-button" class="group-button"></button>
+                <div id="decision-controls">
+                    <button id="delete-button" class="group-button"></button>
+                    <button id="confirm-button" class="group-button"></button>
                 </div>
             </div>
-            <div id="decision-controls">
-                <button id="delete-button" class="group-button"></button>
-                <button id="confirm-button" class="group-button"></button>
-            </div>
+
         </div>
 
         <div id="confirm-dialog" class="dialog-container">
