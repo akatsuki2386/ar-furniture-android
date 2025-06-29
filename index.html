@@ -505,7 +505,7 @@
             -webkit-backdrop-filter: blur(8px);
             display: none;
             justify-content: center;
-            align-items: flex-end; /* ▼▼▼ 修正: centerからflex-endへ ▼▼▼ */
+            align-items: flex-end;
             z-index: 250;
             padding-bottom: 15vh;
             box-sizing: border-box;
@@ -525,7 +525,7 @@
         #modal-header {
             padding: 15px 20px 10px;
             display: flex;
-            justify-content: center; /* 修正: 中央寄せ */
+            justify-content: center;
             align-items: center;
             border-bottom: none;
             flex-shrink: 0;
@@ -537,7 +537,7 @@
         }
         #close-modal-button {
             position: absolute;
-            bottom: -85px;
+            bottom: -85px; /* ▼▼▼ 修正: -70pxから-85pxへ ▼▼▼ */
             left: 50%;
             transform: translateX(-50%);
             background: rgba(255,255,255,0.2);
