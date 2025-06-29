@@ -751,21 +751,25 @@
             let appState = 'IDLE';
             let isEditMode = false; 
 
+            // ★ 削除アニメーション用の変数を追加
+            const objectsToDelete = []; 
+            const clock = new THREE.Clock();
+
             const gestureState = {
                 touchCount: 0,
                 initialDistance: 0.0,
                 lastX: 0,
                 isInteracting: false,
                 originalMultiplier: 1.0,
-                // ★ タップ判定用のプロパティを追加
                 startTime: 0,
                 startX: 0,
                 startY: 0,
+                // ★ 長押しタイマー用のプロパティを追加
+                longPressTimer: null,
             };
             
             let isRotatingContinuously = false;
             let continuousRotationDirection = 0;
-            let longPressTimer = null;
             
             init();
             
@@ -1014,15 +1018,16 @@
             }
 
             function setupRotationButtonEvents(button, direction) {
+                let pressTimer = null;
                 const pressStart = (e) => {
                     e.preventDefault();
-                    longPressTimer = setTimeout(() => {
+                    pressTimer = setTimeout(() => {
                         isRotatingContinuously = true;
                         continuousRotationDirection = direction;
                     }, 300);
                 };
                 const pressEnd = () => {
-                    clearTimeout(longPressTimer);
+                    clearTimeout(pressTimer);
                     if (!isRotatingContinuously) {
                         onRotate(direction);
                     }
@@ -1041,8 +1046,8 @@
                 return Math.sqrt(dx * dx + dy * dy);
             }
 
-            // ★★★ タップイベントのロジックをここから修正 ★★★
-            
+            // ★★★ タッチイベントここから ★★★
+
             function onObjectTap(event) {
                 const touch = event.changedTouches[0];
                 const tapPosition = new THREE.Vector2(
@@ -1071,6 +1076,20 @@
                     }
                 }
             }
+            
+            // ★ 長押し検知時の処理
+            function handleLongPress(tappedObject) {
+                if (!tappedObject) return;
+
+                const objectToConfirm = tappedObject;
+                
+                // 確認ダイアログを表示
+                setTimeout(() => {
+                     if (confirm("この家具を削除しますか？")) {
+                        startDeleteAnimation(objectToConfirm);
+                    }
+                }, 10);
+            }
 
             function handleTouchStart(event) {
                 if (event.target !== event.currentTarget) return;
@@ -1080,17 +1099,46 @@
                 gestureState.startTime = Date.now();
                 gestureState.startX = event.touches[0].clientX;
                 gestureState.startY = event.touches[0].clientY;
+                
+                // ★ 長押しタイマーを開始
+                if (gestureState.touchCount === 1) {
+                    clearTimeout(gestureState.longPressTimer); // 念のためクリア
+                    gestureState.longPressTimer = setTimeout(() => {
+                        gestureState.longPressTimer = null; // タイマー完了
+                        
+                        const tapPosition = new THREE.Vector2(
+                            (gestureState.startX / window.innerWidth) * 2 - 1,
+                            - (gestureState.startY / window.innerHeight) * 2 + 1
+                        );
+                        raycaster.setFromCamera(tapPosition, camera);
+                        const allObjects = (appState === 'EDITING') ? [selectedObject] : placedObjects;
+                        const intersects = raycaster.intersectObjects(allObjects, true);
+
+                        if (intersects.length > 0) {
+                            let targetObject = intersects[0].object;
+                             while(targetObject.parent && !allObjects.includes(targetObject)) {
+                                targetObject = targetObject.parent;
+                            }
+                            if (allObjects.includes(targetObject)) {
+                                 handleLongPress(targetObject);
+                            }
+                        }
+                    }, 800); // 800ミリ秒で長押しと判定
+                }
 
                 const activeObject = (appState === 'PLACING' || appState === 'EDITING') ? (previewObject || selectedObject) : null;
-                if (!activeObject || !isEditMode) return;
-
-                gestureState.isInteracting = true;
+                if (activeObject && isEditMode) {
+                    gestureState.isInteracting = true;
+                }
 
                 if (gestureState.touchCount === 1) {
                     gestureState.lastX = event.touches[0].clientX;
                 } else if (gestureState.touchCount === 2) {
+                    clearTimeout(gestureState.longPressTimer); // 2本指になったら長押しキャンセル
                     gestureState.initialDistance = getDistance(event.touches);
-                    gestureState.originalMultiplier = activeObject.userData.scaleMultiplier || 1.0; 
+                    if (activeObject) {
+                        gestureState.originalMultiplier = activeObject.userData.scaleMultiplier || 1.0; 
+                    }
                 }
             }
 
@@ -1098,10 +1146,20 @@
                 if (event.target !== event.currentTarget) return;
                 event.preventDefault();
                 
+                // ★ 少しでも動いたら長押しタイマーをキャンセル
+                if (gestureState.longPressTimer) {
+                    const moveX = event.touches[0].clientX;
+                    const moveY = event.touches[0].clientY;
+                    const distance = Math.sqrt(Math.pow(moveX - gestureState.startX, 2) + Math.pow(moveY - gestureState.startY, 2));
+                    if (distance > 10) { // 10px以上動いたらキャンセル
+                       clearTimeout(gestureState.longPressTimer);
+                       gestureState.longPressTimer = null;
+                    }
+                }
+
+                if (!gestureState.isInteracting) return;
                 const activeObject = (appState === 'PLACING' || appState === 'EDITING') ? (previewObject || selectedObject) : null;
                 if (!activeObject || !isEditMode) return;
-                
-                if (!gestureState.isInteracting) return;
 
                 if (gestureState.touchCount === 1 && event.touches.length === 1) {
                     const currentX = event.touches[0].clientX;
@@ -1109,7 +1167,7 @@
                     activeObject.rotation.y += deltaX * 0.01;
                     gestureState.lastX = currentX;
 
-                } else if (gestureState.touchCount === 2 && event.touches.length === 2) {
+                } else if (gestureState.touchCount >= 2 && event.touches.length >= 2) {
                     if (gestureState.initialDistance === 0) return; 
                     const currentDistance = getDistance(event.touches);
                     const scaleRatio = currentDistance / gestureState.initialDistance;
@@ -1128,6 +1186,10 @@
             function handleTouchEnd(event) {
                 if (event.target !== event.currentTarget) return;
                 
+                // ★ 指が離れたらタイマーは必ずキャンセル
+                clearTimeout(gestureState.longPressTimer);
+                gestureState.longPressTimer = null;
+                
                 const touchDuration = Date.now() - gestureState.startTime;
                 const touchEndX = event.changedTouches[0].clientX;
                 const touchEndY = event.changedTouches[0].clientY;
@@ -1136,7 +1198,6 @@
                     Math.pow(touchEndY - gestureState.startY, 2)
                 );
 
-                // タップ操作の判定 (短時間かつ移動が少ない)
                 if (touchDuration < 200 && distanceMoved < 10) {
                     onObjectTap(event);
                 }
@@ -1150,8 +1211,7 @@
                 gestureState.touchCount = event.touches.length;
             }
 
-            // ★★★ ここまでタップイベントのロジックを修正 ★★★
-
+            // ★★★ タッチイベントここまで ★★★
 
             function updateSliderForObject(object) {
                 if (!object) return;
@@ -1211,14 +1271,12 @@
                 updateSliderForObject(previewObject);
             }
             
-            // ★ onSelectを、新しく作るselectAndEditObject関数を呼び出すように変更
             function onSelect() {
                 if (hoveredObject) {
                     selectAndEditObject(hoveredObject);
                 }
             }
             
-            // ★ オブジェクトを選択して編集状態にするロジックを関数化
             function selectAndEditObject(objectToEdit) {
                 if (!isEditMode || appState !== 'IDLE' || !objectToEdit) return;
                 
@@ -1253,22 +1311,37 @@
                     target.rotation.y += (Math.PI / 4) * direction;
                 }
             }
+
+            // ★ 削除アニメーションを開始する関数
+            function startDeleteAnimation(objectToDelete) {
+                if (!objectToDelete) return;
+
+                // 削除リストに追加
+                objectsToDelete.push({
+                    object: objectToDelete,
+                    startTime: clock.getElapsedTime(),
+                    duration: 0.3, // 0.3秒かけてアニメーション
+                    initialY: objectToDelete.position.y
+                });
+                
+                // アプリの状態をリセット
+                if (objectToDelete === selectedObject) {
+                    selectedObject = null;
+                    appState = 'IDLE';
+                    updateUI();
+                } else if (appState === 'PLACING' && objectToDelete === previewObject) {
+                    previewObject = null;
+                    appState = 'IDLE';
+                    updateUI();
+                }
+            }
             
             function onDelete() {
                 if (appState === 'PLACING') {
-                    if(previewObject) scene.remove(previewObject);
-                    previewObject = null;
-                    appState = 'CHOOSING';
+                    if(previewObject) startDeleteAnimation(previewObject);
                 } else if (appState === 'EDITING') {
-                    if(selectedObject) {
-                        scene.remove(selectedObject);
-                        const index = placedObjects.indexOf(selectedObject);
-                        if (index > -1) placedObjects.splice(index, 1);
-                        selectedObject = null;
-                    }
-                    appState = 'IDLE';
+                    if(selectedObject) startDeleteAnimation(selectedObject);
                 }
-                updateUI();
             }
             
             function placeNewObject() { 
@@ -1289,12 +1362,12 @@
                 updateUI();
             }
             
-            function setObjectTransparency(object, isTransparent) {
+            function setObjectTransparency(object, isTransparent, opacity = 0.7) {
                 if (!object) return;
                 object.traverse(child => {
                     if (child.isMesh) {
                         child.material.transparent = isTransparent;
-                        child.material.opacity = isTransparent ? 0.7 : 1.0;
+                        child.material.opacity = isTransparent ? opacity : 1.0;
                     }
                 });
             }
@@ -1354,7 +1427,7 @@
             }
 
             function handleHover() {
-                if (gestureState.isInteracting || isRotatingContinuously) {
+                if (gestureState.isInteracting || isRotatingContinuously || gestureState.longPressTimer) {
                     if(hoveredObject) {
                          setObjectTransparency(hoveredObject, false);
                          hoveredObject = null;
@@ -1422,6 +1495,31 @@
             }
 
             function render() {
+                const delta = clock.getDelta();
+                const elapsedTime = clock.getElapsedTime();
+
+                // ★ 削除アニメーションの処理
+                for (let i = objectsToDelete.length - 1; i >= 0; i--) {
+                    const item = objectsToDelete[i];
+                    const progress = (elapsedTime - item.startTime) / item.duration;
+                    
+                    if (progress < 1) {
+                        // 上に移動 & フェードアウト
+                        item.object.position.y = item.initialY + progress * 0.5; // 0.5は移動距離
+                        const opacity = 1.0 - progress;
+                        setObjectTransparency(item.object, true, opacity);
+                    } else {
+                        // アニメーション完了後、シーンから完全に削除
+                        scene.remove(item.object);
+                        const placedIndex = placedObjects.indexOf(item.object);
+                        if (placedIndex > -1) {
+                            placedObjects.splice(placedIndex, 1);
+                        }
+                        objectsToDelete.splice(i, 1);
+                    }
+                }
+
+
                 if (!renderer.xr.isPresenting) {
                     return;
                 }
