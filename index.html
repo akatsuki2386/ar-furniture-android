@@ -665,7 +665,18 @@
                                     <h4>拡大・縮小</h4>
                                     <p>2本指で広げたりつまんでサイズ変更。</p>
                                 </div>
-                            </div>
+                                <div class="help-card">
+                                    <div class="icon-container">
+                                        <svg viewBox="0 0 48 48" class="gesture-svg">
+                                            <path d="M14,18 h20 v12 h-20z" stroke-width="1" opacity="0.5"/>
+                                            <circle cx="24" cy="24" r="5" class="finger"/>
+                                            <circle cx="24" cy="24" r="9" stroke-width="1.5" stroke-dasharray="2 4" opacity="0.9" />
+                                        </svg>
+                                    </div>
+                                    <h4>長押しで削除</h4>
+                                    <p>家具を長押しすると削除の確認ができます。</p>
+                                </div>
+                                </div>
                         </div>
                         <div class="help-section">
                             <h3>ボタン操作</h3>
@@ -713,7 +724,7 @@
         <div id="top-left-controls">
              <button id="help-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
-                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                      <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
                  </svg>
             </button>
         </div>
@@ -1500,9 +1511,9 @@
             function handleHover() {
                 if (gestureState.isInteracting || isRotatingContinuously || gestureState.longPressTimer) {
                     if(hoveredObject) {
-                         setObjectTransparency(hoveredObject, false);
-                         hoveredObject = null;
-                         updateUI();
+                          setObjectTransparency(hoveredObject, false);
+                          hoveredObject = null;
+                          updateUI();
                     }
                     return;
                 }
