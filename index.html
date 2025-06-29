@@ -494,7 +494,7 @@
             color: white;
         }
         
-        /* ▼▼▼ ここからモーダルとグリッドのCSS（変更後） ▼▼▼ */
+        /* ▼▼▼ モーダルのCSS（位置調整後） ▼▼▼ */
         #furniture-modal {
             position: fixed;
             top: 0;
@@ -506,14 +506,16 @@
             -webkit-backdrop-filter: blur(8px);
             display: none;
             justify-content: center;
-            align-items: center;
+            align-items: flex-end; /* 下揃えに戻す */
             z-index: 250;
+            padding-bottom: 15vh; /* 下からの余白で位置を調整 */
+            box-sizing: border-box; /* paddingをサイズ計算に含める */
         }
         #modal-content {
             background-color: rgba(45, 55, 72, 0.85);
             width: 90%;
             max-width: 500px;
-            max-height: 80vh;
+            max-height: 70vh; /* 高さを調整 */
             border-radius: 20px;
             box-sizing: border-box;
             display: flex;
@@ -571,14 +573,9 @@
             color: #E2E8F0;
         }
         @keyframes fadeIn {
-            from {
-                opacity: 0;
-            }
-            to {
-                opacity: 1;
-            }
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
         }
-        /* ▲▲▲ ここまでモーダルとグリッドのCSS ▲▲▲ */
 
     </style>
 </head>
@@ -1038,7 +1035,6 @@
                 setupUI();
             }
 
-            // ▼▼▼ 修正: UIセットアップのロジックを変更 ▼▼▼
             function setupUI() {
                 const furnitureModal = document.getElementById('furniture-modal');
                 const closeModalButton = document.getElementById('close-modal-button');
@@ -1084,7 +1080,6 @@
                     }
                 });
 
-                // --- 既存のUIセットアップ ---
                 document.getElementById('exit-ar-button').addEventListener('click', (e) => { e.stopPropagation(); endSession(); });
                 function endSession() {
                     const currentSession = renderer.xr.getSession();
