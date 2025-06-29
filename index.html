@@ -503,7 +503,7 @@
             background-color: rgba(0,0,0,0.6);
             backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
-            display: none;
+            display: none; 
             justify-content: center;
             align-items: center;
             z-index: 300;
@@ -1020,7 +1020,6 @@
                     objectPendingDeletion = null;
                 });
 
-
                 document.getElementById('mode-switch-button').addEventListener('click', (e) => {
                     e.stopPropagation();
                     isEditMode = !isEditMode;
@@ -1160,7 +1159,6 @@
             
             function handleLongPress(tappedObject) {
                 if (!tappedObject || confirmDialog.style.display === 'flex') return;
-
                 objectPendingDeletion = tappedObject;
                 confirmDialog.style.display = 'flex';
             }
@@ -1175,6 +1173,7 @@
                 gestureState.startY = event.touches[0].clientY;
                 
                 if (gestureState.touchCount === 1) {
+                    if (!isEditMode) return;
                     clearTimeout(gestureState.longPressTimer);
                     gestureState.longPressTimer = setTimeout(() => {
                         gestureState.longPressTimer = null; 
@@ -1438,7 +1437,7 @@
                 if (!object) return;
                 object.traverse(child => {
                     if (child.isMesh) {
-                        child.material.transparent = true; //常に透明を有効に
+                        child.material.transparent = true; 
                         child.material.opacity = isTransparent ? opacity : 1.0;
                     }
                 });
