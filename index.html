@@ -160,7 +160,7 @@
             flex-direction: column;
             justify-content: flex-end;
             align-items: center;
-            padding-bottom: 80px; /* ▼▼▼ この行を変更 (20px -> 80px) ▼▼▼ */
+            padding-bottom: 80px;
             box-sizing: border-box;
         }
 
@@ -906,6 +906,33 @@
                     .catch(error => console.error("モデルの事前読み込み中にエラーが発生しました。", error));
             }
 
+            // ▼▼▼ 修正点 1-1: シーンをクリーンアップする関数を作成 ▼▼▼
+            function resetScene() {
+                // 配置されたオブジェクトをシーンから削除し、配列を空にする
+                placedObjects.forEach(object => scene.remove(object));
+                placedObjects.length = 0;
+
+                // プレビュー中や選択中のオブジェクトもクリア
+                if (previewObject) scene.remove(previewObject);
+                previewObject = null;
+                selectedObject = null;
+                hoveredObject = null;
+
+                // レティクルも削除
+                if(reticle) scene.remove(reticle);
+                reticle = null;
+                
+                // 各種状態をリセット
+                appState = 'IDLE';
+                isFloorDetected = false;
+                floorY = null;
+                hitTestSource = null;
+                hitTestSourceRequested = false;
+
+                // UIを初期状態に戻す
+                updateUI();
+            }
+
             function init() {
                 scene = new THREE.Scene();
                 camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
@@ -941,7 +968,7 @@
 
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
-                    appState = 'IDLE';
+                    resetScene(); // ▼▼▼ 修正点 1-2: セッション開始時にresetSceneを呼ぶように変更 ▼▼▼
                     isEditMode = true; 
                     updateUI();
                     initializeARExperience();
@@ -950,13 +977,11 @@
 
                 renderer.xr.addEventListener('sessionend', () => {
                     document.getElementById('title-container').style.display = 'block';
-                    Object.keys(gestureState).forEach(key => gestureState[key] = (typeof gestureState[key] === 'boolean' ? false : (key === 'originalMultiplier' ? 1.0 : 0)));
+                    resetScene(); // ▼▼▼ 修正点 1-3: セッション終了時もresetSceneを呼ぶように変更 ▼▼▼
                     document.getElementById('exit-ar-button').style.display = 'none';
                     document.getElementById('help-button').style.display = 'none';
                     document.getElementById('mode-switch-button').style.display = 'none';
                     stopDotAnimation(); 
-                    floorY = null; 
-                    isFloorDetected = false;
                 });
                 
                 animate();
@@ -1047,6 +1072,10 @@
 
                 document.getElementById('mode-switch-button').addEventListener('click', (e) => {
                     e.stopPropagation();
+                    // ▼▼▼ 修正点 3-1: 配置中や編集中はモード切替を無効化する ▼▼▼
+                    if (appState === 'PLACING' || appState === 'EDITING') {
+                        return;
+                    }
                     isEditMode = !isEditMode;
                     if (!isEditMode) {
                         appState = 'IDLE';
@@ -1208,16 +1237,26 @@
                             - (gestureState.startY / window.innerHeight) * 2 + 1
                         );
                         raycaster.setFromCamera(tapPosition, camera);
-                        const objectsToCheck = (appState === 'EDITING' && selectedObject) ? [selectedObject] : placedObjects;
+
+                        // ▼▼▼ 修正点 2-1: 長押し対象のロジックを修正 ▼▼▼
+                        let objectsToCheck = [];
+                        if (appState === 'IDLE') {
+                            objectsToCheck = placedObjects;
+                        } else if (appState === 'PLACING' && previewObject) {
+                            objectsToCheck = [previewObject];
+                        } else if (appState === 'EDITING' && selectedObject) {
+                            objectsToCheck = [selectedObject];
+                        }
+                        
                         const intersects = raycaster.intersectObjects(objectsToCheck, true);
 
                         if (intersects.length > 0) {
                             let targetObject = intersects[0].object;
-                             while(targetObject.parent && !objectsToCheck.includes(targetObject)) {
+                            while (targetObject.parent && !objectsToCheck.includes(targetObject)) {
                                 targetObject = targetObject.parent;
                             }
                             if (objectsToCheck.includes(targetObject)) {
-                                 handleLongPress(targetObject);
+                                handleLongPress(targetObject);
                             }
                         }
                     }, 800);
@@ -1436,7 +1475,7 @@
                 if (appState === 'EDITING' && selectedObject) {
                     handleLongPress(selectedObject);
                 } else if (appState === 'PLACING' && previewObject) {
-                    startDeleteAnimation(previewObject);
+                    handleLongPress(previewObject); // ▼▼▼ 修正点 2-2: 新規配置中の削除ボタンも長押しハンドラを呼ぶように変更 ▼▼▼
                 }
             }
             
@@ -1483,6 +1522,15 @@
                 document.getElementById('exit-ar-button').style.display = 'flex';
                 helpButton.style.display = 'flex';
                 modeSwitchButton.style.display = 'flex';
+
+                // ▼▼▼ 修正点 3-2: 配置/編集中はモード切替ボタンを少し透明にして非アクティブに見せる ▼▼▼
+                if (appState === 'PLACING' || appState === 'EDITING') {
+                    modeSwitchButton.style.opacity = '0.5';
+                    modeSwitchButton.style.cursor = 'not-allowed';
+                } else {
+                    modeSwitchButton.style.opacity = '1';
+                    modeSwitchButton.style.cursor = 'pointer';
+                }
 
                 if (isEditMode) {
                     editModeLabel.classList.add('active');
@@ -1647,7 +1695,7 @@
                             const Y_TOLERANCE = 0.2;
                             isPlaceable = Math.abs(hitY - floorY) < Y_TOLERANCE;
                             
-                            reticle.matrix.fromArray(hitPose.transform.matrix);
+                            if(reticle) reticle.matrix.fromArray(hitPose.transform.matrix);
                             
                             if (instructionText.style.display !== 'none') {
                                 instructionText.style.display = 'none';
@@ -1661,7 +1709,7 @@
                                 if(activeObject) activeObject.visible = true;
                                 
                                 if (appState === 'PLACING' || appState === 'EDITING') {
-                                    reticle.visible = isPlaceable;
+                                    if(reticle) reticle.visible = isPlaceable;
                                     crossMark.visible = !isPlaceable;
                                     if (crossMark.visible && activeObject) {
                                         crossMark.position.copy(activeObject.position).add(activeObject.userData.centerOffset);
@@ -1670,16 +1718,16 @@
                                         crossMark.quaternion.copy(camera.quaternion);
                                     }
                                 } else {
-                                    reticle.visible = true;
+                                    if(reticle) reticle.visible = true;
                                     crossMark.visible = false;
                                 }
                             } else { 
-                                reticle.visible = false;
+                                if(reticle) reticle.visible = false;
                                 crossMark.visible = false;
                             }
                         } else {
                             isPlaceable = false;
-                            reticle.visible = false;
+                            if(reticle) reticle.visible = false;
                             crossMark.visible = false;
                             if (activeObject) activeObject.visible = false;
                             if (instructionText.style.display !== 'block' && !isFloorDetected) {
