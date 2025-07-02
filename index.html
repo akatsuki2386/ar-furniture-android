@@ -536,7 +536,7 @@
         }
         #close-modal-button {
             position: absolute;
-            bottom: -70px; /* ▼▼▼ 修正: -70pxから-85pxへ ▼▼▼ */
+            bottom: -70px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(255,255,255,0.2);
@@ -552,8 +552,7 @@
             line-height: 48px;
             text-align: center;
         }
-        #furniture-grid {
-            display: grid;
+        #furniture-grid, #floor-grid {
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             gap: 15px;
             padding: 20px;
@@ -588,6 +587,34 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        .modal-tabs {
+            display: flex;
+            gap: 10px;
+            position: absolute;
+            left: 50%;
+            transform: translateX(-50%);
+        }
+        .modal-tab-button {
+            padding: 8px 20px;
+            background-color: transparent;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: #A0AECB;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: bold;
+            transition: all 0.2s ease;
+        }
+        .modal-tab-button.active {
+            background-color: rgba(255, 255, 255, 0.15);
+            color: white;
+        }
+        .modal-grid {
+            display: none; /* デフォルトは非表示 */
+        }
+        .modal-grid.active {
+            display: grid; /* activeクラスで表示 */
+        }
     </style>
 </head>
 <body>
@@ -779,7 +806,7 @@
         <div id="top-left-controls">
              <button id="help-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
-                      <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                       <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
                  </svg>
             </button>
         </div>
@@ -827,11 +854,16 @@
         <div id="furniture-modal">
             <div id="modal-content">
                 <div id="modal-header">
-                    <h2>家具を選択</h2>
+                    <div class="modal-tabs">
+                        <button id="tab-furniture" class="modal-tab-button active">家具</button>
+                        <button id="tab-floor" class="modal-tab-button">床</button>
+                    </div>
                     <button id="close-modal-button">&times;</button>
                 </div>
-                <div id="furniture-grid">
-                    </div>
+                <div id="furniture-grid" class="modal-grid active">
+                </div>
+                <div id="floor-grid" class="modal-grid">
+                </div>
             </div>
         </div>
 
@@ -873,11 +905,21 @@
             let tabButtons, helpPages;
             let confirmDialog, objectPendingDeletion = null;
 
+            let floorPlane = null;
+            const textureLoader = new THREE.TextureLoader();
+
             const furnitureData = [
                 { name: 'イス',   file: 'chair.glb',     height: 0.79, thumbnail: 'chair.png' },
                 { name: '本棚',   file: 'bookshelf.glb', height: 1.8,  thumbnail: 'bookshelf.png' }, 
                 { name: '脚立',   file: 'stand.glb',     height: 1.2,  thumbnail: 'stand.png' }, 
             ];
+            
+            const floorData = [
+                { name: 'フローリング', file: 'flooring.jpg' },
+                { name: '畳', file: 'tatami.jpg' },
+                { name: 'リセット', file: null }
+            ];
+
             let currentFurniture = furnitureData[0];
             let previewObject = null;
             const placedObjects = [];
@@ -1043,6 +1085,17 @@
                 reticle.matrixAutoUpdate = false;
                 reticle.visible = false;
                 scene.add(reticle);
+
+                const floorGeometry = new THREE.PlaneGeometry(100, 100);
+                const floorMaterial = new THREE.MeshStandardMaterial({
+                    transparent: true,
+                    opacity: 0
+                });
+                floorPlane = new THREE.Mesh(floorGeometry, floorMaterial);
+                floorPlane.rotation.x = -Math.PI / 2;
+                floorPlane.visible = false;
+                scene.add(floorPlane);
+
                 setupUI();
             }
 
@@ -1050,7 +1103,24 @@
                 const furnitureModal = document.getElementById('furniture-modal');
                 const closeModalButton = document.getElementById('close-modal-button');
                 const furnitureGrid = document.getElementById('furniture-grid');
-                
+                const floorGrid = document.getElementById('floor-grid');
+                const tabFurniture = document.getElementById('tab-furniture');
+                const tabFloor = document.getElementById('tab-floor');
+
+                tabFurniture.addEventListener('click', () => {
+                    tabFurniture.classList.add('active');
+                    tabFloor.classList.remove('active');
+                    furnitureGrid.classList.add('active');
+                    floorGrid.classList.remove('active');
+                });
+
+                tabFloor.addEventListener('click', () => {
+                    tabFloor.classList.add('active');
+                    tabFurniture.classList.remove('active');
+                    floorGrid.classList.add('active');
+                    furnitureGrid.classList.remove('active');
+                });
+
                 furnitureGrid.innerHTML = '';
                 furnitureData.forEach(item => {
                     const gridItem = document.createElement('div');
@@ -1072,6 +1142,23 @@
                     
                     furnitureGrid.appendChild(gridItem);
                 });
+
+                floorGrid.innerHTML = '';
+                floorData.forEach(item => {
+                    const gridItem = document.createElement('div');
+                    gridItem.className = 'grid-item';
+                    const p = document.createElement('p');
+                    p.textContent = item.name;
+                    gridItem.appendChild(p);
+
+                    gridItem.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        changeFloorTexture(item.file);
+                        closeModal(e);
+                    });
+                    floorGrid.appendChild(gridItem);
+                });
+
 
                 document.getElementById('add-button').addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -1194,6 +1281,25 @@
                 sliderHandle.addEventListener('touchstart', onSliderDragStart, { passive: false });
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
+            }
+
+            function changeFloorTexture(textureFile) {
+                if (!floorPlane) return;
+
+                if (textureFile === null) {
+                    floorPlane.material.map = null;
+                    floorPlane.material.opacity = 0;
+                } else {
+                    textureLoader.load(textureFile, (texture) => {
+                        texture.wrapS = THREE.RepeatWrapping;
+                        texture.wrapT = THREE.RepeatWrapping;
+                        texture.repeat.set(20, 20); 
+                        
+                        floorPlane.material.map = texture;
+                        floorPlane.material.opacity = 1;
+                        floorPlane.material.needsUpdate = true;
+                    });
+                }
             }
 
             function setupRotationButtonEvents(button, direction) {
@@ -1727,6 +1833,11 @@
                                 isFloorDetected = true;
                                 updateUI();
                             }
+
+                            if (!floorPlane.visible && isFloorDetected) {
+                                floorPlane.position.y = hitPose.transform.position.y;
+                                floorPlane.visible = true;
+                            }
                             
                             const Y_TOLERANCE = 0.2;
                             isPlaceable = Math.abs(hitY - floorY) < Y_TOLERANCE;
@@ -1762,14 +1873,17 @@
                                 crossMark.visible = false;
                             }
                         } else {
-                            isPlaceable = false;
                             if(reticle) reticle.visible = false;
                             crossMark.visible = false;
-                            if (activeObject) activeObject.visible = false;
-                            if (instructionText.style.display !== 'block' && !isFloorDetected) {
-                                instructionText.style.display = 'block';
-                                startDotAnimation();
-                            }
+                        }
+                    } else {
+                        isPlaceable = false;
+                        if(reticle) reticle.visible = false;
+                        crossMark.visible = false;
+                        if (activeObject) activeObject.visible = false;
+                        if (instructionText.style.display !== 'block' && !isFloorDetected) {
+                            instructionText.style.display = 'block';
+                            startDotAnimation();
                         }
                     }
                 }
