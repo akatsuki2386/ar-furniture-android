@@ -1780,7 +1780,7 @@
                                         const size = box.getSize(new THREE.Vector3());
                                         crossMark.position.y = activeObject.position.y + (size.y / 2) + 0.01; // 家具の底面から少し上に配置
                                         
-                                        const scale = activeObject.userData.crossMarkScale * 0.6; 
+                                        const scale = activeObject.userData.crossMarkScale * 0.4; 
                                         crossMark.scale.set(scale, scale, scale);
                                         crossMark.quaternion.copy(camera.quaternion); // カメラの向きに合わせる
                                     }
