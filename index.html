@@ -502,7 +502,7 @@
             position: fixed;
             left: 0;
             width: 100%;
-            height: auto; /* 高さを自動調整 */
+            /*height: auto;*/ /* 高さを自動調整 */
             background-color: rgba(0,0,0,0.5);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
@@ -515,13 +515,16 @@
             transition: bottom 0.3s ease-out; /* 位置変更をスムーズに */
             /* top を削除し、bottom をメインに使う */
             bottom: 0; /* 初期位置は画面下 */
-            max-height: 80vh; /* 最大高さを設定 */
+            /*max-height: 80vh;*/ /* 最大高さを設定 */
+            /* ▼▼▼ 追加・変更箇所 ▼▼▼ */
+            height: 60vh; /* 例えば、ビューポートの60%に固定 */
+            /* ▲▲▲ 追加・変更箇所 ▲▲▲ */
         }
 
         /* modal-content スタイルの変更（縦スクロール向け） */
         #modal-content {
             max-width: 380px; /* 例: 縦スクロールでも片手で操作しやすい幅 */
-            height: auto; /* コンテンツに合わせて高さを自動調整 */
+            /*height: auto;*/ /* コンテンツに合わせて高さを自動調整 */
             border-radius: 20px; /* 角の丸み */
             display: flex; /* Flexboxにして子要素の配置を制御 */
             flex-direction: column; /* 垂直方向に要素を並べる */
@@ -529,6 +532,9 @@
             position: relative;
             background-color: rgba(45, 55, 72, 0.85); /* background-colorを直接指定 */
             border: 1px solid rgba(255, 255, 255, 0.2); /* ボーダーを追加 */
+            /* ▼▼▼ 追加・変更箇所 ▼▼▼ */
+            height: 100%; /* 親要素の #furniture-modal の高さに合わせる */
+            /* ▲▲▲ 追加・変更箇所 ▲▲▲ */
         }
 
         #modal-header {
