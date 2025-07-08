@@ -62,8 +62,6 @@
             -webkit-backdrop-filter: blur(10px);
         }
         #ARButton {
-            display: block !important; /* ボタンが確実に表示されるようにする */
-            visibility: visible !important; /* ボタンが確実に可視になるようにする */
             color: white !important;
             background-color: rgba(255, 255, 255, 0.2) !important;
             border: 1px solid rgba(255, 255, 255, 0.3) !important;
@@ -521,7 +519,7 @@
         /* modal-content スタイルの変更（縦スクロール向け） */
         #modal-content {
             max-width: 380px; /* 例: 縦スクロールでも片手で操作しやすい幅 */
-            height: 40vh; /* 調整: 6個表示後スクロールのために高さを固定 */
+            height: 40vh; /* 調整: 6個表示後スクロールのために高さを少し上げる */
             border-radius: 20px; /* 角の丸み */
             /*overflow: hidden;*/ /* 親要素の overflow:hidden を削除済みであることを確認 */
             display: flex; /* Flexboxにして子要素の配置を制御 */
@@ -622,8 +620,10 @@
             /* min-height: 40px; は不要になるので削除してもOK */
             box-sizing: border-box;
 
+            /* ▼▼▼ ここを調整します ▼▼▼ */
             width: 90px;   /* 各ボタンの横幅 */
             height: 90px;  /* 各ボタンの縦幅（正方形に近づける） */
+            /* ▲▲▲ ここまで調整します ▲▲▲ */
         }
         .grid-item:hover {
             background-color: rgba(255,255,255,0.15);
@@ -944,15 +944,14 @@
             let tabButtons, helpPages;
             let confirmDialog, objectPendingDeletion = null;
 
-            // カテゴリ管理用のグローバル変数
-            let availableCategories = []; // 生成されたカテゴリのリスト
-            let currentCategoryIndex = 0; // 現在選択されているカテゴリのインデックス
-
             // ★家具データ（カテゴリとサムネイルパスを追加）
             const furnitureData = [
+                // 既存の家具
                 { name: 'イス', file: 'chair.glb', height: 0.79, category: 'チェア', thumbnail: 'thumbnails/chair_thumb.png' },
                 { name: '本棚', file: 'bookshelf.glb', height: 1.8, category: '収納', thumbnail: 'thumbnails/bookshelf_thumb.png' },
                 { name: '脚立', file: 'stand.glb', height: 1.2, category: 'その他', thumbnail: 'thumbnails/stand_thumb.png' },
+
+                // ★ここから新しい家具を追加
                 { name: 'ダイニングテーブル', file: 'dining_table.glb', height: 0.75, category: 'テーブル', thumbnail: 'thumbnails/dining_table_thumb.png' },
                 { name: 'ソファ', file: 'sofa.glb', height: 0.7, category: 'ソファ', thumbnail: 'thumbnails/sofa_thumb.png' },
                 { name: 'フロアランプ', file: 'floor_lamp.glb', height: 1.5, category: '照明', thumbnail: 'thumbnails/floor_lamp_thumb.png' },
@@ -962,6 +961,7 @@
                 { name: 'テレビボード', file: 'tv_board.glb', height: 0.4, category: '収納', thumbnail: 'thumbnails/tv_board_thumb.png' },
                 { name: 'ローテーブル', file: 'low_table.glb', height: 0.35, category: 'テーブル', thumbnail: 'thumbnails/low_table_thumb.png' },
                 { name: 'コートハンガー', file: 'coat_hanger.glb', height: 1.7, category: 'その他', thumbnail: 'thumbnails/coat_hanger_thumb.png' },
+                // 必要に応じてさらに家具を追加してください
             ];
             let currentFurniture = furnitureData[0];
             let previewObject = null;
@@ -1131,61 +1131,39 @@
                 setupUI(); // ここでUI要素のイベントリスナーを設定
             }
 
-            // カテゴリ管理用のグローバル変数
-            let availableCategories = []; // 生成されたカテゴリのリスト
-            let currentCategoryIndex = 0; // 現在選択されているカテゴリのインデックス
-
             // ★新しい関数: カテゴリタブを生成する
             function populateCategories() {
                 const categoryTabsContainer = document.getElementById('category-tabs');
                 categoryTabsContainer.innerHTML = ''; // 既存のタブをクリア
 
                 // furnitureDataからユニークなカテゴリを取得し、ソート
-                availableCategories = [...new Set(furnitureData.map(item => item.category))].sort();
+                const categories = [...new Set(furnitureData.map(item => item.category))].sort();
                 // 「すべて」タブを先頭に追加
-                availableCategories.unshift('すべて');
+                categories.unshift('すべて');
 
-                availableCategories.forEach((category, index) => {
+                categories.forEach(category => {
                     const tabButton = document.createElement('button');
                     tabButton.className = 'category-tab-button';
                     tabButton.textContent = category;
                     tabButton.dataset.category = category; // データ属性にカテゴリ名を設定
-                    tabButton.dataset.index = index; // インデックスもデータ属性に設定
 
                     tabButton.addEventListener('click', () => {
-                        currentCategoryIndex = index; // クリックされたタブのインデックスを更新
-                        updateCategoryUI(); // UI更新
-                        displayFurniture(category); // 家具表示
+                        // すべてのタブから active クラスを削除
+                        document.querySelectorAll('.category-tab-button').forEach(btn => {
+                            btn.classList.remove('active');
+                        });
+                        // クリックされたタブに active クラスを追加
+                        tabButton.classList.add('active');
+                        // 選択されたカテゴリの家具を表示
+                        displayFurniture(category);
                     });
                     categoryTabsContainer.appendChild(tabButton);
                 });
 
                 // 初期状態で「すべて」タブをアクティブにする
-                currentCategoryIndex = 0; // デフォルトは「すべて」
-                updateCategoryUI(); // 初期表示時にUIを更新
-            }
-
-            // ★新しい関数: カテゴリUIの状態を更新する
-            function updateCategoryUI() {
-                document.querySelectorAll('.category-tab-button').forEach((btn, index) => {
-                    if (index === currentCategoryIndex) {
-                        btn.classList.add('active');
-                        // アクティブなタブがスクロール表示領域内に来るようにスクロール
-                        btn.scrollIntoView({ behavior: 'smooth', inline: 'center' });
-                    } else {
-                        btn.classList.remove('active');
-                    }
-                });
-            }
-
-            // ★新しい関数: カテゴリを切り替える (スワイプ用)
-            function changeCategory(direction) { // direction: 1 for next, -1 for previous
-                const newIndex = currentCategoryIndex + direction;
-                if (newIndex >= 0 && newIndex < availableCategories.length) {
-                    currentCategoryIndex = newIndex;
-                    const newCategory = availableCategories[currentCategoryIndex];
-                    updateCategoryUI();
-                    displayFurniture(newCategory);
+                const allTab = categoryTabsContainer.querySelector('[data-category="すべて"]');
+                if (allTab) {
+                    allTab.classList.add('active');
                 }
             }
 
@@ -1230,53 +1208,7 @@
             function setupUI() {
                 const furnitureModal = document.getElementById('furniture-modal');
                 const closeModalButton = document.getElementById('close-modal-button');
-
-                // スワイプイベントリスナーの追加
-                let touchStartX = 0;
-                let touchStartTime = 0;
-                const SWIPE_THRESHOLD_X = 50; // スワイプと判定する横方向の最小移動量（ピクセル）
-                const SWIPE_TIME_THRESHOLD = 300; // スワイプと判定する最大時間（ミリ秒）
-
-                furnitureModal.addEventListener('touchstart', (e) => {
-                    // Xボタンやタブボタン上でのタッチ開始を無視しないように変更
-                    // e.target !== furnitureModal の条件を削除
-                    // ただし、もし個別のボタンの操作とスワイプを明確に分けたいなら、
-                    // そのボタンのイベントリスナーで e.stopPropagation() を使うべきです。
-                    if (e.touches.length === 1) { // 1本指でのスワイプのみを検出
-                        touchStartX = e.touches[0].clientX;
-                        touchStartTime = Date.now();
-                    } else {
-                        // 2本指以上の場合はスワイプ検出をリセット
-                        touchStartX = 0;
-                    }
-                });
-
-                furnitureModal.addEventListener('touchmove', (e) => {
-                    // touchmoveではスワイプの判定はしないが、preventDefaultでスクロールを防ぐ
-                    if (touchStartX !== 0) { // touchstartが開始されている場合のみ
-                        e.preventDefault(); // デフォルトのスクロール動作を抑制
-                    }
-                }, { passive: false }); // passive: false を指定してpreventDefaultを有効にする
-
-                furnitureModal.addEventListener('touchend', (e) => {
-                    if (touchStartX === 0) return; // touchstartが開始されていない場合は何もしない
-
-                    const touchEndX = e.changedTouches[0].clientX;
-                    const deltaTime = Date.now() - touchStartTime;
-                    const deltaX = touchEndX - touchStartX;
-
-                    // スワイプ速度と移動距離を考慮
-                    if (deltaTime < SWIPE_TIME_THRESHOLD && Math.abs(deltaX) > SWIPE_THRESHOLD_X) {
-                        if (deltaX > 0) { // 右スワイプ (前のカテゴリへ)
-                            changeCategory(-1);
-                        } else { // 左スワイプ (次のカテゴリへ)
-                            changeCategory(1);
-                        }
-                    }
-                    touchStartX = 0; // リセット
-                    touchStartTime = 0; // リセット
-                });
-
+                // const furnitureGrid = document.getElementById('furniture-grid'); // この行はdisplayFurniture内で使用するため不要に
 
                 // add-buttonクリック時、家具モーダルを表示し、カテゴリタブと家具を初期化・表示
                 document.getElementById('add-button').addEventListener('click', (e) => {
@@ -1284,7 +1216,7 @@
                     if (appState === 'IDLE') {
                         furnitureModal.style.display = 'flex';
                         populateCategories(); // カテゴリタブを生成
-                        displayFurniture(availableCategories[currentCategoryIndex]); // 現在のカテゴリの家具を表示
+                        displayFurniture('すべて'); // デフォルトで「すべて」カテゴリの家具を表示
                     }
                 });
 
@@ -1294,7 +1226,6 @@
                 };
                 closeModalButton.addEventListener('click', closeModal);
                 furnitureModal.addEventListener('click', (e) => {
-                    // モーダル背景クリックで閉じる場合、子要素でのクリックは無視
                     if (e.target === furnitureModal) {
                         closeModal(e);
                     }
