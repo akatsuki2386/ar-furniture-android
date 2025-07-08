@@ -596,8 +596,8 @@
         #furniture-grid {
             display: grid; /* グリッド表示に戻す */
             grid-template-columns: repeat(3, 1fr); /* 例: 2列に固定 */
-            gap: 15px; /* アイテム間のギャップ */
-            padding: 20px; /* パディング */
+            gap: 10px; /* アイテム間のギャップ */
+            padding: 15px; /* パディング */
             overflow-y: auto; /* 縦方向のスクロールを有効にする */
             overflow-x: hidden; /* 横方向のスクロールを無効にする */
             flex: 1; /* 親のFlexコンテナ内で残りのスペースを埋める */
@@ -610,27 +610,46 @@
             text-align: center;
             background-color: rgba(255,255,255,0.05);
             border-radius: 12px;
-            padding: 15px 10px;
+            padding: 8px 5px;
             transition: background-color 0.2s ease;
             display: flex;
+            flex-direction: column; /* 画像とテキストを縦に並べるため */
             justify-content: center;
             align-items: center;
             min-height: 40px; /* 画像がない場合は高さを確保 */
             box-sizing: border-box; /* paddingを含めて幅を計算 */
+             /* ▼▼▼ ここを調整します ▼▼▼ */
+            width: 90px;   /* 各ボタンの横幅 */
+            height: 90px;  /* 各ボタンの縦幅（正方形に近づける） */
+            /* ▲▲▲ ここまで調整します ▲▲▲ */
         }
         .grid-item:hover {
             background-color: rgba(255,255,255,0.15);
         }
         .grid-item img {
             display: none; /* デフォルトでは画像を非表示 */
+            display: block; /* とりあえず表示されるように変更 */
+            width: 60px;  /* サムネイルの幅を調整 */
+            height: 60px; /* サムネイルの高さを調整 */
+            object-fit: contain;
+            margin-bottom: 5px; /* 画像とテキストの間の余白 */
+            background-color: rgba(255, 255, 255, 0.1); /* 仮の背景色 */
+            border-radius: 8px;
+            padding: 5px;
         }
         .grid-item p {
             margin: 0;
-            font-size: 1rem;
-            font-weight: bold;
+            font-size: 0.75rem; /* テキストサイズをさらに小さく */
+            font-weight: normal;
             color: #E2E8F0;
-            white-space: normal; /* テキストが折り返されるように */
-            word-break: break-word; /* 長い単語も折り返す */
+            white-space: normal;
+            word-break: break-word;
+            line-height: 1.2; /* 行間を詰める */
+            overflow: hidden; /* テキストがはみ出す場合は隠す */
+            text-overflow: ellipsis; /* はみ出した場合に...で表示 */
+            display: -webkit-box;
+            -webkit-line-clamp: 2; /* 2行で収まるように制限 */
+            -webkit-box-orient: vertical;
         }
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
