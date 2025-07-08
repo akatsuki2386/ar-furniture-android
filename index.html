@@ -509,9 +509,9 @@
             -webkit-backdrop-filter: blur(8px);
             display: none;
             justify-content: center;
-            align-items: flex-end;
+            align-items: flex-end; /* 下に寄せる */
             z-index: 250;
-            padding-bottom: 15vh;
+            padding-bottom: 15vh; /* モーダルを画面下部から持ち上げる */
             box-sizing: border-box;
             
         }
@@ -519,13 +519,14 @@
         /* modal-content スタイルの変更（縦スクロール向け） */
         #modal-content {
             max-width: 380px; /* 例: 縦スクロールでも片手で操作しやすい幅 */
-            max-height: 35vh; /* 高さの最大値を維持 */
+            max-height: 50vh; /* 調整: 6個表示後スクロールのために高さを少し上げる */
             border-radius: 20px; /* 角の丸み */
-            /*overflow: hidden;  子要素が丸みをはみ出さないように */
+            /*overflow: hidden;*/ /* 親要素の overflow:hidden を削除済みであることを確認 */
             display: flex; /* Flexboxにして子要素の配置を制御 */
             flex-direction: column; /* 垂直方向に要素を並べる */
             animation: fadeIn 0.3s ease-out;
             position: relative;
+            background-color: rgba(45, 55, 72, 0.85); /* background-colorを直接指定 */
         }
 
         #modal-header {
@@ -538,7 +539,7 @@
         }
         #close-modal-button {
             position: absolute;
-            bottom: -50px;
+            bottom: -50px; /* Xボタンの位置調整 */
             left: 50%;
             transform: translateX(-50%);
             background: rgba(255,255,255,0.2);
@@ -595,9 +596,9 @@
         /* 家具グリッドのスタイル調整（縦スクロール対応） */
         #furniture-grid {
             display: grid; /* グリッド表示に戻す */
-            grid-template-columns: repeat(3, 1fr); /* 例: 2列に固定 */
-            gap: 10px; /* アイテム間のギャップ */
-            padding: 15px; /* パディング */
+            grid-template-columns: repeat(3, 1fr); /* 3列表示に変更 */
+            gap: 10px; /* アイテム間のギャップを少し狭める */
+            padding: 15px; /* パディングを調整 */
             overflow-y: auto; /* 縦方向のスクロールを有効にする */
             overflow-x: hidden; /* 横方向のスクロールを無効にする */
             flex: 1; /* 親のFlexコンテナ内で残りのスペースを埋める */
@@ -610,15 +611,16 @@
             text-align: center;
             background-color: rgba(255,255,255,0.05);
             border-radius: 12px;
-            padding: 8px 5px;
+            padding: 8px 5px; /* パディングを少し減らす */
             transition: background-color 0.2s ease;
             display: flex;
             flex-direction: column; /* 画像とテキストを縦に並べるため */
             justify-content: center;
             align-items: center;
-            min-height: 40px; /* 画像がない場合は高さを確保 */
-            box-sizing: border-box; /* paddingを含めて幅を計算 */
-             /* ▼▼▼ ここを調整します ▼▼▼ */
+            /* min-height: 40px; は不要になるので削除してもOK */
+            box-sizing: border-box;
+
+            /* ▼▼▼ ここを調整します ▼▼▼ */
             width: 90px;   /* 各ボタンの横幅 */
             height: 90px;  /* 各ボタンの縦幅（正方形に近づける） */
             /* ▲▲▲ ここまで調整します ▲▲▲ */
@@ -627,7 +629,6 @@
             background-color: rgba(255,255,255,0.15);
         }
         .grid-item img {
-            display: none; /* デフォルトでは画像を非表示 */
             display: block; /* とりあえず表示されるように変更 */
             width: 60px;  /* サムネイルの幅を調整 */
             height: 60px; /* サムネイルの高さを調整 */
@@ -943,16 +944,16 @@
             let tabButtons, helpPages;
             let confirmDialog, objectPendingDeletion = null;
 
-            // ★家具データ（以前のシンプルな形式に戻す）
+            // ★家具データ（カテゴリとサムネイルパスを追加）
             const furnitureData = [
                 // 既存の家具
-                { name: 'イス',   file: 'chair.glb',      height: 0.79, category: 'チェア', thumbnail: 'thumbnails/chair_thumb.png' },
-                { name: '本棚',   file: 'bookshelf.glb', height: 1.8,  category: '収納', thumbnail: 'thumbnails/bookshelf_thumb.png' },
-                { name: '脚立',   file: 'stand.glb',      height: 1.2,  category: 'その他', thumbnail: 'thumbnails/stand_thumb.png' },
+                { name: 'イス', file: 'chair.glb', height: 0.79, category: 'チェア', thumbnail: 'thumbnails/chair_thumb.png' },
+                { name: '本棚', file: 'bookshelf.glb', height: 1.8, category: '収納', thumbnail: 'thumbnails/bookshelf_thumb.png' },
+                { name: '脚立', file: 'stand.glb', height: 1.2, category: 'その他', thumbnail: 'thumbnails/stand_thumb.png' },
 
                 // ★ここから新しい家具を追加
                 { name: 'ダイニングテーブル', file: 'dining_table.glb', height: 0.75, category: 'テーブル', thumbnail: 'thumbnails/dining_table_thumb.png' },
-                { name: 'ソファ', file: 'sofa.glb', height: 0.7,  category: 'ソファ', thumbnail: 'thumbnails/sofa_thumb.png' },
+                { name: 'ソファ', file: 'sofa.glb', height: 0.7, category: 'ソファ', thumbnail: 'thumbnails/sofa_thumb.png' },
                 { name: 'フロアランプ', file: 'floor_lamp.glb', height: 1.5, category: '照明', thumbnail: 'thumbnails/floor_lamp_thumb.png' },
                 { name: 'デスク', file: 'desk.glb', height: 0.72, category: 'テーブル', thumbnail: 'thumbnails/desk_thumb.png' },
                 { name: 'サイドテーブル', file: 'side_table.glb', height: 0.5, category: 'テーブル', thumbnail: 'thumbnails/side_table_thumb.png' },
@@ -962,7 +963,6 @@
                 { name: 'コートハンガー', file: 'coat_hanger.glb', height: 1.7, category: 'その他', thumbnail: 'thumbnails/coat_hanger_thumb.png' },
                 // 必要に応じてさらに家具を追加してください
             ];
-            // ... (rest of the code) ...
             let currentFurniture = furnitureData[0];
             let previewObject = null;
             const placedObjects = [];
@@ -1131,21 +1131,66 @@
                 setupUI(); // ここでUI要素のイベントリスナーを設定
             }
 
-            function setupUI() {
-                const furnitureModal = document.getElementById('furniture-modal');
-                const closeModalButton = document.getElementById('close-modal-button');
-                const furnitureGrid = document.getElementById('furniture-grid'); // ★ここを再度取得
+            // ★新しい関数: カテゴリタブを生成する
+            function populateCategories() {
+                const categoryTabsContainer = document.getElementById('category-tabs');
+                categoryTabsContainer.innerHTML = ''; // 既存のタブをクリア
 
-                furnitureGrid.innerHTML = ''; // ★モーダル開くたびにリセット
+                // furnitureDataからユニークなカテゴリを取得し、ソート
+                const categories = [...new Set(furnitureData.map(item => item.category))].sort();
+                // 「すべて」タブを先頭に追加
+                categories.unshift('すべて');
 
-                // ★家具データをループして、グリッドアイテムを生成
-                furnitureData.forEach(item => {
+                categories.forEach(category => {
+                    const tabButton = document.createElement('button');
+                    tabButton.className = 'category-tab-button';
+                    tabButton.textContent = category;
+                    tabButton.dataset.category = category; // データ属性にカテゴリ名を設定
+
+                    tabButton.addEventListener('click', () => {
+                        // すべてのタブから active クラスを削除
+                        document.querySelectorAll('.category-tab-button').forEach(btn => {
+                            btn.classList.remove('active');
+                        });
+                        // クリックされたタブに active クラスを追加
+                        tabButton.classList.add('active');
+                        // 選択されたカテゴリの家具を表示
+                        displayFurniture(category);
+                    });
+                    categoryTabsContainer.appendChild(tabButton);
+                });
+
+                // 初期状態で「すべて」タブをアクティブにする
+                const allTab = categoryTabsContainer.querySelector('[data-category="すべて"]');
+                if (allTab) {
+                    allTab.classList.add('active');
+                }
+            }
+
+            // ★新しい関数: 指定されたカテゴリの家具を表示する
+            function displayFurniture(category) {
+                const furnitureGrid = document.getElementById('furniture-grid');
+                furnitureGrid.innerHTML = ''; // グリッドをクリア
+
+                // フィルタリングする家具データのリスト
+                const filteredFurniture = category === 'すべて' ? furnitureData : furnitureData.filter(item => item.category === category);
+
+                filteredFurniture.forEach(item => {
                     const gridItem = document.createElement('div');
                     gridItem.className = 'grid-item';
+                    gridItem.dataset.category = item.category; // アイテムにもカテゴリ情報を持たせる
 
+                    // サムネイル画像を作成
+                    const img = document.createElement('img');
+                    img.src = item.thumbnail;
+                    img.alt = item.name;
+                    // 画像の読み込みエラー時のフォールバック（画像がない場合、非表示にする）
+                    img.onerror = () => { img.style.display = 'none'; console.warn(`Thumbnail not found or failed to load: ${item.thumbnail}`); };
+                    gridItem.appendChild(img);
+
+                    // 家具名テキストを作成
                     const p = document.createElement('p');
                     p.textContent = item.name;
-
                     gridItem.appendChild(p);
 
                     gridItem.addEventListener('click', (e) => {
@@ -1153,39 +1198,25 @@
                         currentFurniture = item;
                         updatePreviewObject();
                         appState = 'PLACING';
-                        furnitureModal.style.display = 'none';
+                        document.getElementById('furniture-modal').style.display = 'none'; // モーダルを閉じる
                         updateUI();
                     });
-
                     furnitureGrid.appendChild(gridItem);
                 });
+            }
 
+            function setupUI() {
+                const furnitureModal = document.getElementById('furniture-modal');
+                const closeModalButton = document.getElementById('close-modal-button');
+                // const furnitureGrid = document.getElementById('furniture-grid'); // この行はdisplayFurniture内で使用するため不要に
+
+                // add-buttonクリック時、家具モーダルを表示し、カテゴリタブと家具を初期化・表示
                 document.getElementById('add-button').addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (appState === 'IDLE') {
                         furnitureModal.style.display = 'flex';
-                        // ★ add-buttonクリック時にもグリッドを再生成して最新の状態にする
-                        furnitureGrid.innerHTML = ''; 
-                        furnitureData.forEach(item => {
-                            const gridItem = document.createElement('div');
-                            gridItem.className = 'grid-item';
-
-                            const p = document.createElement('p');
-                            p.textContent = item.name;
-
-                            gridItem.appendChild(p);
-
-                            gridItem.addEventListener('click', (e) => {
-                                e.stopPropagation();
-                                currentFurniture = item;
-                                updatePreviewObject();
-                                appState = 'PLACING';
-                                furnitureModal.style.display = 'none';
-                                updateUI();
-                            });
-
-                            furnitureGrid.appendChild(gridItem);
-                        });
+                        populateCategories(); // カテゴリタブを生成
+                        displayFurniture('すべて'); // デフォルトで「すべて」カテゴリの家具を表示
                     }
                 });
 
@@ -1660,11 +1691,6 @@
                     }
                 });
             }
-
-            // ★ populateCategoryTabs 関数（削除）
-
-            // ★ displayFurniture 関数（削除）
-
 
             function updateUI() {
                 const addButton = document.getElementById('add-button');
