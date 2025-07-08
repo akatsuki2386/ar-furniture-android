@@ -621,7 +621,7 @@
             box-sizing: border-box;
 
             /* ▼▼▼ ここを調整します ▼▼▼ */
-            width: 90px;   /* 各ボタンの横幅 */
+            width: 90px;    /* 各ボタンの横幅 */
             height: 90px;  /* 各ボタンの縦幅（正方形に近づける） */
             /* ▲▲▲ ここまで調整します ▲▲▲ */
         }
@@ -712,7 +712,7 @@
                                 </div>
                                 <div class="help-card">
                                     <div class="icon-container">
-                                       <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
+                                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>
                                     </div>
                                     <h4>家具の編集</h4>
                                     <p>家具を狙うと出るボタンで再選択できます。</p>
@@ -808,7 +808,7 @@
                                     <div class="help-card">
                                         <div class="icon-container">
                                             <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="transform: rotate(180deg);">
-                                               <path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 1 0 12h3" />
+                                                   <path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 1 0 12h3" />
                                             </svg>
                                         </div>
                                         <h4>回転</h4>
@@ -832,54 +832,6 @@
                             </div>
                     </div>
                 </div>
-            </div>
-        </div>
-
-        <div id="instruction-text">
-            <span style="font-size: 1.25em; font-weight: bold;">床を認識中<span id="loading-dots"></span></span><br><br>
-            カメラをゆっくりと<br>床に向けて<br>動かしてください
-        </div>
-
-        <button id="mode-switch-button">
-            <span id="edit-mode-label" class="mode-label">編集モード</span>
-            <span id="view-mode-label" class="mode-label">鑑賞モード</span>
-        </button>
-
-        <div id="top-left-controls">
-             <button id="help-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
-                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
-                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
-                 </svg>
-             </button>
-        </div>
-        <div id="top-right-controls">
-            <button id="exit-ar-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3-3-3m0 0 3-3m-3 3h12" />
-                </svg>
-            </button>
-        </div>
-
-        <div id="bottom-bar">
-            <button id="add-button" class="circle-button"></button>
-            <button id="edit-button" class="circle-button"></button>
-
-            <div id="transform-controls">
-                <div id="scale-slider-container">
-                    <span class="slider-icon">-</span>
-                    <div id="slider-track">
-                        <div id="slider-handle"></div>
-                    </div>
-                    <span class="slider-icon">+</span>
-                </div>
-                <div class="rotation-button-group">
-                    <button id="rotate-left-button" class="group-button"></button>
-                    <button id="rotate-right-button" class="group-button"></button>
-                </div>
-            </div>
-            <div id="decision-controls">
-                <button id="delete-button" class="group-button"></button>
-                <button id="confirm-button" class="group-button"></button>
             </div>
         </div>
 
@@ -990,6 +942,12 @@
 
             let isRotatingContinuously = false;
             let continuousRotationDirection = 0;
+
+            // スワイプ機能のための追加変数
+            let touchStartX = 0;
+            let currentCategoryIndex = 0;
+            let availableCategories = []; // カテゴリを保持する配列
+
 
             init();
 
@@ -1131,17 +1089,17 @@
                 setupUI(); // ここでUI要素のイベントリスナーを設定
             }
 
-            // ★新しい関数: カテゴリタブを生成する
+            // ★修正：新しい関数: カテゴリタブを生成する
             function populateCategories() {
                 const categoryTabsContainer = document.getElementById('category-tabs');
                 categoryTabsContainer.innerHTML = ''; // 既存のタブをクリア
 
                 // furnitureDataからユニークなカテゴリを取得し、ソート
-                const categories = [...new Set(furnitureData.map(item => item.category))].sort();
+                availableCategories = [...new Set(furnitureData.map(item => item.category))].sort();
                 // 「すべて」タブを先頭に追加
-                categories.unshift('すべて');
+                availableCategories.unshift('すべて');
 
-                categories.forEach(category => {
+                availableCategories.forEach((category, index) => {
                     const tabButton = document.createElement('button');
                     tabButton.className = 'category-tab-button';
                     tabButton.textContent = category;
@@ -1156,18 +1114,19 @@
                         tabButton.classList.add('active');
                         // 選択されたカテゴリの家具を表示
                         displayFurniture(category);
+                        currentCategoryIndex = index; // 現在のカテゴリインデックスを更新
                     });
                     categoryTabsContainer.appendChild(tabButton);
                 });
 
-                // 初期状態で「すべて」タブをアクティブにする
-                const allTab = categoryTabsContainer.querySelector('[data-category="すべて"]');
-                if (allTab) {
-                    allTab.classList.add('active');
+                // 現在のカテゴリインデックスに基づいてタブをアクティブにする
+                const activeTab = categoryTabsContainer.querySelector(`[data-category="${availableCategories[currentCategoryIndex]}"]`);
+                if (activeTab) {
+                    activeTab.classList.add('active');
                 }
             }
 
-            // ★新しい関数: 指定されたカテゴリの家具を表示する
+            // ★修正：新しい関数: 指定されたカテゴリの家具を表示する
             function displayFurniture(category) {
                 const furnitureGrid = document.getElementById('furniture-grid');
                 furnitureGrid.innerHTML = ''; // グリッドをクリア
@@ -1208,15 +1167,14 @@
             function setupUI() {
                 const furnitureModal = document.getElementById('furniture-modal');
                 const closeModalButton = document.getElementById('close-modal-button');
-                // const furnitureGrid = document.getElementById('furniture-grid'); // この行はdisplayFurniture内で使用するため不要に
-
+                
                 // add-buttonクリック時、家具モーダルを表示し、カテゴリタブと家具を初期化・表示
                 document.getElementById('add-button').addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (appState === 'IDLE') {
                         furnitureModal.style.display = 'flex';
                         populateCategories(); // カテゴリタブを生成
-                        displayFurniture('すべて'); // デフォルトで「すべて」カテゴリの家具を表示
+                        displayFurniture(availableCategories[currentCategoryIndex]); // 現在のカテゴリの家具を表示
                     }
                 });
 
@@ -1230,6 +1188,30 @@
                         closeModal(e);
                     }
                 });
+
+                // ★家具モーダルのスワイプイベントリスナーを追加
+                const modalContent = document.getElementById('modal-content');
+                modalContent.addEventListener('touchstart', (e) => {
+                    if (e.touches.length === 1) {
+                        touchStartX = e.touches[0].clientX;
+                    }
+                }, { passive: true }); // passive: true を設定
+
+                modalContent.addEventListener('touchend', (e) => {
+                    if (e.changedTouches.length === 1) {
+                        const touchEndX = e.changedTouches[0].clientX;
+                        const swipeDistance = touchEndX - touchStartX;
+                        const SWIPE_THRESHOLD = 50; // スワイプと認識するしきい値 (px)
+
+                        if (swipeDistance > SWIPE_THRESHOLD) {
+                            // 右スワイプ (前のカテゴリへ)
+                            navigateToCategory(-1);
+                        } else if (swipeDistance < -SWIPE_THRESHOLD) {
+                            // 左スワイプ (次のカテゴリへ)
+                            navigateToCategory(1);
+                        }
+                    }
+                }, { passive: true }); // passive: true を設定
 
                 document.getElementById('exit-ar-button').addEventListener('click', (e) => { e.stopPropagation(); endSession(); });
                 function endSession() {
@@ -1336,6 +1318,36 @@
                 document.addEventListener('touchend', onSliderDragEnd);
             }
 
+            // ★修正：カテゴリを前後に移動する関数
+            function navigateToCategory(direction) {
+                if (availableCategories.length === 0) return;
+
+                let newIndex = currentCategoryIndex + direction;
+                if (newIndex < 0) {
+                    newIndex = availableCategories.length - 1; // 最初のカテゴリから左にスワイプしたら最後のカテゴリへ
+                } else if (newIndex >= availableCategories.length) {
+                    newIndex = 0; // 最後のカテゴリから右にスワイプしたら最初のカテゴリへ
+                }
+                currentCategoryIndex = newIndex;
+
+                const category = availableCategories[currentCategoryIndex];
+                displayFurniture(category);
+
+                // アクティブなタブの表示を更新
+                document.querySelectorAll('.category-tab-button').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.category === category) {
+                        btn.classList.add('active');
+                    }
+                });
+                // スクロールして現在のタブが見えるようにする
+                const categoryTabsContainer = document.getElementById('category-tabs');
+                const activeTab = categoryTabsContainer.querySelector('.category-tab-button.active');
+                if (activeTab) {
+                    activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                }
+            }
+
             function setupRotationButtonEvents(button, direction) {
                 let pressTimer = null;
                 const pressStart = (e) => {
@@ -1403,7 +1415,12 @@
             }
 
             function handleTouchStart(event) {
-                if (event.target !== event.currentTarget || confirmDialog.style.display === 'flex') return;
+                // モーダルがアクティブな場合は、モーダル内のイベントのみ処理
+                if (document.getElementById('furniture-modal').style.display === 'flex' || confirmDialog.style.display === 'flex') {
+                    return;
+                }
+
+                if (event.target !== event.currentTarget) return;
                 event.preventDefault();
 
                 gestureState.touchCount = event.touches.length;
@@ -1463,7 +1480,12 @@
             }
 
             function handleTouchMove(event) {
-                if (event.target !== event.currentTarget || confirmDialog.style.display === 'flex') return;
+                // モーダルがアクティブな場合は、モーダル内のイベントのみ処理
+                if (document.getElementById('furniture-modal').style.display === 'flex' || confirmDialog.style.display === 'flex') {
+                    return;
+                }
+
+                if (event.target !== event.currentTarget) return;
                 event.preventDefault();
 
                 if (gestureState.longPressTimer) {
@@ -1752,9 +1774,9 @@
             function handleHover() {
                 if (gestureState.isInteracting || isRotatingContinuously || gestureState.longPressTimer) {
                     if(hoveredObject) {
-                             setObjectTransparency(hoveredObject, false);
-                             hoveredObject = null;
-                             updateUI();
+                        setObjectTransparency(hoveredObject, false);
+                        hoveredObject = null;
+                        updateUI();
                     }
                     return;
                 }
