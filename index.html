@@ -1131,9 +1131,9 @@
                 setupUI(); // ここでUI要素のイベントリスナーを設定
             }
 
-            // ★新しい関数: カテゴリタブを生成する
-            // 既存のpopulateCategories関数に、スワイプ用のカテゴリ管理と初期アクティブ設定を追加
+            // ★カテゴリタブとスワイプ機能関連の変数と関数
             const categoryTabsContainer = document.getElementById('category-tabs');
+            const modalContent = document.getElementById('modal-content'); // スワイプイベントリスナーの親要素
             let allCategories = []; // すべてのカテゴリを保持する配列
             let currentCategoryIndex = 0; // 現在選択されているカテゴリのインデックス
 
@@ -1172,7 +1172,7 @@
                 activateCategoryTab(allCategories[currentCategoryIndex]);
             }
 
-            // ★新しい関数: 指定されたカテゴリの家具を表示する
+            // 指定されたカテゴリの家具を表示する
             function displayFurniture(category) {
                 const furnitureGrid = document.getElementById('furniture-grid');
                 furnitureGrid.innerHTML = ''; // グリッドをクリア
@@ -1213,15 +1213,13 @@
             function setupUI() {
                 const furnitureModal = document.getElementById('furniture-modal');
                 const closeModalButton = document.getElementById('close-modal-button');
-                // const furnitureGrid = document.getElementById('furniture-grid'); // この行はdisplayFurniture内で使用するため不要に
-
+                
                 // add-buttonクリック時、家具モーダルを表示し、カテゴリタブと家具を初期化・表示
                 document.getElementById('add-button').addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (appState === 'IDLE') {
                         furnitureModal.style.display = 'flex';
                         populateCategories(); // カテゴリタブを生成・初期化
-                        // displayFurniture('すべて'); // populateCategories内で呼び出されるため不要
                     }
                 });
 
@@ -1340,16 +1338,24 @@
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
             
-                // ★家具モーダルでのスワイプイベントリスナー
+                // ★家具モーダルでのスワイプイベントリスナーをmodalContentに設定
                 let touchStartX = 0;
                 let touchEndX = 0;
                 const swipeThreshold = 50; // スワイプと認識する最小距離（ピクセル）
 
-                categoryTabsContainer.addEventListener('touchstart', (e) => {
+                modalContent.addEventListener('touchstart', (e) => {
+                    // カテゴリタブ、閉じるボタン、グリッドアイテム上でのスワイプは処理しない
+                    if (e.target.closest('.category-tab-button') || e.target.closest('#close-modal-button') || e.target.closest('.grid-item')) {
+                        return; 
+                    }
                     touchStartX = e.changedTouches[0].clientX;
                 }, { passive: true });
 
-                categoryTabsContainer.addEventListener('touchend', (e) => {
+                modalContent.addEventListener('touchend', (e) => {
+                    // touchstartで除外したものと同じ要素を再度チェック
+                    if (e.target.closest('.category-tab-button') || e.target.closest('#close-modal-button') || e.target.closest('.grid-item')) {
+                        return; 
+                    }
                     touchEndX = e.changedTouches[0].clientX;
                     handleSwipeGesture();
                 }, { passive: true });
