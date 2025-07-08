@@ -657,6 +657,49 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
+        /* ここから検索機能用の新しいスタイル */
+        #search-container {
+            padding: 10px 20px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0;
+            display: flex; /* flexbox を使用して入力フィールドとアイコンを配置 */
+            align-items: center;
+            gap: 10px;
+        }
+
+        #search-input {
+            width: 100%;
+            padding: 10px 15px;
+            border-radius: 9999px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            box-sizing: border-box; /* padding を幅に含める */
+        }
+
+        #search-input::placeholder {
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        #search-icon {
+            color: rgba(255, 255, 255, 0.6);
+            flex-shrink: 0; /* 縮小されないようにする */
+        }
+        #search-results-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr); /* 3列表示 */
+            gap: 10px;
+            padding: 15px;
+            overflow-y: auto;
+            overflow-x: hidden;
+            flex: 1; /* 親のFlexコンテナ内で残りのスペースを埋める */
+            min-height: 0;
+            box-sizing: border-box;
+            display: none; /* 初期状態では非表示 */
+        }
     </style>
 </head>
 <body>
@@ -847,10 +890,10 @@
 
         <div id="top-left-controls">
              <button id="help-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
-                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
-                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
-                 </svg>
-             </button>
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                </svg>
+            </button>
         </div>
         <div id="top-right-controls">
             <button id="exit-ar-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
@@ -897,12 +940,20 @@
             <div id="modal-content">
                 <div id="modal-header">
                     <h2>家具を選択</h2>
-                    <button id="close-modal-button">&times;</button>
+                </div>
+                <div id="search-container">
+                    <svg id="search-icon" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 24px; height: 24px;">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z" />
+                    </svg>
+                    <input type="text" id="search-input" placeholder="家具を検索...">
                 </div>
                 <div id="category-tabs">
                 </div>
+                <div id="search-results-grid">
+                    </div>
                 <div id="furniture-grid">
-                </div>
+                    </div>
+                <button id="close-modal-button">&times;</button>
             </div>
         </div>
 
@@ -1136,10 +1187,23 @@
             const modalContent = document.getElementById('modal-content'); // スワイプイベントリスナーの親要素
             let allCategories = []; // すべてのカテゴリを保持する配列
             let currentCategoryIndex = 0; // 現在選択されているカテゴリのインデックス
+            let isSearching = false; // 検索モードかどうかを追跡するフラグ
 
             function updateAllCategories() {
                 allCategories = [...new Set(furnitureData.map(item => item.category))].sort();
                 allCategories.unshift('すべて'); // 「すべて」タブを先頭に追加
+            }
+
+            // 新しい関数: アクティブなカテゴリタブを設定する
+            function activateCategoryTab(categoryToActivate) {
+                document.querySelectorAll('.category-tab-button').forEach(btn => {
+                    btn.classList.remove('active');
+                    if (btn.dataset.category === categoryToActivate) {
+                        btn.classList.add('active');
+                        // アクティブなタブがビューポート内に収まるようにスクロール
+                        btn.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+                    }
+                });
             }
 
             function populateCategories() {
@@ -1153,6 +1217,11 @@
                     tabButton.dataset.category = category; // データ属性にカテゴリ名を設定
 
                     tabButton.addEventListener('click', () => {
+                        // 検索モードを終了
+                        isSearching = false;
+                        document.getElementById('search-input').value = ''; // 検索バーをクリア
+                        document.getElementById('search-results-grid').style.display = 'none'; // 検索結果を非表示
+
                         // すべてのタブから active クラスを削除
                         document.querySelectorAll('.category-tab-button').forEach(btn => {
                             btn.classList.remove('active');
@@ -1163,6 +1232,7 @@
                         currentCategoryIndex = allCategories.indexOf(category);
                         // 選択されたカテゴリの家具を表示
                         displayFurniture(category);
+                        document.getElementById('furniture-grid').style.display = 'grid'; // 通常のグリッドを表示
                     });
                     categoryTabsContainer.appendChild(tabButton);
                 });
@@ -1172,41 +1242,42 @@
                 activateCategoryTab(allCategories[currentCategoryIndex]);
             }
 
+            // グリッドアイテムを生成するヘルパー関数
+            function createGridItem(item) {
+                const gridItem = document.createElement('div');
+                gridItem.className = 'grid-item';
+                gridItem.dataset.category = item.category;
+
+                const img = document.createElement('img');
+                img.src = item.thumbnail;
+                img.alt = item.name;
+                img.onerror = () => { img.style.display = 'none'; console.warn(`Thumbnail not found or failed to load: ${item.thumbnail}`); };
+                gridItem.appendChild(img);
+
+                const p = document.createElement('p');
+                p.textContent = item.name;
+                gridItem.appendChild(p);
+
+                gridItem.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    currentFurniture = item;
+                    updatePreviewObject();
+                    appState = 'PLACING';
+                    document.getElementById('furniture-modal').style.display = 'none';
+                    updateUI();
+                });
+                return gridItem;
+            }
+
             // 指定されたカテゴリの家具を表示する
             function displayFurniture(category) {
                 const furnitureGrid = document.getElementById('furniture-grid');
                 furnitureGrid.innerHTML = ''; // グリッドをクリア
 
-                // フィルタリングする家具データのリスト
                 const filteredFurniture = category === 'すべて' ? furnitureData : furnitureData.filter(item => item.category === category);
 
                 filteredFurniture.forEach(item => {
-                    const gridItem = document.createElement('div');
-                    gridItem.className = 'grid-item';
-                    gridItem.dataset.category = item.category; // アイテムにもカテゴリ情報を持たせる
-
-                    // サムネイル画像を作成
-                    const img = document.createElement('img');
-                    img.src = item.thumbnail;
-                    img.alt = item.name;
-                    // 画像の読み込みエラー時のフォールバック（画像がない場合、非表示にする）
-                    img.onerror = () => { img.style.display = 'none'; console.warn(`Thumbnail not found or failed to load: ${item.thumbnail}`); };
-                    gridItem.appendChild(img);
-
-                    // 家具名テキストを作成
-                    const p = document.createElement('p');
-                    p.textContent = item.name;
-                    gridItem.appendChild(p);
-
-                    gridItem.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        currentFurniture = item;
-                        updatePreviewObject();
-                        appState = 'PLACING';
-                        document.getElementById('furniture-modal').style.display = 'none'; // モーダルを閉じる
-                        updateUI();
-                    });
-                    furnitureGrid.appendChild(gridItem);
+                    furnitureGrid.appendChild(createGridItem(item));
                 });
             }
 
@@ -1220,6 +1291,12 @@
                     if (appState === 'IDLE') {
                         furnitureModal.style.display = 'flex';
                         populateCategories(); // カテゴリタブを生成・初期化
+                        // 初期表示は「すべて」カテゴリの家具リスト
+                        displayFurniture('すべて');
+                        document.getElementById('search-results-grid').style.display = 'none'; // 検索結果グリッドを非表示に
+                        document.getElementById('furniture-grid').style.display = 'grid'; // 家具グリッドを表示に
+                        document.getElementById('search-input').value = ''; // 検索バーをクリア
+                        isSearching = false; // 検索モードをリセット
                     }
                 });
 
@@ -1337,16 +1414,60 @@
                 sliderHandle.addEventListener('touchstart', onSliderDragStart, { passive: false });
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
-            
-                // ★家具モーダルでのスワイプイベントリスナーをmodalContentに設定
-                let touchStartX = 0;
-                let touchEndX = 0;
-                const swipeThreshold = 50; // スワイプと認識する最小距離（ピクセル）
+                
+                // ★検索機能関連の追加
+                const searchInput = document.getElementById('search-input');
+                const searchResultsGrid = document.getElementById('search-results-grid');
+                // const furnitureGrid = document.getElementById('furniture-grid'); // setupUI関数内で既に取得済み
 
+                searchInput.addEventListener('input', () => {
+                    const searchTerm = searchInput.value.toLowerCase().trim();
+                    searchResultsGrid.innerHTML = ''; // 検索結果をクリア
+
+                    if (searchTerm.length > 0) {
+                        isSearching = true;
+                        // 通常のカテゴリ表示を非表示にする
+                        furnitureGrid.style.display = 'none';
+                        // 検索結果グリッドを表示
+                        searchResultsGrid.style.display = 'grid';
+                        // カテゴリタブのアクティブ状態を解除
+                        document.querySelectorAll('.category-tab-button').forEach(btn => {
+                            btn.classList.remove('active');
+                        });
+
+                        const results = furnitureData.filter(item =>
+                            item.name.toLowerCase().includes(searchTerm) ||
+                            item.category.toLowerCase().includes(searchTerm)
+                        );
+
+                        if (results.length > 0) {
+                            results.forEach(item => {
+                                searchResultsGrid.appendChild(createGridItem(item));
+                            });
+                        } else {
+                            const noResults = document.createElement('p');
+                            noResults.textContent = '該当する家具は見つかりませんでした。';
+                            noResults.style.color = 'rgba(255, 255, 255, 0.7)';
+                            noResults.style.textAlign = 'center';
+                            noResults.style.gridColumn = '1 / -1'; // グリッド全体に表示
+                            searchResultsGrid.appendChild(noResults);
+                        }
+                    } else {
+                        // 検索バーが空の場合
+                        isSearching = false;
+                        searchResultsGrid.style.display = 'none'; // 検索結果グリッドを非表示
+                        furnitureGrid.style.display = 'grid'; // 通常のカテゴリグリッドを表示
+                        // 「すべて」タブを再度アクティブにする
+                        activateCategoryTab('すべて');
+                        displayFurniture('すべて'); // 「すべて」カテゴリの家具を表示
+                    }
+                });
+
+                // スワイプジェスチャーの修正 (グリッドアイテム上のスワイプも有効にする)
                 modalContent.addEventListener('touchstart', (e) => {
-                    // カテゴリタブ、閉じるボタン、グリッドアイテム上でのスワイプは処理しない
+                    // カテゴリタブ、閉じるボタン上でのスワイプは処理しない
                     if (e.target.closest('.category-tab-button') || e.target.closest('#close-modal-button')) {
-                        return; 
+                        return;
                     }
                     touchStartX = e.changedTouches[0].clientX;
                 }, { passive: true });
@@ -1354,67 +1475,14 @@
                 modalContent.addEventListener('touchend', (e) => {
                     // touchstartで除外したものと同じ要素を再度チェック
                     if (e.target.closest('.category-tab-button') || e.target.closest('#close-modal-button')) {
-                        return; 
+                        return;
                     }
                     touchEndX = e.changedTouches[0].clientX;
-                    handleSwipeGesture();
+                    // 検索モード中はスワイプによるカテゴリ切り替えを行わない
+                    if (!isSearching) {
+                        handleSwipeGesture();
+                    }
                 }, { passive: true });
-
-                function handleSwipeGesture() {
-                    const swipeDistance = touchEndX - touchStartX;
-
-                    if (Math.abs(swipeDistance) > swipeThreshold) {
-                        if (swipeDistance < 0) { // 左スワイプ（次のカテゴリへ）
-                            currentCategoryIndex++;
-                            if (currentCategoryIndex >= allCategories.length) {
-                                currentCategoryIndex = 0; // 最後まで行ったら最初に戻る
-                            }
-                        } else { // 右スワイプ（前のカテゴリへ）
-                            currentCategoryIndex--;
-                            if (currentCategoryIndex < 0) {
-                                currentCategoryIndex = allCategories.length - 1; // 最初まで行ったら最後に戻る
-                            }
-                        }
-                        const newCategory = allCategories[currentCategoryIndex];
-                        activateCategoryTab(newCategory); // 新しいカテゴリのタブをアクティブにする
-                        displayFurniture(newCategory); // 家具表示を更新
-                    }
-                }
-
-                // アクティブなカテゴリタブを更新し、スクロールするヘルパー関数
-                function activateCategoryTab(categoryToActivate) {
-                    document.querySelectorAll('.category-tab-button').forEach(btn => {
-                        btn.classList.remove('active');
-                        if (btn.dataset.category === categoryToActivate) {
-                            btn.classList.add('active');
-                            // アクティブなタブがビューポート内に収まるようにスクロール
-                            btn.scrollIntoView({ behavior: 'smooth', inline: 'center' });
-                        }
-                    });
-                }
-            }
-
-            function setupRotationButtonEvents(button, direction) {
-                let pressTimer = null;
-                const pressStart = (e) => {
-                    e.preventDefault();
-                    pressTimer = setTimeout(() => {
-                        isRotatingContinuously = true;
-                        continuousRotationDirection = direction;
-                    }, 300);
-                };
-                const pressEnd = () => {
-                    clearTimeout(pressTimer);
-                    if (!isRotatingContinuously) {
-                        onRotate(direction);
-                    }
-                    isRotatingContinuously = false;
-                };
-                button.addEventListener('mousedown', pressStart);
-                button.addEventListener('touchstart', pressStart, { passive: false });
-                button.addEventListener('mouseup', pressEnd);
-                button.addEventListener('touchend', pressEnd);
-                button.addEventListener('mouseleave', pressEnd);
             }
 
             function getDistance(touches) {
