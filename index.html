@@ -528,6 +528,29 @@
             position: relative;
             background-color: rgba(45, 55, 72, 0.85); /* background-colorを直接指定 */
         }
+        /* 検索バーコンテナのスタイル */
+        #search-bar-container {
+            padding: 10px 20px; /* カテゴリタブと合わせるか、調整してください */
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            flex-shrink: 0; /* モーダルサイズ変更時に縮小されないようにする */
+            background-color: rgba(0, 0, 0, 0.2); /* カテゴリタブの背景色と合わせる */
+        }
+        
+        #furniture-search-input {
+            width: 100%;
+            padding: 10px 15px;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+            border-radius: 9999px; /* 丸みを帯びたデザイン */
+            background-color: rgba(255, 255, 255, 0.1);
+            color: white;
+            font-size: 1rem;
+            box-sizing: border-box; /* パディングを含めて幅を計算 */
+            outline: none; /* フォーカス時のアウトラインを消す */
+        }
+        
+        #furniture-search-input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }        
 
         #modal-header {
             padding: 15px 20px 10px;
@@ -898,6 +921,9 @@
                 <div id="modal-header">
                     <h2>家具を選択</h2>
                     <button id="close-modal-button">&times;</button>
+                </div>
+                <div id="search-bar-container">
+                    <input type="text" id="furniture-search-input" placeholder="家具を検索...">
                 </div>
                 <div id="category-tabs">
                     </div>
