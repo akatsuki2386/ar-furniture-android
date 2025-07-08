@@ -1341,14 +1341,24 @@
             
                 // ★家具モーダルでのスワイプイベントリスナーをmodalContentに設定
                 // カテゴリタブ、閉じるボタン、グリッドアイテム上でのスワイプも許可するため、除外条件を削除
+                let touchStartX = 0;
+                let touchEndX = 0;
+                const swipeThreshold = 50; // スワイプと認識する最小距離（ピクセル）
+
                 modalContent.addEventListener('touchstart', (e) => {
                     touchStartX = e.changedTouches[0].clientX;
-                }, { passive: true });
+                }, { passive: true }); // passive: true は変更しない（スクロールパフォーマンスのため）
+
+                modalContent.addEventListener('touchmove', (e) => {
+                    // modalContent内でのスワイプ時にデフォルトの動作（スクロールなど）を抑制
+                    // これによりカスタムスワイプジェスチャーが優先される
+                    e.preventDefault(); 
+                }, { passive: false }); // passive: false に変更してpreventDefaultを許可
 
                 modalContent.addEventListener('touchend', (e) => {
                     touchEndX = e.changedTouches[0].clientX;
                     handleSwipeGesture();
-                }, { passive: true });
+                }, { passive: true }); // passive: true は変更しない
 
                 function handleSwipeGesture() {
                     const swipeDistance = touchEndX - touchStartX;
@@ -1908,8 +1918,8 @@
 
                         if (hitTestResults.length > 0) {
                             const hit = hitTestResults[0];
-                            const hitPose = hit.getPose(referenceSpace);
-                            const hitY = hitPose.transform.position.y;
+                            const hitPose = hit.transform.position; // 修正: hit.getPose(referenceSpace).transform.position のショートカット
+                            const hitY = hitPose.y; // 修正
 
                             if (floorY === null) floorY = hitY;
 
@@ -1921,7 +1931,7 @@
                             const Y_TOLERANCE = 0.2; // 20cmの許容範囲
                             const isOnFloor = Math.abs(hitY - floorY) < Y_TOLERANCE;
 
-                            if(reticle) reticle.matrix.fromArray(hitPose.transform.matrix);
+                            if(reticle) reticle.matrix.fromArray(hit.getPose(referenceSpace).transform.matrix); // 修正: reticle.matrixAutoUpdate = false なので直接matrixを更新
 
                             if (instructionText.style.display !== 'none') {
                                 instructionText.style.display = 'none';
