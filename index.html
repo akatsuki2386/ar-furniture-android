@@ -519,10 +519,13 @@
         #modal-content {
             max-width: 380px; /* 例: 縦スクロールでも片手で操作しやすい幅 */
             max-height: 70vh; /* 高さの最大値を維持 */
-            border-radius: 20px; /* 角の丸み */
+            border-radius: 16px; /* 角の丸み */
             overflow: hidden; /* 子要素が丸みをはみ出さないように */
             display: flex; /* Flexboxにして子要素の配置を制御 */
             flex-direction: column; /* 垂直方向に要素を並べる */
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
         }
 
         #modal-header {
@@ -568,7 +571,7 @@
             -webkit-overflow-scrolling: touch; /* iOSでのスムーズなスクロール */
             white-space: nowrap; /* タブが改行されないようにする */
             flex-shrink: 0; /* モーダルサイズ変更時に縮小されないようにする */
-            border-radius: 20px 20px 0 0; /* 上部の角を丸くする */
+            border-radius: 0; /* 上部の角を丸くする */
         }
 
         .category-tab-button {
@@ -604,6 +607,7 @@
             flex: 1; /* 親のFlexコンテナ内で残りのスペースを埋める */
             min-height: 0; /* flexアイテムの最小高さを設定 */
             box-sizing: border-box; /* paddingを含めて幅を計算 */
+            background-color: rgba(45, 55, 72, 0.7); /* 例: 少し暗い色 */
         }
 
         .grid-item {
@@ -612,6 +616,7 @@
             align-items: center; /* 横方向中央揃え */
             padding: 10px; /* パディングを少し調整 */
             /* widthの固定は不要 */
+            text-align: center;
         }
 
         .grid-item img {
