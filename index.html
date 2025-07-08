@@ -206,6 +206,10 @@
         .group-button:active {
             background-color: rgba(255, 255, 255, 0.2);
         }
+        .group-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
         #delete-button, #confirm-button {
             padding: 16px 28px;
         }
@@ -536,7 +540,7 @@
         }
         #close-modal-button {
             position: absolute;
-            bottom: -70px;
+            bottom: -85px; /* ▼▼▼ 修正: -70pxから-85pxへ ▼▼▼ */
             left: 50%;
             transform: translateX(-50%);
             background: rgba(255,255,255,0.2);
@@ -552,7 +556,8 @@
             line-height: 48px;
             text-align: center;
         }
-        #furniture-grid, #floor-grid {
+        #furniture-grid {
+            display: grid;
             grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
             gap: 15px;
             padding: 20px;
@@ -587,34 +592,6 @@
             to { opacity: 1; transform: translateY(0); }
         }
 
-        .modal-tabs {
-            display: flex;
-            gap: 10px;
-            position: absolute;
-            left: 50%;
-            transform: translateX(-50%);
-        }
-        .modal-tab-button {
-            padding: 8px 20px;
-            background-color: transparent;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            color: #A0AECB;
-            border-radius: 8px;
-            cursor: pointer;
-            font-size: 1rem;
-            font-weight: bold;
-            transition: all 0.2s ease;
-        }
-        .modal-tab-button.active {
-            background-color: rgba(255, 255, 255, 0.15);
-            color: white;
-        }
-        .modal-grid {
-            display: none; /* デフォルトは非表示 */
-        }
-        .modal-grid.active {
-            display: grid; /* activeクラスで表示 */
-        }
     </style>
 </head>
 <body>
@@ -675,7 +652,7 @@
                                     <h4>家具の編集</h4>
                                     <p>家具を狙うと出るボタンで再選択できます。</p>
                                 </div>
-                                 <div class="help-card">
+                                <div class="help-card">
                                     <div class="icon-container">
                                         <svg fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 19.5 8.25 12l7.5-7.5" /></svg>
                                     </div>
@@ -686,108 +663,108 @@
                         </div>
                     </div>
                     <div class="help-page" id="page2">
-                         <div class="help-section">
-                            <h3>配置場所の確認</h3>
-                            <div class="help-grid">
-                                <div class="help-card">
-                                    <div class="icon-container">
-                                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><circle cx="12" cy="12" r="7.5" /></svg>
+                            <div class="help-section">
+                                <h3>配置場所の確認</h3>
+                                <div class="help-grid">
+                                    <div class="help-card">
+                                        <div class="icon-container">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><circle cx="12" cy="12" r="7.5" /></svg>
+                                        </div>
+                                        <h4>配置できます</h4>
+                                        <p>地面に輪が表示されている場所に置けます。</p>
                                     </div>
-                                    <h4>配置できます</h4>
-                                    <p>地面に輪が表示されている場所に置けます。</p>
-                                </div>
-                                <div class="help-card">
-                                    <div class="icon-container" style="color: #f56565;">
-                                        <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" /></svg>
+                                    <div class="help-card">
+                                        <div class="icon-container" style="color: #f56565;">
+                                            <svg fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.28 7.22a.75.75 0 00-1.06 1.06L8.94 10l-1.72 1.72a.75.75 0 101.06 1.06L10 11.06l1.72 1.72a.75.75 0 101.06-1.06L11.06 10l1.72-1.72a.75.75 0 00-1.06-1.06L10 8.94 8.28 7.22z" clip-rule="evenodd" /></svg>
+                                        </div>
+                                        <h4>配置できません</h4>
+                                        <p>❌印の場所には置けません。</p>
                                     </div>
-                                    <h4>配置できません</h4>
-                                    <p>❌印の場所には置けません。</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="help-section">
-                            <h3>ジェスチャー操作</h3>
-                             <div class="help-grid">
-                                <div class="help-card">
-                                    <div class="icon-container">
-                                        <svg viewBox="0 0 48 48" class="gesture-svg">
-                                            <defs><path id="arc-path" d="M8,34 A16,16 0 0,1 40,34" fill="none"/></defs>
-                                            <path d="M12,12 h24 v24 h-24z" stroke-width="1" opacity="0.5"/>
-                                            <use href="#arc-path" stroke-dasharray="4 4" stroke-width="1.5" opacity="0.7"/>
-                                            <circle cx="24" cy="23" r="5" class="finger" />
-                                            <path d="M7 32 L10 35 L13 32 Z" class="arrow"/>
-                                        </svg>
-                                    </div>
-                                    <h4>回転</h4>
-                                    <p>1本指で家具を左右にドラッグして回します。</p>
-                                </div>
-                                 <div class="help-card">
-                                    <div class="icon-container">
-                                        <svg viewBox="0 0 48 48" class="gesture-svg">
-                                            <circle cx="18" cy="30" r="5" class="finger"/>
-                                            <circle cx="30" cy="18" r="5" class="finger"/>
-                                            <path d="M21,27 l-4,-4" stroke-width="1.5" stroke-dasharray="3 3"/>
-                                            <path d="M15,21 l-3,-1 l2,3" class="arrow" />
-                                            <path d="M27,21 l4,4" stroke-width="1.5" stroke-dasharray="3 3"/>
-                                            <path d="M33,27 l3,1 l-2,-3" class="arrow"/>
-                                        </svg>
-                                    </div>
-                                    <h4>拡大・縮小</h4>
-                                    <p>2本指で広げたりつまんでサイズ変更。</p>
-                                </div>
-                                <div class="help-card">
-                                    <div class="icon-container">
-                                        <svg viewBox="0 0 48 48" class="gesture-svg">
-                                            <path d="M14,18 h20 v12 h-20z" stroke-width="1" opacity="0.5"/>
-                                            <circle cx="24" cy="24" r="5" class="finger"/>
-                                            <circle cx="24" cy="24" r="9" stroke-width="1.5" stroke-dasharray="2 4" opacity="0.9" />
-                                        </svg>
-                                    </div>
-                                    <h4>長押しで削除</h4>
-                                    <p>家具を長押しすると削除の確認ができます。</p>
                                 </div>
                             </div>
-                        </div>
-                        <div class="help-section">
-                            <h3>ボタン操作</h3>
-                            <div class="help-grid">
-                                <div class="help-card">
-                                    <div class="icon-container">
-                                        <svg viewBox="0 0 48 48" stroke="#CBD5E0" fill="none">
-                                            <text x="2" y="32" font-family="sans-serif" font-size="20" font-weight="bold" stroke="none" fill="#CBD5E0">-</text>
-                                            <rect x="13" y="22" width="22" height="4" rx="2" stroke="none" fill="rgba(255,255,255,0.4)"></rect>
-                                            <circle cx="24" cy="24" r="6" stroke-width="2" fill="white"></circle>
-                                            <text x="36" y="32" font-family="sans-serif" font-size="20" font-weight="bold" stroke="none" fill="#CBD5E0">+</text>
-                                        </svg>
+                            <div class="help-section">
+                                <h3>ジェスチャー操作</h3>
+                                <div class="help-grid">
+                                    <div class="help-card">
+                                        <div class="icon-container">
+                                            <svg viewBox="0 0 48 48" class="gesture-svg">
+                                                <defs><path id="arc-path" d="M8,34 A16,16 0 0,1 40,34" fill="none"/></defs>
+                                                <path d="M12,12 h24 v24 h-24z" stroke-width="1" opacity="0.5"/>
+                                                <use href="#arc-path" stroke-dasharray="4 4" stroke-width="1.5" opacity="0.7"/>
+                                                <circle cx="24" cy="23" r="5" class="finger" />
+                                                <path d="M7 32 L10 35 L13 32 Z" class="arrow"/>
+                                            </svg>
+                                        </div>
+                                        <h4>回転</h4>
+                                        <p>1本指で家具を左右にドラッグして回します。</p>
                                     </div>
-                                    <h4>サイズ変更</h4>
-                                    <p>スライダーを動かして家具の大きさを変更します。</p>
-                                </div>
-                                <div class="help-card">
-                                    <div class="icon-container">
-                                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="transform: rotate(180deg);">
-                                           <path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" />
-                                        </svg>
+                                    <div class="help-card">
+                                        <div class="icon-container">
+                                            <svg viewBox="0 0 48 48" class="gesture-svg">
+                                                <circle cx="18" cy="30" r="5" class="finger"/>
+                                                <circle cx="30" cy="18" r="5" class="finger"/>
+                                                <path d="M21,27 l-4,-4" stroke-width="1.5" stroke-dasharray="3 3"/>
+                                                <path d="M15,21 l-3,-1 l2,3" class="arrow" />
+                                                <path d="M27,21 l4,4" stroke-width="1.5" stroke-dasharray="3 3"/>
+                                                <path d="M33,27 l3,1 l-2,-3" class="arrow"/>
+                                            </svg>
+                                        </div>
+                                        <h4>拡大・縮小</h4>
+                                        <p>2本指で広げたりつまんでサイズ変更。</p>
                                     </div>
-                                    <h4>回転</h4>
-                                    <p>タップで45度、長押しで連続回転します。</p>
-                                </div>
-                                <div class="help-card">
-                                    <div class="icon-container">
-                                        <svg fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                                    <div class="help-card">
+                                        <div class="icon-container">
+                                            <svg viewBox="0 0 48 48" class="gesture-svg">
+                                                <path d="M14,18 h20 v12 h-20z" stroke-width="1" opacity="0.5"/>
+                                                <circle cx="24" cy="24" r="5" class="finger"/>
+                                                <circle cx="24" cy="24" r="9" stroke-width="1.5" stroke-dasharray="2 4" opacity="0.9" />
+                                            </svg>
+                                        </div>
+                                        <h4>長押しで削除</h4>
+                                        <p>家具を長押しすると削除の確認ができます。</p>
                                     </div>
-                                    <h4>配置の確定</h4>
-                                    <p>家具の位置や向き、大きさを決定します。</p>
-                                </div>
-                                 <div class="help-card">
-                                    <div class="icon-container">
-                                        <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 0 0-2.09 2.134v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
-                                    </div>
-                                    <h4>削除</h4>
-                                    <p>選択中の家具をシーンから削除します。</p>
                                 </div>
                             </div>
-                        </div>
+                            <div class="help-section">
+                                <h3>ボタン操作</h3>
+                                <div class="help-grid">
+                                    <div class="help-card">
+                                        <div class="icon-container">
+                                            <svg viewBox="0 0 48 48" stroke="#CBD5E0" fill="none">
+                                                <text x="2" y="32" font-family="sans-serif" font-size="20" font-weight="bold" stroke="none" fill="#CBD5E0">-</text>
+                                                <rect x="13" y="22" width="22" height="4" rx="2" stroke="none" fill="rgba(255,255,255,0.4)"></rect>
+                                                <circle cx="24" cy="24" r="6" stroke-width="2" fill="white"></circle>
+                                                <text x="36" y="32" font-family="sans-serif" font-size="20" font-weight="bold" stroke="none" fill="#CBD5E0">+</text>
+                                            </svg>
+                                        </div>
+                                        <h4>サイズ変更</h4>
+                                        <p>スライダーを動かして家具の大きさを変更します。</p>
+                                    </div>
+                                    <div class="help-card">
+                                        <div class="icon-container">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="transform: rotate(180deg);">
+                                               <path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" />
+                                            </svg>
+                                        </div>
+                                        <h4>回転</h4>
+                                        <p>タップで45度、長押しで連続回転します。</p>
+                                    </div>
+                                    <div class="help-card">
+                                        <div class="icon-container">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>
+                                        </div>
+                                        <h4>配置の確定</h4>
+                                        <p>家具の位置や向き、大きさを決定します。</p>
+                                    </div>
+                                    <div class="help-card">
+                                        <div class="icon-container">
+                                            <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 0 0-2.09 2.134v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>
+                                        </div>
+                                        <h4>削除</h4>
+                                        <p>選択中の家具をシーンから削除します。</p>
+                                    </div>
+                                </div>
+                            </div>
                     </div>
                 </div>
             </div>
@@ -806,9 +783,9 @@
         <div id="top-left-controls">
              <button id="help-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
-                       <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
                  </svg>
-            </button>
+             </button>
         </div>
         <div id="top-right-controls">
             <button id="exit-ar-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
@@ -854,16 +831,11 @@
         <div id="furniture-modal">
             <div id="modal-content">
                 <div id="modal-header">
-                    <div class="modal-tabs">
-                        <button id="tab-furniture" class="modal-tab-button active">家具</button>
-                        <button id="tab-floor" class="modal-tab-button">床</button>
-                    </div>
+                    <h2>家具を選択</h2>
                     <button id="close-modal-button">&times;</button>
                 </div>
-                <div id="furniture-grid" class="modal-grid active">
-                </div>
-                <div id="floor-grid" class="modal-grid">
-                </div>
+                <div id="furniture-grid">
+                    </div>
             </div>
         </div>
 
@@ -905,21 +877,11 @@
             let tabButtons, helpPages;
             let confirmDialog, objectPendingDeletion = null;
 
-            let floorPlane = null;
-            const textureLoader = new THREE.TextureLoader();
-
             const furnitureData = [
-                { name: 'イス',   file: 'chair.glb',     height: 0.79, thumbnail: 'chair.png' },
+                { name: 'イス',   file: 'chair.glb',      height: 0.79, thumbnail: 'chair.png' },
                 { name: '本棚',   file: 'bookshelf.glb', height: 1.8,  thumbnail: 'bookshelf.png' }, 
-                { name: '脚立',   file: 'stand.glb',     height: 1.2,  thumbnail: 'stand.png' }, 
+                { name: '脚立',   file: 'stand.glb',      height: 1.2,  thumbnail: 'stand.png' }, 
             ];
-            
-            const floorData = [
-                { name: 'フローリング', file: 'flooring.jpg' },
-                { name: '畳', file: 'tatami.jpg' },
-                { name: 'リセット', file: null }
-            ];
-
             let currentFurniture = furnitureData[0];
             let previewObject = null;
             const placedObjects = [];
@@ -1085,17 +1047,6 @@
                 reticle.matrixAutoUpdate = false;
                 reticle.visible = false;
                 scene.add(reticle);
-
-                const floorGeometry = new THREE.PlaneGeometry(100, 100);
-                const floorMaterial = new THREE.MeshStandardMaterial({
-                    transparent: true,
-                    opacity: 0
-                });
-                floorPlane = new THREE.Mesh(floorGeometry, floorMaterial);
-                floorPlane.rotation.x = -Math.PI / 2;
-                floorPlane.visible = false;
-                scene.add(floorPlane);
-
                 setupUI();
             }
 
@@ -1103,24 +1054,7 @@
                 const furnitureModal = document.getElementById('furniture-modal');
                 const closeModalButton = document.getElementById('close-modal-button');
                 const furnitureGrid = document.getElementById('furniture-grid');
-                const floorGrid = document.getElementById('floor-grid');
-                const tabFurniture = document.getElementById('tab-furniture');
-                const tabFloor = document.getElementById('tab-floor');
-
-                tabFurniture.addEventListener('click', () => {
-                    tabFurniture.classList.add('active');
-                    tabFloor.classList.remove('active');
-                    furnitureGrid.classList.add('active');
-                    floorGrid.classList.remove('active');
-                });
-
-                tabFloor.addEventListener('click', () => {
-                    tabFloor.classList.add('active');
-                    tabFurniture.classList.remove('active');
-                    floorGrid.classList.add('active');
-                    furnitureGrid.classList.remove('active');
-                });
-
+                
                 furnitureGrid.innerHTML = '';
                 furnitureData.forEach(item => {
                     const gridItem = document.createElement('div');
@@ -1142,23 +1076,6 @@
                     
                     furnitureGrid.appendChild(gridItem);
                 });
-
-                floorGrid.innerHTML = '';
-                floorData.forEach(item => {
-                    const gridItem = document.createElement('div');
-                    gridItem.className = 'grid-item';
-                    const p = document.createElement('p');
-                    p.textContent = item.name;
-                    gridItem.appendChild(p);
-
-                    gridItem.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        changeFloorTexture(item.file);
-                        closeModal(e);
-                    });
-                    floorGrid.appendChild(gridItem);
-                });
-
 
                 document.getElementById('add-button').addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -1281,25 +1198,6 @@
                 sliderHandle.addEventListener('touchstart', onSliderDragStart, { passive: false });
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
-            }
-
-            function changeFloorTexture(textureFile) {
-                if (!floorPlane) return;
-
-                if (textureFile === null) {
-                    floorPlane.material.map = null;
-                    floorPlane.material.opacity = 0;
-                } else {
-                    textureLoader.load(textureFile, (texture) => {
-                        texture.wrapS = THREE.RepeatWrapping;
-                        texture.wrapT = THREE.RepeatWrapping;
-                        texture.repeat.set(20, 20); 
-                        
-                        floorPlane.material.map = texture;
-                        floorPlane.material.opacity = 1;
-                        floorPlane.material.needsUpdate = true;
-                    });
-                }
             }
 
             function setupRotationButtonEvents(button, direction) {
@@ -1491,7 +1389,7 @@
                     gestureState.isInteracting = false;
                 }
                 if (event.touches.length > 0 && event.touches.length !== gestureState.touchCount) {
-                     handleTouchStart(event);
+                    handleTouchStart(event);
                 }
                 gestureState.touchCount = event.touches.length;
             }
@@ -1667,6 +1565,7 @@
                 const helpButton = document.getElementById('help-button');
                 const transformControls = document.getElementById('transform-controls');
                 const decisionControls = document.getElementById('decision-controls');
+                const decisionConfirmButton = document.querySelector('#decision-controls #confirm-button');
                 
                 document.getElementById('exit-ar-button').style.display = 'flex';
                 helpButton.style.display = 'flex';
@@ -1711,14 +1610,16 @@
                     transformControls.style.display = 'none';
                     decisionControls.style.display = 'none';
                 }
+                // 確定ボタンの有効/無効はrenderループ内で常に更新されるようにする
+                // decisionConfirmButton.disabled = !isPlaceable; // render関数に移動
             }
 
             function handleHover() {
                 if (gestureState.isInteracting || isRotatingContinuously || gestureState.longPressTimer) {
                     if(hoveredObject) {
-                          setObjectTransparency(hoveredObject, false);
-                          hoveredObject = null;
-                          updateUI();
+                             setObjectTransparency(hoveredObject, false);
+                             hoveredObject = null;
+                             updateUI();
                     }
                     return;
                 }
@@ -1833,14 +1734,9 @@
                                 isFloorDetected = true;
                                 updateUI();
                             }
-
-                            if (!floorPlane.visible && isFloorDetected) {
-                                floorPlane.position.y = hitPose.transform.position.y;
-                                floorPlane.visible = true;
-                            }
                             
-                            const Y_TOLERANCE = 0.2;
-                            isPlaceable = Math.abs(hitY - floorY) < Y_TOLERANCE;
+                            const Y_TOLERANCE = 0.2; // 20cmの許容範囲
+                            const isOnFloor = Math.abs(hitY - floorY) < Y_TOLERANCE;
                             
                             if(reticle) reticle.matrix.fromArray(hitPose.transform.matrix);
                             
@@ -1856,13 +1752,37 @@
                                 if(activeObject) activeObject.visible = true;
                                 
                                 if (appState === 'PLACING' || appState === 'EDITING') {
-                                    if(reticle) reticle.visible = isPlaceable;
-                                    crossMark.visible = !isPlaceable;
+                                    // 衝突判定ロジック
+                                    let isColliding = false;
+                                    if (activeObject) { // activeObjectが存在する場合のみ衝突判定を行う
+                                        const activeObjectBox = new THREE.Box3().setFromObject(activeObject);
+                                        for (const placedObj of placedObjects) {
+                                            if (placedObj === activeObject) continue; // 自身とは衝突判定しない
+                                            const placedObjBox = new THREE.Box3().setFromObject(placedObj);
+                                            if (activeObjectBox.intersectsBox(placedObjBox)) {
+                                                isColliding = true;
+                                                break;
+                                            }
+                                        }
+                                    }
+
+                                    isPlaceable = isOnFloor && !isColliding;
+
+                                    if(reticle) reticle.visible = isPlaceable; // 配置可能な場合のみレティクル表示
+                                    crossMark.visible = !isPlaceable; // 配置不可能な場合のみクロスマーク表示
+
                                     if (crossMark.visible && activeObject) {
-                                        crossMark.position.copy(activeObject.position).add(activeObject.userData.centerOffset);
+                                        crossMark.position.copy(activeObject.position);
+                                        // 家具の底面中央に十字マークを合わせるためのオフセット調整
+                                        const box = new THREE.Box3().setFromObject(activeObject);
+                                        const center = new THREE.Vector3();
+                                        box.getCenter(center);
+                                        const size = box.getSize(new THREE.Vector3());
+                                        crossMark.position.y = activeObject.position.y + (size.y / 2) + 0.01; // 家具の底面から少し上に配置
+                                        
                                         const scale = activeObject.userData.crossMarkScale * 0.6; 
                                         crossMark.scale.set(scale, scale, scale);
-                                        crossMark.quaternion.copy(camera.quaternion);
+                                        crossMark.quaternion.copy(camera.quaternion); // カメラの向きに合わせる
                                     }
                                 } else {
                                     if(reticle) reticle.visible = true;
@@ -1873,17 +1793,14 @@
                                 crossMark.visible = false;
                             }
                         } else {
+                            isPlaceable = false;
                             if(reticle) reticle.visible = false;
                             crossMark.visible = false;
-                        }
-                    } else {
-                        isPlaceable = false;
-                        if(reticle) reticle.visible = false;
-                        crossMark.visible = false;
-                        if (activeObject) activeObject.visible = false;
-                        if (instructionText.style.display !== 'block' && !isFloorDetected) {
-                            instructionText.style.display = 'block';
-                            startDotAnimation();
+                            if (activeObject) activeObject.visible = false;
+                            if (instructionText.style.display !== 'block' && !isFloorDetected) {
+                                instructionText.style.display = 'block';
+                                startDotAnimation();
+                            }
                         }
                     }
                 }
