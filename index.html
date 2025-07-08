@@ -1152,7 +1152,8 @@
                     tabButton.textContent = category;
                     tabButton.dataset.category = category; // データ属性にカテゴリ名を設定
 
-                    tabButton.addEventListener('click', () => {
+                    tabButton.addEventListener('click', (e) => {
+                        e.stopPropagation(); // スワイプと同時にカテゴリが切り替わるのを防ぐ
                         // すべてのタブから active クラスを削除
                         document.querySelectorAll('.category-tab-button').forEach(btn => {
                             btn.classList.remove('active');
@@ -1339,23 +1340,12 @@
                 document.addEventListener('touchend', onSliderDragEnd);
             
                 // ★家具モーダルでのスワイプイベントリスナーをmodalContentに設定
-                let touchStartX = 0;
-                let touchEndX = 0;
-                const swipeThreshold = 50; // スワイプと認識する最小距離（ピクセル）
-
+                // カテゴリタブ、閉じるボタン、グリッドアイテム上でのスワイプも許可するため、除外条件を削除
                 modalContent.addEventListener('touchstart', (e) => {
-                    // カテゴリタブ、閉じるボタン、グリッドアイテム上でのスワイプは処理しない
-                    if (e.target.closest('.category-tab-button') || e.target.closest('#close-modal-button') || e.target.closest('.grid-item')) {
-                        return; 
-                    }
                     touchStartX = e.changedTouches[0].clientX;
                 }, { passive: true });
 
                 modalContent.addEventListener('touchend', (e) => {
-                    // touchstartで除外したものと同じ要素を再度チェック
-                    if (e.target.closest('.category-tab-button') || e.target.closest('#close-modal-button') || e.target.closest('.grid-item')) {
-                        return; 
-                    }
                     touchEndX = e.changedTouches[0].clientX;
                     handleSwipeGesture();
                 }, { passive: true });
