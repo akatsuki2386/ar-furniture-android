@@ -232,6 +232,9 @@
             display: none;
             align-items: center;
             pointer-events: auto;
+            flex-shrink: 0;
+            user-select: none;
+            -webkit-user-select: none;
         }
         .circle-button {
             width: 64px;
@@ -621,7 +624,7 @@
             box-sizing: border-box;
 
             /* ▼▼▼ ここを調整します ▼▼▼ */
-            width: 90px;    /* 各ボタンの横幅 */
+            width: 90px;   /* 各ボタンの横幅 */
             height: 90px;  /* 各ボタンの縦幅（正方形に近づける） */
             /* ▲▲▲ ここまで調整します ▲▲▲ */
         }
@@ -835,6 +838,54 @@
             </div>
         </div>
 
+        <div id="instruction-text">
+            <span style="font-size: 1.25em; font-weight: bold;">床を認識中<span id="loading-dots"></span></span><br><br>
+            カメラをゆっくりと<br>床に向けて<br>動かしてください
+        </div>
+
+        <button id="mode-switch-button">
+            <span id="edit-mode-label" class="mode-label">編集モード</span>
+            <span id="view-mode-label" class="mode-label">鑑賞モード</span>
+        </button>
+
+        <div id="top-left-controls">
+             <button id="help-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
+                 <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
+                     <path stroke-linecap="round" stroke-linejoin="round" d="M9.879 7.519c1.171-1.025 3.071-1.025 4.242 0 1.172 1.025 1.172 2.687 0 3.712-.203.179-.43.326-.67.442-.745.361-1.45.999-1.45 1.827v.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 5.25h.008v.008H12v-.008Z" />
+                 </svg>
+             </button>
+        </div>
+        <div id="top-right-controls">
+            <button id="exit-ar-button" class="circle-button" style="display: none; width: 56px; height: 56px;">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 28px; height: 28px;">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 9V5.25A2.25 2.25 0 0 0 13.5 3h-6a2.25 2.25 0 0 0-2.25 2.25v13.5A2.25 2.25 0 0 0 7.5 21h6a2.25 2.25 0 0 0 2.25-2.25V15m-3-3-3-3m0 0 3-3m-3 3h12" />
+                </svg>
+            </button>
+        </div>
+
+        <div id="bottom-bar">
+            <button id="add-button" class="circle-button"></button>
+            <button id="edit-button" class="circle-button"></button>
+
+            <div id="transform-controls">
+                <div id="scale-slider-container">
+                    <span class="slider-icon">-</span>
+                    <div id="slider-track">
+                        <div id="slider-handle"></div>
+                    </div>
+                    <span class="slider-icon">+</span>
+                </div>
+                <div class="rotation-button-group">
+                    <button id="rotate-left-button" class="group-button"></button>
+                    <button id="rotate-right-button" class="group-button"></button>
+                </div>
+            </div>
+            <div id="decision-controls">
+                <button id="delete-button" class="group-button"></button>
+                <button id="confirm-button" class="group-button"></button>
+            </div>
+        </div>
+
         <div id="confirm-dialog" class="dialog-container">
             <div class="dialog-box">
                 <p>この家具を削除しますか？</p>
@@ -942,12 +993,6 @@
 
             let isRotatingContinuously = false;
             let continuousRotationDirection = 0;
-
-            // スワイプ機能のための追加変数
-            let touchStartX = 0;
-            let currentCategoryIndex = 0;
-            let availableCategories = []; // カテゴリを保持する配列
-
 
             init();
 
@@ -1089,17 +1134,17 @@
                 setupUI(); // ここでUI要素のイベントリスナーを設定
             }
 
-            // ★修正：新しい関数: カテゴリタブを生成する
+            // ★新しい関数: カテゴリタブを生成する
             function populateCategories() {
                 const categoryTabsContainer = document.getElementById('category-tabs');
                 categoryTabsContainer.innerHTML = ''; // 既存のタブをクリア
 
                 // furnitureDataからユニークなカテゴリを取得し、ソート
-                availableCategories = [...new Set(furnitureData.map(item => item.category))].sort();
+                const categories = [...new Set(furnitureData.map(item => item.category))].sort();
                 // 「すべて」タブを先頭に追加
-                availableCategories.unshift('すべて');
+                categories.unshift('すべて');
 
-                availableCategories.forEach((category, index) => {
+                categories.forEach(category => {
                     const tabButton = document.createElement('button');
                     tabButton.className = 'category-tab-button';
                     tabButton.textContent = category;
@@ -1114,19 +1159,18 @@
                         tabButton.classList.add('active');
                         // 選択されたカテゴリの家具を表示
                         displayFurniture(category);
-                        currentCategoryIndex = index; // 現在のカテゴリインデックスを更新
                     });
                     categoryTabsContainer.appendChild(tabButton);
                 });
 
-                // 現在のカテゴリインデックスに基づいてタブをアクティブにする
-                const activeTab = categoryTabsContainer.querySelector(`[data-category="${availableCategories[currentCategoryIndex]}"]`);
-                if (activeTab) {
-                    activeTab.classList.add('active');
+                // 初期状態で「すべて」タブをアクティブにする
+                const allTab = categoryTabsContainer.querySelector('[data-category="すべて"]');
+                if (allTab) {
+                    allTab.classList.add('active');
                 }
             }
 
-            // ★修正：新しい関数: 指定されたカテゴリの家具を表示する
+            // ★新しい関数: 指定されたカテゴリの家具を表示する
             function displayFurniture(category) {
                 const furnitureGrid = document.getElementById('furniture-grid');
                 furnitureGrid.innerHTML = ''; // グリッドをクリア
@@ -1167,14 +1211,15 @@
             function setupUI() {
                 const furnitureModal = document.getElementById('furniture-modal');
                 const closeModalButton = document.getElementById('close-modal-button');
-                
+                const categoryTabsContainer = document.getElementById('category-tabs'); // Get the category tabs container
+
                 // add-buttonクリック時、家具モーダルを表示し、カテゴリタブと家具を初期化・表示
                 document.getElementById('add-button').addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (appState === 'IDLE') {
                         furnitureModal.style.display = 'flex';
                         populateCategories(); // カテゴリタブを生成
-                        displayFurniture(availableCategories[currentCategoryIndex]); // 現在のカテゴリの家具を表示
+                        displayFurniture('すべて'); // デフォルトで「すべて」カテゴリの家具を表示
                     }
                 });
 
@@ -1188,30 +1233,6 @@
                         closeModal(e);
                     }
                 });
-
-                // ★家具モーダルのスワイプイベントリスナーを追加
-                const modalContent = document.getElementById('modal-content');
-                modalContent.addEventListener('touchstart', (e) => {
-                    if (e.touches.length === 1) {
-                        touchStartX = e.touches[0].clientX;
-                    }
-                }, { passive: true }); // passive: true を設定
-
-                modalContent.addEventListener('touchend', (e) => {
-                    if (e.changedTouches.length === 1) {
-                        const touchEndX = e.changedTouches[0].clientX;
-                        const swipeDistance = touchEndX - touchStartX;
-                        const SWIPE_THRESHOLD = 50; // スワイプと認識するしきい値 (px)
-
-                        if (swipeDistance > SWIPE_THRESHOLD) {
-                            // 右スワイプ (前のカテゴリへ)
-                            navigateToCategory(-1);
-                        } else if (swipeDistance < -SWIPE_THRESHOLD) {
-                            // 左スワイプ (次のカテゴリへ)
-                            navigateToCategory(1);
-                        }
-                    }
-                }, { passive: true }); // passive: true を設定
 
                 document.getElementById('exit-ar-button').addEventListener('click', (e) => { e.stopPropagation(); endSession(); });
                 function endSession() {
@@ -1316,36 +1337,56 @@
                 sliderHandle.addEventListener('touchstart', onSliderDragStart, { passive: false });
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
-            }
 
-            // ★修正：カテゴリを前後に移動する関数
-            function navigateToCategory(direction) {
-                if (availableCategories.length === 0) return;
+                // --- Category Tab Swiping Logic ---
+                let startX = 0;
+                let isSwiping = false;
+                const swipeThreshold = 50; // Minimum horizontal pixels to register a swipe
 
-                let newIndex = currentCategoryIndex + direction;
-                if (newIndex < 0) {
-                    newIndex = availableCategories.length - 1; // 最初のカテゴリから左にスワイプしたら最後のカテゴリへ
-                } else if (newIndex >= availableCategories.length) {
-                    newIndex = 0; // 最後のカテゴリから右にスワイプしたら最初のカテゴリへ
-                }
-                currentCategoryIndex = newIndex;
+                categoryTabsContainer.addEventListener('touchstart', (e) => {
+                    startX = e.touches[0].clientX;
+                    isSwiping = true;
+                }, { passive: true }); // Use passive: true as we don't preventDefault here
 
-                const category = availableCategories[currentCategoryIndex];
-                displayFurniture(category);
+                categoryTabsContainer.addEventListener('touchmove', (e) => {
+                    if (!isSwiping) return;
+                    // You might add some logic here if you want visual feedback during swipe
+                }, { passive: true });
 
-                // アクティブなタブの表示を更新
-                document.querySelectorAll('.category-tab-button').forEach(btn => {
-                    btn.classList.remove('active');
-                    if (btn.dataset.category === category) {
-                        btn.classList.add('active');
+                categoryTabsContainer.addEventListener('touchend', (e) => {
+                    if (!isSwiping) return;
+                    const endX = e.changedTouches[0].clientX;
+                    const diffX = startX - endX; // Positive for left swipe, negative for right swipe
+
+                    isSwiping = false;
+
+                    if (Math.abs(diffX) > swipeThreshold) {
+                        const currentActiveTab = categoryTabsContainer.querySelector('.category-tab-button.active');
+                        if (!currentActiveTab) return;
+
+                        const allTabs = Array.from(categoryTabsContainer.children);
+                        const currentIndex = allTabs.indexOf(currentActiveTab);
+
+                        let nextIndex = -1;
+
+                        if (diffX > 0) { // Swiped left (show next category)
+                            if (currentIndex < allTabs.length - 1) {
+                                nextIndex = currentIndex + 1;
+                            }
+                        } else { // Swiped right (show previous category)
+                            if (currentIndex > 0) {
+                                nextIndex = currentIndex - 1;
+                            }
+                        }
+
+                        if (nextIndex !== -1) {
+                            allTabs[nextIndex].click(); // Simulate a click on the next/previous tab
+                            // Optional: Scroll the tab into view if it's off-screen
+                            allTabs[nextIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+                        }
                     }
                 });
-                // スクロールして現在のタブが見えるようにする
-                const categoryTabsContainer = document.getElementById('category-tabs');
-                const activeTab = categoryTabsContainer.querySelector('.category-tab-button.active');
-                if (activeTab) {
-                    activeTab.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                }
+                // --- End Category Tab Swiping Logic ---
             }
 
             function setupRotationButtonEvents(button, direction) {
@@ -1415,12 +1456,17 @@
             }
 
             function handleTouchStart(event) {
-                // モーダルがアクティブな場合は、モーダル内のイベントのみ処理
-                if (document.getElementById('furniture-modal').style.display === 'flex' || confirmDialog.style.display === 'flex') {
+                // Prevent interaction with the overlay if a modal is open (furnitureModal, helpModal, confirmDialog)
+                if (furnitureModal.style.display === 'flex' || helpModal.style.display === 'flex' || confirmDialog.style.display === 'flex') {
+                    // Allow touches on the furniture modal to handle its internal logic (like category swipes)
+                    if (event.target.closest('#furniture-modal') || event.target.closest('#help-modal') || event.target.closest('#confirm-dialog')) {
+                        return; // Let the modal's own touch listeners handle it
+                    }
+                    event.preventDefault(); // Otherwise, prevent interaction with the underlying AR scene
                     return;
                 }
 
-                if (event.target !== event.currentTarget) return;
+                if (event.target !== event.currentTarget) return; // Only process touches directly on the overlay
                 event.preventDefault();
 
                 gestureState.touchCount = event.touches.length;
@@ -1480,8 +1526,13 @@
             }
 
             function handleTouchMove(event) {
-                // モーダルがアクティブな場合は、モーダル内のイベントのみ処理
-                if (document.getElementById('furniture-modal').style.display === 'flex' || confirmDialog.style.display === 'flex') {
+                 // Prevent interaction with the overlay if a modal is open (furnitureModal, helpModal, confirmDialog)
+                if (furnitureModal.style.display === 'flex' || helpModal.style.display === 'flex' || confirmDialog.style.display === 'flex') {
+                    // Allow touches on the modal itself to handle its internal logic
+                    if (event.target.closest('#furniture-modal') || event.target.closest('#help-modal') || event.target.closest('#confirm-dialog')) {
+                        return;
+                    }
+                    event.preventDefault(); // Otherwise, prevent interaction with the underlying AR scene
                     return;
                 }
 
@@ -1525,6 +1576,15 @@
             }
 
             function handleTouchEnd(event) {
+                // Prevent interaction with the overlay if a modal is open (furnitureModal, helpModal, confirmDialog)
+                if (furnitureModal.style.display === 'flex' || helpModal.style.display === 'flex' || confirmDialog.style.display === 'flex') {
+                    // Allow touches on the modal itself to handle its internal logic
+                    if (event.target.closest('#furniture-modal') || event.target.closest('#help-modal') || event.target.closest('#confirm-dialog')) {
+                        return;
+                    }
+                    return; // Otherwise, do not process touch end for the AR scene
+                }
+
                 if (event.target !== event.currentTarget) return;
 
                 const wasLongPressTriggered = !gestureState.longPressTimer;
@@ -1772,11 +1832,11 @@
             }
 
             function handleHover() {
-                if (gestureState.isInteracting || isRotatingContinuously || gestureState.longPressTimer) {
+                if (gestureState.isInteracting || isRotatingContinuously || gestureState.longPressTimer || furnitureModal.style.display === 'flex') {
                     if(hoveredObject) {
-                        setObjectTransparency(hoveredObject, false);
-                        hoveredObject = null;
-                        updateUI();
+                                setObjectTransparency(hoveredObject, false);
+                                hoveredObject = null;
+                                updateUI();
                     }
                     return;
                 }
