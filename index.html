@@ -1494,7 +1494,7 @@
 
                 modalContent.addEventListener('touchstart', (e) => {
                     // カテゴリタブ、閉じるボタン、検索入力、グリッドアイテム上でのスワイプは処理しない
-                    if (e.target.closest('.category-tab-button') || e.target.closest('#close-modal-button') || e.target.closest('#search-input') || e.target.closest('.grid-item')) {
+                    if (e.target.closest('.category-tab-button') || e.target.closest('#close-modal-button') || e.target.closest('#search-input')) {
                         return; 
                     }
                     touchStartX = e.changedTouches[0].clientX;
@@ -1502,7 +1502,7 @@
 
                 modalContent.addEventListener('touchend', (e) => {
                     // touchstartで除外したものと同じ要素を再度チェック
-                    if (e.target.closest('.category-tab-button') || e.target.closest('#close-modal-button') || e.target.closest('#search-input') || e.target.closest('.grid-item')) {
+                    if (e.target.closest('.category-tab-button') || e.target.closest('#close-modal-button') || e.target.closest('#search-input')) {
                         return; 
                     }
                     touchEndX = e.changedTouches[0].clientX;
