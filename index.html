@@ -232,9 +232,6 @@
             display: none;
             align-items: center;
             pointer-events: auto;
-            flex-shrink: 0;
-            user-select: none;
-            -webkit-user-select: none;
         }
         .circle-button {
             width: 64px;
@@ -624,8 +621,8 @@
             box-sizing: border-box;
 
             /* ▼▼▼ ここを調整します ▼▼▼ */
-            width: 90px;   /* 各ボタンの横幅 */
-            height: 90px;  /* 各ボタンの縦幅（正方形に近づける） */
+            width: 90px;    /* 各ボタンの横幅 */
+            height: 90px;   /* 各ボタンの縦幅（正方形に近づける） */
             /* ▲▲▲ ここまで調整します ▲▲▲ */
         }
         .grid-item:hover {
@@ -811,7 +808,7 @@
                                     <div class="help-card">
                                         <div class="icon-container">
                                             <svg fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="transform: rotate(180deg);">
-                                                   <path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 1 0 12h3" />
+                                               <path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 1 0 12h3" />
                                             </svg>
                                         </div>
                                         <h4>回転</h4>
@@ -903,9 +900,9 @@
                     <button id="close-modal-button">&times;</button>
                 </div>
                 <div id="category-tabs">
-                    </div>
+                </div>
                 <div id="furniture-grid">
-                    </div>
+                </div>
             </div>
         </div>
 
@@ -1135,16 +1132,21 @@
             }
 
             // ★新しい関数: カテゴリタブを生成する
+            // 既存のpopulateCategories関数に、スワイプ用のカテゴリ管理と初期アクティブ設定を追加
+            const categoryTabsContainer = document.getElementById('category-tabs');
+            let allCategories = []; // すべてのカテゴリを保持する配列
+            let currentCategoryIndex = 0; // 現在選択されているカテゴリのインデックス
+
+            function updateAllCategories() {
+                allCategories = [...new Set(furnitureData.map(item => item.category))].sort();
+                allCategories.unshift('すべて'); // 「すべて」タブを先頭に追加
+            }
+
             function populateCategories() {
-                const categoryTabsContainer = document.getElementById('category-tabs');
                 categoryTabsContainer.innerHTML = ''; // 既存のタブをクリア
+                updateAllCategories(); // カテゴリリストを更新
 
-                // furnitureDataからユニークなカテゴリを取得し、ソート
-                const categories = [...new Set(furnitureData.map(item => item.category))].sort();
-                // 「すべて」タブを先頭に追加
-                categories.unshift('すべて');
-
-                categories.forEach(category => {
+                allCategories.forEach(category => {
                     const tabButton = document.createElement('button');
                     tabButton.className = 'category-tab-button';
                     tabButton.textContent = category;
@@ -1157,6 +1159,8 @@
                         });
                         // クリックされたタブに active クラスを追加
                         tabButton.classList.add('active');
+                        // 現在のカテゴリインデックスを更新
+                        currentCategoryIndex = allCategories.indexOf(category);
                         // 選択されたカテゴリの家具を表示
                         displayFurniture(category);
                     });
@@ -1164,10 +1168,8 @@
                 });
 
                 // 初期状態で「すべて」タブをアクティブにする
-                const allTab = categoryTabsContainer.querySelector('[data-category="すべて"]');
-                if (allTab) {
-                    allTab.classList.add('active');
-                }
+                currentCategoryIndex = 0; // 「すべて」は常にインデックス0
+                activateCategoryTab(allCategories[currentCategoryIndex]);
             }
 
             // ★新しい関数: 指定されたカテゴリの家具を表示する
@@ -1211,15 +1213,15 @@
             function setupUI() {
                 const furnitureModal = document.getElementById('furniture-modal');
                 const closeModalButton = document.getElementById('close-modal-button');
-                const categoryTabsContainer = document.getElementById('category-tabs'); // Get the category tabs container
+                // const furnitureGrid = document.getElementById('furniture-grid'); // この行はdisplayFurniture内で使用するため不要に
 
                 // add-buttonクリック時、家具モーダルを表示し、カテゴリタブと家具を初期化・表示
                 document.getElementById('add-button').addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (appState === 'IDLE') {
                         furnitureModal.style.display = 'flex';
-                        populateCategories(); // カテゴリタブを生成
-                        displayFurniture('すべて'); // デフォルトで「すべて」カテゴリの家具を表示
+                        populateCategories(); // カテゴリタブを生成・初期化
+                        // displayFurniture('すべて'); // populateCategories内で呼び出されるため不要
                     }
                 });
 
@@ -1337,56 +1339,53 @@
                 sliderHandle.addEventListener('touchstart', onSliderDragStart, { passive: false });
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
-
-                // --- Category Tab Swiping Logic ---
-                let startX = 0;
-                let isSwiping = false;
-                const swipeThreshold = 50; // Minimum horizontal pixels to register a swipe
+            
+                // ★家具モーダルでのスワイプイベントリスナー
+                let touchStartX = 0;
+                let touchEndX = 0;
+                const swipeThreshold = 50; // スワイプと認識する最小距離（ピクセル）
 
                 categoryTabsContainer.addEventListener('touchstart', (e) => {
-                    startX = e.touches[0].clientX;
-                    isSwiping = true;
-                }, { passive: true }); // Use passive: true as we don't preventDefault here
-
-                categoryTabsContainer.addEventListener('touchmove', (e) => {
-                    if (!isSwiping) return;
-                    // You might add some logic here if you want visual feedback during swipe
+                    touchStartX = e.changedTouches[0].clientX;
                 }, { passive: true });
 
                 categoryTabsContainer.addEventListener('touchend', (e) => {
-                    if (!isSwiping) return;
-                    const endX = e.changedTouches[0].clientX;
-                    const diffX = startX - endX; // Positive for left swipe, negative for right swipe
+                    touchEndX = e.changedTouches[0].clientX;
+                    handleSwipeGesture();
+                }, { passive: true });
 
-                    isSwiping = false;
+                function handleSwipeGesture() {
+                    const swipeDistance = touchEndX - touchStartX;
 
-                    if (Math.abs(diffX) > swipeThreshold) {
-                        const currentActiveTab = categoryTabsContainer.querySelector('.category-tab-button.active');
-                        if (!currentActiveTab) return;
-
-                        const allTabs = Array.from(categoryTabsContainer.children);
-                        const currentIndex = allTabs.indexOf(currentActiveTab);
-
-                        let nextIndex = -1;
-
-                        if (diffX > 0) { // Swiped left (show next category)
-                            if (currentIndex < allTabs.length - 1) {
-                                nextIndex = currentIndex + 1;
+                    if (Math.abs(swipeDistance) > swipeThreshold) {
+                        if (swipeDistance < 0) { // 左スワイプ（次のカテゴリへ）
+                            currentCategoryIndex++;
+                            if (currentCategoryIndex >= allCategories.length) {
+                                currentCategoryIndex = 0; // 最後まで行ったら最初に戻る
                             }
-                        } else { // Swiped right (show previous category)
-                            if (currentIndex > 0) {
-                                nextIndex = currentIndex - 1;
+                        } else { // 右スワイプ（前のカテゴリへ）
+                            currentCategoryIndex--;
+                            if (currentCategoryIndex < 0) {
+                                currentCategoryIndex = allCategories.length - 1; // 最初まで行ったら最後に戻る
                             }
                         }
-
-                        if (nextIndex !== -1) {
-                            allTabs[nextIndex].click(); // Simulate a click on the next/previous tab
-                            // Optional: Scroll the tab into view if it's off-screen
-                            allTabs[nextIndex].scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
-                        }
+                        const newCategory = allCategories[currentCategoryIndex];
+                        activateCategoryTab(newCategory); // 新しいカテゴリのタブをアクティブにする
+                        displayFurniture(newCategory); // 家具表示を更新
                     }
-                });
-                // --- End Category Tab Swiping Logic ---
+                }
+
+                // アクティブなカテゴリタブを更新し、スクロールするヘルパー関数
+                function activateCategoryTab(categoryToActivate) {
+                    document.querySelectorAll('.category-tab-button').forEach(btn => {
+                        btn.classList.remove('active');
+                        if (btn.dataset.category === categoryToActivate) {
+                            btn.classList.add('active');
+                            // アクティブなタブがビューポート内に収まるようにスクロール
+                            btn.scrollIntoView({ behavior: 'smooth', inline: 'center' });
+                        }
+                    });
+                }
             }
 
             function setupRotationButtonEvents(button, direction) {
@@ -1456,17 +1455,7 @@
             }
 
             function handleTouchStart(event) {
-                // Prevent interaction with the overlay if a modal is open (furnitureModal, helpModal, confirmDialog)
-                if (furnitureModal.style.display === 'flex' || helpModal.style.display === 'flex' || confirmDialog.style.display === 'flex') {
-                    // Allow touches on the furniture modal to handle its internal logic (like category swipes)
-                    if (event.target.closest('#furniture-modal') || event.target.closest('#help-modal') || event.target.closest('#confirm-dialog')) {
-                        return; // Let the modal's own touch listeners handle it
-                    }
-                    event.preventDefault(); // Otherwise, prevent interaction with the underlying AR scene
-                    return;
-                }
-
-                if (event.target !== event.currentTarget) return; // Only process touches directly on the overlay
+                if (event.target !== event.currentTarget || confirmDialog.style.display === 'flex') return;
                 event.preventDefault();
 
                 gestureState.touchCount = event.touches.length;
@@ -1526,17 +1515,7 @@
             }
 
             function handleTouchMove(event) {
-                 // Prevent interaction with the overlay if a modal is open (furnitureModal, helpModal, confirmDialog)
-                if (furnitureModal.style.display === 'flex' || helpModal.style.display === 'flex' || confirmDialog.style.display === 'flex') {
-                    // Allow touches on the modal itself to handle its internal logic
-                    if (event.target.closest('#furniture-modal') || event.target.closest('#help-modal') || event.target.closest('#confirm-dialog')) {
-                        return;
-                    }
-                    event.preventDefault(); // Otherwise, prevent interaction with the underlying AR scene
-                    return;
-                }
-
-                if (event.target !== event.currentTarget) return;
+                if (event.target !== event.currentTarget || confirmDialog.style.display === 'flex') return;
                 event.preventDefault();
 
                 if (gestureState.longPressTimer) {
@@ -1576,15 +1555,6 @@
             }
 
             function handleTouchEnd(event) {
-                // Prevent interaction with the overlay if a modal is open (furnitureModal, helpModal, confirmDialog)
-                if (furnitureModal.style.display === 'flex' || helpModal.style.display === 'flex' || confirmDialog.style.display === 'flex') {
-                    // Allow touches on the modal itself to handle its internal logic
-                    if (event.target.closest('#furniture-modal') || event.target.closest('#help-modal') || event.target.closest('#confirm-dialog')) {
-                        return;
-                    }
-                    return; // Otherwise, do not process touch end for the AR scene
-                }
-
                 if (event.target !== event.currentTarget) return;
 
                 const wasLongPressTriggered = !gestureState.longPressTimer;
@@ -1832,7 +1802,7 @@
             }
 
             function handleHover() {
-                if (gestureState.isInteracting || isRotatingContinuously || gestureState.longPressTimer || furnitureModal.style.display === 'flex') {
+                if (gestureState.isInteracting || isRotatingContinuously || gestureState.longPressTimer) {
                     if(hoveredObject) {
                                 setObjectTransparency(hoveredObject, false);
                                 hoveredObject = null;
