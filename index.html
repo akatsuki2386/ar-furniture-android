@@ -591,6 +591,81 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
+        /* カテゴリタブのスタイル */
+        #category-tabs {
+            display: flex;
+            justify-content: center;
+            gap: 8px;
+            padding: 10px 20px;
+            background-color: rgba(0, 0, 0, 0.2);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+            overflow-x: auto; /* タブが多くなった場合にスクロール可能にする */
+            -webkit-overflow-scrolling: touch; /* iOSでのスムーズなスクロール */
+            white-space: nowrap; /* タブが改行されないようにする */
+            flex-shrink: 0; /* モーダルサイズ変更時に縮小されないようにする */
+            border-radius: 20px 20px 0 0; /* 上部の角を丸くする */
+        }
+        
+        .category-tab-button {
+            background-color: rgba(255, 255, 255, 0.1);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 8px 18px;
+            border-radius: 9999px; /* 角を非常に丸くする */
+            cursor: pointer;
+            font-size: 0.9rem;
+            font-weight: bold;
+            transition: background-color 0.2s ease, color 0.2s ease;
+            flex-shrink: 0; /* ボタン自体が縮小されないようにする */
+        }
+        
+        .category-tab-button.active {
+            background-color: white;
+            color: #1A202C; /* 背景色に合わせて文字色を濃くする */
+        }
+        
+        .category-tab-button:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+        }
+        
+        /* 家具グリッドアイテムのスタイル調整 */
+        #furniture-grid {
+            /* 既存のスタイルに加えて、必要に応じて調整 */
+            padding-top: 15px; /* タブとの間に少しスペースを空ける */
+            padding-bottom: 15px;
+        }
+        
+        .grid-item {
+            flex-direction: column; /* 画像とテキストを縦に並べる */
+            padding: 10px; /* パディングを少し調整 */
+        }
+        
+        .grid-item img {
+            display: block; /* 画像を表示する */
+            width: 80px; /* サムネイルの幅を調整 */
+            height: 80px; /* サムネイルの高さを調整 */
+            object-fit: contain; /* 画像がはみ出さないように調整 */
+            margin-bottom: 8px; /* 画像とテキストの間のスペース */
+            background-color: rgba(255, 255, 255, 0.1); /* サムネイル背景 */
+            border-radius: 8px; /* 角を丸くする */
+            padding: 5px; /* 画像内の余白 */
+        }
+        
+        .grid-item p {
+            font-size: 0.85rem; /* テキストサイズを調整 */
+            font-weight: normal; /* 太字ではないほうが良い場合 */
+        }
+        
+        /* モーダルヘッダーのボーダーを削除 (カテゴリタブにボーダーを移すため) */
+        #modal-header {
+            border-bottom: none; 
+        }
+        
+        /* モーダルのコンテンツの角を丸くするのをカテゴリタブに移す */
+        #modal-content {
+            border-radius: 20px;
+            overflow: hidden; /* 子要素が丸みをはみ出さないように */
+        }
 
     </style>
 </head>
@@ -834,6 +909,8 @@
                     <h2>家具を選択</h2>
                     <button id="close-modal-button">&times;</button>
                 </div>
+                <div id="category-tabs">
+                    </div>
                 <div id="furniture-grid">
                     </div>
             </div>
