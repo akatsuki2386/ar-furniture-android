@@ -515,17 +515,16 @@
             box-sizing: border-box;
         }
 
-        /* 家具選択モーダルの最大幅を調整（片手操作向け） */
+        /* modal-content スタイルの変更 */
         #modal-content {
             max-width: 380px; /* 例: 縦スクロールでも片手で操作しやすい幅 */
             max-height: 70vh; /* 高さの最大値を維持 */
-            border-radius: 16px; /* 角の丸み */
+            border-radius: 20px; /* 角の丸み */
             overflow: hidden; /* 子要素が丸みをはみ出さないように */
             display: flex; /* Flexboxにして子要素の配置を制御 */
             flex-direction: column; /* 垂直方向に要素を並べる */
-            backdrop-filter: blur(15px);
-            -webkit-backdrop-filter: blur(15px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            animation: fadeIn 0.3s ease-out;
+            position: relative;
         }
 
         #modal-header {
@@ -536,13 +535,9 @@
             border-bottom: none; /* カテゴリタブにボーダーを移すため削除 */
             flex-shrink: 0;
         }
-        #modal-header h2 {
-            margin: 0;
-            font-size: 1.2rem;
-        }
         #close-modal-button {
             position: absolute;
-            bottom: -85px;
+            bottom: -85px; 
             left: 50%;
             transform: translateX(-50%);
             background: rgba(255,255,255,0.2);
@@ -571,7 +566,7 @@
             -webkit-overflow-scrolling: touch; /* iOSでのスムーズなスクロール */
             white-space: nowrap; /* タブが改行されないようにする */
             flex-shrink: 0; /* モーダルサイズ変更時に縮小されないようにする */
-            border-radius: 0; /* 上部の角を丸くする */
+            border-radius: 20px 20px 0 0; /* 上部の角を丸くする */
         }
 
         .category-tab-button {
@@ -599,7 +594,7 @@
         /* 家具グリッドのスタイル調整（縦スクロール対応） */
         #furniture-grid {
             display: grid; /* グリッド表示に戻す */
-            grid-template-columns: repeat(3, 1fr); /* 例: 2列に固定 */
+            grid-template-columns: repeat(2, 1fr); /* 例: 2列に固定 */
             gap: 15px; /* アイテム間のギャップ */
             padding: 20px; /* パディング */
             overflow-y: auto; /* 縦方向のスクロールを有効にする */
@@ -607,37 +602,43 @@
             flex: 1; /* 親のFlexコンテナ内で残りのスペースを埋める */
             min-height: 0; /* flexアイテムの最小高さを設定 */
             box-sizing: border-box; /* paddingを含めて幅を計算 */
-            background-color: rgba(45, 55, 72, 0.7); /* 例: 少し暗い色 */
         }
-
+        
         .grid-item {
-            flex-direction: column; /* 画像とテキストを縦に並べる */
-            justify-content: center; /* 縦方向中央揃え */
-            align-items: center; /* 横方向中央揃え */
-            padding: 10px; /* パディングを少し調整 */
-            /* widthの固定は不要 */
+            cursor: pointer;
             text-align: center;
+            background-color: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 10px; /* パディングを少し調整 */
+            transition: background-color 0.2s ease;
+            display: flex;
+            flex-direction: column; /* 画像とテキストを縦に並べる */
+            justify-content: center;
+            align-items: center;
+            /* widthの固定は不要 */
+            box-sizing: border-box; /* paddingを含めて幅を計算 */
         }
-
+        .grid-item:hover {
+            background-color: rgba(255,255,255,0.15);
+        }
         .grid-item img {
             display: block; /* 画像を表示する */
-            width: 60px; /* サムネイルの幅をさらに小さく */
-            height: 60px; /* サムネイルの高さも同様に */
+            width: 60px; /* サムネイルの幅を小さく */
+            height: 60px; /* サムネイルの高さを小さく */
             object-fit: contain; /* 画像がはみ出さないように調整 */
             margin-bottom: 8px; /* 画像とテキストの間のスペース */
             background-color: rgba(255, 255, 255, 0.1); /* サムネイル背景 */
             border-radius: 8px; /* 角を丸くする */
             padding: 5px; /* 画像内の余白 */
         }
-
         .grid-item p {
             margin: 0;
             font-size: 0.85rem; /* テキストサイズを調整 */
             font-weight: normal; /* 太字ではないほうが良い場合 */
+            color: #E2E8F0;
             white-space: normal; /* テキストが折り返されるように */
             word-break: break-word; /* 長い単語も折り返す */
         }
-
         @keyframes fadeIn {
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
@@ -934,7 +935,6 @@
                 { name: 'イス',   file: 'chair.glb',      height: 0.79, category: 'チェア', thumbnail: 'thumbnails/chair_thumb.png' },
                 { name: '本棚',   file: 'bookshelf.glb', height: 1.8,  category: '収納', thumbnail: 'thumbnails/bookshelf_thumb.png' }, 
                 { name: '脚立',   file: 'stand.glb',      height: 1.2,  category: 'その他', thumbnail: 'thumbnails/stand_thumb.png' },
-                // 例として追加する新しい家具データ
                 { name: 'ダイニングテーブル', file: 'dining_table.glb', height: 0.75, category: 'テーブル', thumbnail: 'thumbnails/dining_table_thumb.png' },
                 { name: 'ソファ', file: 'sofa.glb', height: 0.7, category: 'ソファ', thumbnail: 'thumbnails/sofa_thumb.png' },
                 { name: 'フロアランプ', file: 'floor_lamp.glb', height: 1.5, category: '照明', thumbnail: 'thumbnails/floor_lamp_thumb.png' },
@@ -1110,80 +1110,32 @@
                 setupUI();
             }
 
+            // ★ setupUI 関数の変更開始
             function setupUI() {
                 const furnitureModal = document.getElementById('furniture-modal');
                 const closeModalButton = document.getElementById('close-modal-button');
-                const furnitureGrid = document.getElementById('furniture-grid');
-                const categoryTabsContainer = document.getElementById('category-tabs'); // 新しく追加
-
-                // カテゴリを抽出
-                const categories = ['すべて', ...new Set(furnitureData.map(item => item.category))];
-                let activeCategory = categories[0]; // 初期アクティブカテゴリは「すべて」
-
-                // カテゴリタブを生成
-                categoryTabsContainer.innerHTML = ''; // クリア
-                categories.forEach(category => {
-                    const tabButton = document.createElement('button');
-                    tabButton.className = 'category-tab-button';
-                    tabButton.textContent = category;
-                    tabButton.dataset.category = category;
-                    if (category === activeCategory) {
-                        tabButton.classList.add('active');
-                    }
-                    tabButton.addEventListener('click', (e) => {
-                        e.stopPropagation();
-                        activeCategory = category;
-                        // すべてのタブから active クラスを削除
-                        document.querySelectorAll('.category-tab-button').forEach(btn => {
-                            btn.classList.remove('active');
-                        });
-                        // クリックされたタブに active クラスを追加
-                        e.target.classList.add('active');
-                        renderFurnitureGrid(activeCategory); // 家具グリッドを再描画
-                    });
-                    categoryTabsContainer.appendChild(tabButton);
-                });
-
-                // 家具グリッドを初期描画
-                renderFurnitureGrid(activeCategory);
+                // furnitureGrid は displayFurniture 関数内で操作されるため、ここでinnerHTMLクリアは不要
+                // const furnitureGrid = document.getElementById('furniture-grid');
+                // furnitureGrid.innerHTML = ''; 
                 
-                function renderFurnitureGrid(filterCategory) {
-                    furnitureGrid.innerHTML = ''; // 古いアイテムをクリア
-                    const filteredData = filterCategory === 'すべて' ? furnitureData : furnitureData.filter(item => item.category === filterCategory);
+                // ★カテゴリタブを生成・表示
+                populateCategoryTabs(); 
 
-                    filteredData.forEach(item => {
-                        const gridItem = document.createElement('div');
-                        gridItem.className = 'grid-item';
-                        gridItem.dataset.category = item.category; // カテゴリをデータ属性として追加
+                // ★すべての家具を表示する初期呼び出し（デフォルトカテゴリとして）
+                displayFurniture('全て'); 
 
-                        const img = document.createElement('img'); // imgタグを追加
-                        img.src = item.thumbnail;
-                        img.alt = item.name;
-                        gridItem.appendChild(img);
-                        
-                        const p = document.createElement('p');
-                        p.textContent = item.name;
-                        gridItem.appendChild(p);
-
-                        gridItem.addEventListener('click', (e) => {
-                            e.stopPropagation();
-                            currentFurniture = item;
-                            updatePreviewObject();
-                            appState = 'PLACING';
-                            furnitureModal.style.display = 'none';
-                            updateUI();
-                        });
-                        
-                        furnitureGrid.appendChild(gridItem);
-                    });
-                }
-
-
+                // --- 既存のイベントリスナー設定 ---
                 document.getElementById('add-button').addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (appState === 'IDLE') {
                         furnitureModal.style.display = 'flex';
-                        renderFurnitureGrid(activeCategory); // モーダルを開くときに現在のカテゴリで再描画
+                        // モーダルが開くときに「全て」タブをアクティブにして表示を更新
+                        displayFurniture('全て'); 
+                        const defaultTabButton = document.querySelector('.category-tab-button[data-category="全て"]'); 
+                        if (defaultTabButton) { 
+                            document.querySelectorAll('.category-tab-button').forEach(btn => btn.classList.remove('active')); 
+                            defaultTabButton.classList.add('active'); 
+                        } 
                     }
                 });
 
@@ -1222,8 +1174,8 @@
                     }
                 });
                 
-                tabButtons = document.querySelectorAll('.help-tab-button');
-                helpPages = document.querySelectorAll('.help-page');
+                tabButtons = document.querySelectorAll('.help-tab-button'); // ヘルプモーダル用のタブボタン
+                helpPages = document.querySelectorAll('.help-page'); // ヘルプモーダル用のページ
                 tabButtons.forEach(button => {
                     button.addEventListener('click', (e) => {
                         e.stopPropagation();
@@ -1302,6 +1254,7 @@
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
             }
+            // ★ setupUI 関数の変更終了
 
             function setupRotationButtonEvents(button, direction) {
                 let pressTimer = null;
@@ -1548,8 +1501,8 @@
                 previewObject.userData.initialScale = previewObject.scale.clone();
                 previewObject.userData.scaleMultiplier = 1.0;
                 previewObject.userData.centerOffset = initialCenter.multiplyScalar(scaleFactor);
-                // ❌マークのスケールを調整: 0.6から0.2へ変更
-                previewObject.userData.crossMarkScale = Math.max(size.x, size.z) * scaleFactor * 0.2; 
+                // ❌マークの大きさを調整
+                previewObject.userData.crossMarkScale = Math.max(size.x, size.z) * scaleFactor;
 
                 previewObject.visible = false;
                 scene.add(previewObject);
@@ -1882,9 +1835,8 @@
                                         const size = box.getSize(new THREE.Vector3());
                                         crossMark.position.y = activeObject.position.y + (size.y / 2) + 0.01; // 家具の底面から少し上に配置
                                         
-                                        // ❌マークのスケールを調整: previewObject.userData.crossMarkScale をそのまま使う
-                                        // updatePreviewObject() で 0.2 を乗算しているので、ここではそのまま適用
-                                        crossMark.scale.set(activeObject.userData.crossMarkScale, activeObject.userData.crossMarkScale, activeObject.userData.crossMarkScale);
+                                        const scale = activeObject.userData.crossMarkScale * 0.2; // ❌マークの大きさを0.2に修正
+                                        crossMark.scale.set(scale, scale, scale);
                                         crossMark.quaternion.copy(camera.quaternion); // カメラの向きに合わせる
                                     }
                                 } else {
