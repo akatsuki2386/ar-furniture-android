@@ -510,10 +510,9 @@
             display: none;
             justify-content: center;
             align-items: flex-end; /* 下に寄せる */
-            z-index: 250;
-            padding-bottom: 15vh; /* モーダルを画面下部から持ち上げる */
+            padding-bottom: 15vh; /* 初期値として設定。JSで動的に変更する */
             box-sizing: border-box;
-            
+            transition: padding-bottom 0.3s ease-out; /* 位置変更をスムーズにするためのトランジション */
         }
 
         /* modal-content スタイルの変更（縦スクロール向け） */
@@ -1188,6 +1187,7 @@
             let allCategories = []; // すべてのカテゴリを保持する配列
             let currentCategoryIndex = 0; // 現在選択されているカテゴリのインデックス
             let isSearching = false; // 検索モードかどうかを追跡するフラグ
+            let keyboardVisible = false; // キーボード表示状態を追跡するフラグ
 
             function updateAllCategories() {
                 allCategories = [...new Set(furnitureData.map(item => item.category))].sort();
@@ -1284,7 +1284,11 @@
             function setupUI() {
                 const furnitureModal = document.getElementById('furniture-modal');
                 const closeModalButton = document.getElementById('close-modal-button');
-                
+                const searchInput = document.getElementById('search-input'); // searchInputを再取得
+                const searchResultsGrid = document.getElementById('search-results-grid');
+                const furnitureGrid = document.getElementById('furniture-grid');
+                // const modalContent = document.getElementById('modal-content'); // グローバル変数にあるので再取得不要
+
                 // add-buttonクリック時、家具モーダルを表示し、カテゴリタブと家具を初期化・表示
                 document.getElementById('add-button').addEventListener('click', (e) => {
                     e.stopPropagation();
@@ -1293,16 +1297,19 @@
                         populateCategories(); // カテゴリタブを生成・初期化
                         // 初期表示は「すべて」カテゴリの家具リスト
                         displayFurniture('すべて');
-                        document.getElementById('search-results-grid').style.display = 'none'; // 検索結果グリッドを非表示に
-                        document.getElementById('furniture-grid').style.display = 'grid'; // 家具グリッドを表示に
-                        document.getElementById('search-input').value = ''; // 検索バーをクリア
+                        searchResultsGrid.style.display = 'none'; // 検索結果グリッドを非表示に
+                        furnitureGrid.style.display = 'grid'; // 家具グリッドを表示に
+                        searchInput.value = ''; // 検索バーをクリア
                         isSearching = false; // 検索モードをリセット
+                        resetModalPosition(); // モーダルの位置をリセット
                     }
                 });
 
                 const closeModal = (e) => {
                     e.stopPropagation();
                     furnitureModal.style.display = 'none';
+                    searchInput.blur(); // モーダルを閉じるときにキーボードも閉じる
+                    resetModalPosition(); // モーダルを閉じるときに位置をリセット
                 };
                 closeModalButton.addEventListener('click', closeModal);
                 furnitureModal.addEventListener('click', (e) => {
@@ -1415,10 +1422,16 @@
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
                 
-                // ★検索機能関連の追加
-                const searchInput = document.getElementById('search-input');
-                const searchResultsGrid = document.getElementById('search-results-grid');
-                // const furnitureGrid = document.getElementById('furniture-grid'); // setupUI関数内で既に取得済み
+                // ★ 検索機能関連のイベントリスナー
+                searchInput.addEventListener('focus', () => {
+                    // 検索入力欄にフォーカスが当たったら、キーボード表示に備える
+                    // ここでモーダルの高さを一時的に高くするなどの調整も可能ですが、
+                    // adjustModalPositionForKeyboard で padding-bottom を制御するため、直接的な高さ変更は不要かもしれません。
+                });
+
+                searchInput.addEventListener('blur', () => {
+                    // 検索入力欄からフォーカスが外れたら、adjustModalPositionForKeyboard が自動で位置をリセットします。
+                });
 
                 searchInput.addEventListener('input', () => {
                     const searchTerm = searchInput.value.toLowerCase().trim();
@@ -1444,6 +1457,8 @@
                             results.forEach(item => {
                                 searchResultsGrid.appendChild(createGridItem(item));
                             });
+                            // 検索結果が表示されたら、スクロールを一番上に
+                            searchResultsGrid.scrollTop = 0;
                         } else {
                             const noResults = document.createElement('p');
                             noResults.textContent = '該当する家具は見つかりませんでした。';
@@ -1483,610 +1498,72 @@
                         handleSwipeGesture();
                     }
                 }, { passive: true });
-            }
+            } // setupUI() の終わり
 
-            function getDistance(touches) {
-                const dx = touches[0].clientX - touches[1].clientX;
-                const dy = touches[0].clientY - touches[1].clientY;
-                return Math.sqrt(dx * dx + dy * dy);
-            }
+            // ★ キーボードの表示/非表示を検知し、モーダルの位置を調整する関数
+            function adjustModalPositionForKeyboard() {
+                const furnitureModal = document.getElementById('furniture-modal');
+                const searchInput = document.getElementById('search-input');
+                const modalContent = document.getElementById('modal-content');
 
-            function onObjectTap(event) {
-                const touch = event.changedTouches[0];
-                const tapPosition = new THREE.Vector2(
-                    (touch.clientX / window.innerWidth) * 2 - 1,
-                    - (touch.clientY / window.innerHeight) * 2 + 1
-                );
+                // visualViewport.height がキーボードが表示されると小さくなる
+                // window.innerHeight は通常、キーボードの有無にかかわらずスクロール可能なビューポート全体の高さを返す
+                // visualViewport.offsetTop は、キーボード表示時にビューポートの上端が移動する量を示す
+                const viewportHeight = window.visualViewport.height;
+                const windowHeight = window.innerHeight;
+                const modalHeight = modalContent.offsetHeight; // modal-content の現在の表示高さを取得
 
-                raycaster.setFromCamera(tapPosition, camera);
+                // キーボードが表示されているかどうかの基本的な判定
+                // window.innerHeight と visualViewport.height の差が一定以上あればキーボードと判断
+                const keyboardDelta = windowHeight - viewportHeight;
+                const isKeyboardReallyVisible = keyboardDelta > 100; // 100px以上の差があればキーボードと判断
 
-                if (appState === 'PLACING' || appState === 'EDITING') {
-                    const activeObject = appState === 'PLACING' ? previewObject : selectedObject;
-                    if (activeObject) {
-                        const intersects = raycaster.intersectObject(activeObject, true);
-                        if (intersects.length > 0) {
-                            onConfirm();
-                        }
+                // 検索入力欄がアクティブかどうか
+                const isSearchInputActive = (searchInput === document.activeElement);
+
+                if (isKeyboardReallyVisible && isSearchInputActive) {
+                    // キーボードが表示されており、かつ検索入力欄がアクティブな場合
+                    keyboardVisible = true;
+                    // キーボードの高さ（おおよそ）。visualViewport.offsetTop も考慮に入れるとより正確になることがある
+                    const keyboardHeight = keyboardDelta - window.visualViewport.offsetTop; 
+                    
+                    // モーダルをキーボードの上に出すための新しい padding-bottom
+                    // キーボード上端にモーダルの下端を合わせ、さらに少し余白を設ける
+                    let newPaddingBottom = keyboardHeight + 20; // キーボードの上に20pxの余白
+
+                    // モーダルが画面上端を突き抜けないようにする
+                    // モーダルの現在の高さ + 新しいpadding-bottom がビューポートの高さより大きい場合、調整
+                    if (modalHeight + newPaddingBottom > viewportHeight) {
+                        newPaddingBottom = viewportHeight - modalHeight - window.visualViewport.offsetTop; 
+                        // マイナスにならないようにし、最低限の余白を確保
+                        if (newPaddingBottom < 0) newPaddingBottom = 0; 
                     }
-                } else if (appState === 'IDLE') {
-                    const intersects = raycaster.intersectObjects(placedObjects, true);
-                    if (intersects.length > 0) {
-                        let targetObject = intersects[0].object;
-                        while(targetObject.parent && !placedObjects.includes(targetObject)) {
-                            targetObject = targetObject.parent;
-                        }
-                        if (placedObjects.includes(targetObject)) {
-                            selectAndEditObject(targetObject);
-                        }
-                    }
-                }
-            }
 
-            function handleLongPress(tappedObject) {
-                if (!tappedObject || confirmDialog.style.display === 'flex') return;
-                objectPendingDeletion = tappedObject;
-                confirmDialog.style.display = 'flex';
-            }
-
-            function handleTouchStart(event) {
-                if (event.target !== event.currentTarget || confirmDialog.style.display === 'flex') return;
-                event.preventDefault();
-
-                gestureState.touchCount = event.touches.length;
-                gestureState.startTime = Date.now();
-                gestureState.startX = event.touches[0].clientX;
-                gestureState.startY = event.touches[0].clientY;
-
-                if (gestureState.touchCount === 1) {
-                    if (!isEditMode) return;
-                    clearTimeout(gestureState.longPressTimer);
-                    gestureState.longPressTimer = setTimeout(() => {
-                        gestureState.longPressTimer = null;
-
-                        const tapPosition = new THREE.Vector2(
-                            (gestureState.startX / window.innerWidth) * 2 - 1,
-                            - (gestureState.startY / window.innerHeight) * 2 + 1
-                        );
-                        raycaster.setFromCamera(tapPosition, camera);
-
-                        let objectsToCheck = [];
-                        if (appState === 'IDLE') {
-                            objectsToCheck = placedObjects;
-                        } else if (appState === 'PLACING' && previewObject) {
-                            objectsToCheck = [previewObject];
-                        } else if (appState === 'EDITING' && selectedObject) {
-                            objectsToCheck = [selectedObject];
-                        }
-
-                        const intersects = raycaster.intersectObjects(objectsToCheck, true);
-
-                        if (intersects.length > 0) {
-                            let targetObject = intersects[0].object;
-                            while (targetObject.parent && !objectsToCheck.includes(targetObject)) {
-                                targetObject = targetObject.parent;
-                            }
-                            if (objectsToCheck.includes(targetObject)) {
-                                handleLongPress(targetObject);
-                            }
-                        }
-                    }, 800);
-                }
-
-                const activeObject = (appState === 'PLACING' || appState === 'EDITING') ? (previewObject || selectedObject) : null;
-                if (activeObject && isEditMode) {
-                    gestureState.isInteracting = true;
-                }
-
-                if (gestureState.touchCount === 1) {
-                    gestureState.lastX = event.touches[0].clientX;
-                } else if (gestureState.touchCount >= 2) {
-                    clearTimeout(gestureState.longPressTimer);
-                    gestureState.initialDistance = getDistance(event.touches);
-                    if (activeObject) {
-                        gestureState.originalMultiplier = activeObject.userData.scaleMultiplier || 1.0;
-                    }
-                }
-            }
-
-            function handleTouchMove(event) {
-                if (event.target !== event.currentTarget || confirmDialog.style.display === 'flex') return;
-                event.preventDefault();
-
-                if (gestureState.longPressTimer) {
-                    const moveX = event.touches[0].clientX;
-                    const moveY = event.touches[0].clientY;
-                    const distance = Math.sqrt(Math.pow(moveX - gestureState.startX, 2) + Math.pow(moveY - gestureState.startY, 2));
-                    if (distance > 10) {
-                       clearTimeout(gestureState.longPressTimer);
-                       gestureState.longPressTimer = null;
-                    }
-                }
-
-                if (!gestureState.isInteracting) return;
-                const activeObject = (appState === 'PLACING' || appState === 'EDITING') ? (previewObject || selectedObject) : null;
-                if (!activeObject || !isEditMode) return;
-
-                if (gestureState.touchCount === 1 && event.touches.length === 1) {
-                    const currentX = event.touches[0].clientX;
-                    const deltaX = currentX - gestureState.lastX;
-                    activeObject.rotation.y += deltaX * 0.01;
-                    gestureState.lastX = currentX;
-
-                } else if (gestureState.touchCount >= 2 && event.touches.length >= 2) {
-                    if (gestureState.initialDistance === 0) return;
-                    const currentDistance = getDistance(event.touches);
-                    const scaleRatio = currentDistance / gestureState.initialDistance;
-
-                    let newMultiplier = gestureState.originalMultiplier * scaleRatio;
-                    newMultiplier = Math.max(0.5, Math.min(2.0, newMultiplier));
-
-                    activeObject.scale.copy(activeObject.userData.initialScale).multiplyScalar(newMultiplier);
-                    activeObject.userData.scaleMultiplier = newMultiplier;
-
-                    const percent = (newMultiplier - 0.5) / 1.5;
-                    updateSliderHandlePosition(percent);
-                }
-            }
-
-            function handleTouchEnd(event) {
-                if (event.target !== event.currentTarget) return;
-
-                const wasLongPressTriggered = !gestureState.longPressTimer;
-                clearTimeout(gestureState.longPressTimer);
-                gestureState.longPressTimer = null;
-
-                const touchDuration = Date.now() - gestureState.startTime;
-                const touchEndX = event.changedTouches[0].clientX;
-                const touchEndY = event.changedTouches[0].clientY;
-                const distanceMoved = Math.sqrt(
-                    Math.pow(touchEndX - gestureState.startX, 2) +
-                    Math.pow(touchEndY - gestureState.startY, 2)
-                );
-
-                if (!wasLongPressTriggered && touchDuration < 200 && distanceMoved < 10) {
-                    onObjectTap(event);
-                }
-
-                if (event.touches.length === 0) {
-                    gestureState.isInteracting = false;
-                }
-                if (event.touches.length > 0 && event.touches.length !== gestureState.touchCount) {
-                    handleTouchStart(event);
-                }
-                gestureState.touchCount = event.touches.length;
-            }
-
-            function updateSliderForObject(object) {
-                if (!object) return;
-                const multiplier = object.userData.scaleMultiplier || 1.0;
-                const percent = (multiplier - 0.5) / 1.5;
-                updateSliderHandlePosition(percent);
-            }
-
-            function updateSliderHandlePosition(percent) {
-                const handleWidth = sliderHandle.offsetWidth;
-                const trackWidth = sliderTrack.offsetWidth;
-                sliderHandle.style.left = `calc(${percent * 100}% - ${handleWidth * percent}px)`;
-
-                const scale = 0.8 + 0.4 * percent;
-                sliderHandle.style.transform = `translateY(-50%) scale(${scale})`;
-            }
-
-            function updateScaleFromSlider(percent) {
-                const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
-                if (!activeObject) return;
-
-                const multiplier = 0.5 + percent * 1.5;
-                activeObject.userData.scaleMultiplier = multiplier;
-
-                const initialScale = activeObject.userData.initialScale;
-                activeObject.scale.copy(initialScale).multiplyScalar(multiplier);
-
-                updateSliderHandlePosition(percent);
-            }
-
-            function updatePreviewObject() {
-                if (previewObject) {
-                    scene.remove(previewObject);
-                    previewObject = null;
-                }
-                const gltf = preloadedModels.get(currentFurniture.file);
-                if (!gltf) return;
-
-                previewObject = gltf.scene.clone();
-                setObjectTransparency(previewObject, true);
-
-                const initialBox = new THREE.Box3().setFromObject(previewObject);
-                const initialCenter = new THREE.Vector3();
-                initialBox.getCenter(initialCenter);
-
-                const size = initialBox.getSize(new THREE.Vector3());
-                const scaleFactor = currentFurniture.height / size.y;
-                previewObject.scale.set(scaleFactor, scaleFactor, scaleFactor);
-
-                previewObject.userData.initialScale = previewObject.scale.clone();
-                previewObject.userData.scaleMultiplier = 1.0;
-                previewObject.userData.centerOffset = initialCenter.multiplyScalar(scaleFactor);
-                // ❌マークの大きさを調整 (0.2に修正)
-                previewObject.userData.crossMarkScale = Math.max(size.x, size.z) * scaleFactor;
-
-                previewObject.visible = false;
-                scene.add(previewObject);
-                updateSliderForObject(previewObject);
-            }
-
-            function onSelect() {
-                if (hoveredObject) {
-                    selectAndEditObject(hoveredObject);
-                }
-            }
-
-            function selectAndEditObject(objectToEdit) {
-                if (!isEditMode || appState !== 'IDLE' || !objectToEdit) return;
-
-                if (selectedObject) {
-                    setObjectTransparency(selectedObject, false);
-                }
-                selectedObject = objectToEdit;
-                if (hoveredObject === selectedObject) {
-                    hoveredObject = null;
-                }
-
-                setObjectTransparency(selectedObject, true);
-                appState = 'EDITING';
-                updateUI();
-                updateSliderForObject(selectedObject);
-            }
-
-            function onConfirm() {
-                if (appState === 'PLACING') {
-                    placeNewObject();
-                } else if (appState === 'EDITING') {
-                    setObjectTransparency(selectedObject, false);
-                    selectedObject = null;
-                    appState = 'IDLE';
-                    updateUI();
-                }
-            }
-
-            function onRotate(direction) {
-                const target = (appState === 'PLACING') ? previewObject : selectedObject;
-                if (target) {
-                    target.rotation.y += (Math.PI / 4) * direction;
-                }
-            }
-
-            function startDeleteAnimation(objectToDelete) {
-                if (!objectToDelete) return;
-
-                const indexInPlaced = placedObjects.indexOf(objectToDelete);
-                if (indexInPlaced > -1) {
-                    placedObjects.splice(indexInPlaced, 1);
-                }
-
-                objectsToDelete.push({
-                    object: objectToDelete,
-                    startTime: clock.getElapsedTime(),
-                    duration: 0.3,
-                    initialY: objectToDelete.position.y
-                });
-
-                if (objectToDelete === selectedObject) {
-                    selectedObject = null;
-                    appState = 'IDLE';
-                    updateUI();
-                } else if (appState === 'PLACING' && objectToDelete === previewObject) {
-                    previewObject = null;
-                    appState = 'IDLE';
-                    updateUI();
-                }
-            }
-
-            function onDelete() {
-                if (appState === 'EDITING' && selectedObject) {
-                    handleLongPress(selectedObject);
-                } else if (appState === 'PLACING' && previewObject) {
-                    handleLongPress(previewObject);
-                }
-            }
-
-            function placeNewObject() {
-                if (!previewObject) return;
-                const solidObject = previewObject.clone();
-                setObjectTransparency(solidObject, false);
-
-                solidObject.position.copy(previewObject.position);
-                solidObject.rotation.copy(previewObject.rotation);
-                solidObject.scale.copy(previewObject.scale);
-                solidObject.userData = JSON.parse(JSON.stringify(previewObject.userData));
-
-                scene.add(solidObject);
-                placedObjects.push(solidObject);
-                scene.remove(previewObject);
-                previewObject = null;
-                appState = 'IDLE';
-                updateUI();
-            }
-
-            function setObjectTransparency(object, isTransparent, opacity = 0.7) {
-                if (!object) return;
-                object.traverse(child => {
-                    if (child.isMesh) {
-                        child.material.transparent = true;
-                        child.material.opacity = isTransparent ? opacity : 1.0;
-                    }
-                });
-            }
-
-            function updateUI() {
-                const addButton = document.getElementById('add-button');
-                const editButton = document.getElementById('edit-button');
-                const modeSwitchButton = document.getElementById('mode-switch-button');
-                const editModeLabel = document.getElementById('edit-mode-label');
-                const viewModeLabel = document.getElementById('view-mode-label');
-
-                const helpButton = document.getElementById('help-button');
-                const transformControls = document.getElementById('transform-controls');
-                const decisionControls = document.getElementById('decision-controls');
-                const decisionConfirmButton = document.querySelector('#decision-controls #confirm-button');
-
-                document.getElementById('exit-ar-button').style.display = 'flex';
-                helpButton.style.display = 'flex';
-                modeSwitchButton.style.display = 'flex';
-
-                if (appState === 'PLACING' || appState === 'EDITING') {
-                    modeSwitchButton.style.opacity = '0.5';
-                    modeSwitchButton.style.cursor = 'not-allowed';
+                    furnitureModal.style.paddingBottom = `${newPaddingBottom}px`;
+                    furnitureModal.style.justifyContent = 'center'; // 中央揃えにすることで、モーダルを浮かせやすくする
                 } else {
-                    modeSwitchButton.style.opacity = '1';
-                    modeSwitchButton.style.cursor = 'pointer';
-                }
-
-                if (isEditMode) {
-                    editModeLabel.classList.add('active');
-                    viewModeLabel.classList.remove('active');
-
-                    addButton.style.display = 'none';
-                    editButton.style.display = 'none';
-                    transformControls.style.display = 'none';
-                    decisionControls.style.display = 'none';
-
-                    switch (appState) {
-                        case 'IDLE':
-                            addButton.style.display = isFloorDetected ? 'flex' : 'none';
-                            if (hoveredObject) {
-                                editButton.style.display = 'flex';
-                            }
-                            break;
-                        case 'PLACING':
-                        case 'EDITING':
-                            transformControls.style.display = 'flex';
-                            decisionControls.style.display = 'flex';
-                            break;
-                    }
-                } else {
-                    editModeLabel.classList.remove('active');
-                    viewModeLabel.classList.add('active');
-
-                    addButton.style.display = 'none';
-                    editButton.style.display = 'none';
-                    transformControls.style.display = 'none';
-                    decisionControls.style.display = 'none';
+                    // キーボードが非表示、または検索入力欄がアクティブでない場合
+                    keyboardVisible = false;
+                    resetModalPosition();
                 }
             }
 
-            function handleHover() {
-                if (gestureState.isInteracting || isRotatingContinuously || gestureState.longPressTimer) {
-                    if(hoveredObject) {
-                                setObjectTransparency(hoveredObject, false);
-                                hoveredObject = null;
-                                updateUI();
-                    }
-                    return;
-                }
-
-                if (!isEditMode || appState !== 'IDLE') {
-                    if (hoveredObject) {
-                        setObjectTransparency(hoveredObject, false);
-                        hoveredObject = null;
-                        updateUI();
-                    }
-                    return;
-                }
-
-                raycaster.setFromCamera({ x: 0, y: 0 }, camera);
-                const intersects = raycaster.intersectObjects(placedObjects, true);
-                let newHoveredObject = null;
-                if (intersects.length > 0) {
-                    let currentObject = intersects[0].object;
-                    while (currentObject) {
-                        if (placedObjects.includes(currentObject)) {
-                            newHoveredObject = currentObject;
-                            break;
-                        }
-                        currentObject = currentObject.parent;
-                    }
-                }
-
-                if (newHoveredObject !== hoveredObject) {
-                    if (hoveredObject) setObjectTransparency(hoveredObject, false);
-                    if (newHoveredObject && newHoveredObject !== selectedObject) {
-                        setObjectTransparency(newHoveredObject, true);
-                    }
-                    hoveredObject = newHoveredObject;
-                    updateUI();
-                }
+            function resetModalPosition() {
+                const furnitureModal = document.getElementById('furniture-modal');
+                furnitureModal.style.paddingBottom = '15vh'; // 初期値に戻す
+                furnitureModal.style.justifyContent = 'flex-end'; // 下に寄せるに戻す
             }
 
-            function startDotAnimation() {
-                if (dotAnimationTimer) return;
-                const dotsElement = document.getElementById('loading-dots');
-                if (!dotsElement) return;
 
-                let dotCount = 0;
-                const dots = ['・', '・・', '・・・'];
-
-                dotAnimationTimer = setInterval(() => {
-                    dotsElement.textContent = dots[dotCount % dots.length];
-                    dotCount++;
-                }, 400);
+            // visualViewport の resize イベントを監視
+            if (window.visualViewport) {
+                window.visualViewport.addEventListener('resize', adjustModalPositionForKeyboard);
+                // 初期ロード時にも位置調整を実行
+                adjustModalPositionForKeyboard();
+            } else {
+                console.warn('visualViewport API is not supported. Keyboard avoidance may not work as expected.');
             }
-
-            function stopDotAnimation() {
-                if (dotAnimationTimer) {
-                    clearInterval(dotAnimationTimer);
-                    dotAnimationTimer = null;
-                }
-            }
-
-            function animate() {
-                renderer.setAnimationLoop(render);
-            }
-
-            function render() {
-                const elapsedTime = clock.getElapsedTime();
-
-                for (let i = objectsToDelete.length - 1; i >= 0; i--) {
-                    const item = objectsToDelete[i];
-                    const progress = (elapsedTime - item.startTime) / item.duration;
-
-                    if (progress < 1) {
-                        item.object.position.y = item.initialY + progress * 0.5;
-                        const opacity = 1.0 - progress;
-                        setObjectTransparency(item.object, true, opacity);
-                    } else {
-                        scene.remove(item.object);
-                        objectsToDelete.splice(i, 1);
-                    }
-                }
-
-                if (!renderer.xr.isPresenting) {
-                    return;
-                }
-
-                if (isRotatingContinuously && (appState === 'PLACING' || appState === 'EDITING')) {
-                    const target = (appState === 'PLACING') ? previewObject : selectedObject;
-                    if (target) {
-                        const rotationSpeed = 0.04;
-                        target.rotation.y += rotationSpeed * continuousRotationDirection;
-                    }
-                }
-
-                handleHover();
-
-                const instructionText = document.getElementById('instruction-text');
-                let isPlaceable = false;
-                const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
-
-                if (renderer.xr.getFrame()) {
-                    const frame = renderer.xr.getFrame();
-                    const referenceSpace = renderer.xr.getReferenceSpace();
-                    if (hitTestSource) {
-                        const hitTestResults = frame.getHitTestResults(hitTestSource);
-
-                        if (hitTestResults.length > 0) {
-                            const hit = hitTestResults[0];
-                            const hitPose = hit.getPose(referenceSpace);
-                            const hitY = hitPose.transform.position.y;
-
-                            if (floorY === null) floorY = hitY;
-
-                            if (!isFloorDetected) {
-                                isFloorDetected = true;
-                                updateUI();
-                            }
-
-                            const Y_TOLERANCE = 0.2; // 20cmの許容範囲
-                            const isOnFloor = Math.abs(hitY - floorY) < Y_TOLERANCE;
-
-                            if(reticle) reticle.matrix.fromArray(hitPose.transform.matrix);
-
-                            if (instructionText.style.display !== 'none') {
-                                instructionText.style.display = 'none';
-                                stopDotAnimation();
-                            }
-
-                            if (isEditMode) {
-                                if (activeObject && !gestureState.isInteracting && !isRotatingContinuously) {
-                                    activeObject.position.setFromMatrixPosition(reticle.matrix);
-                                }
-                                if(activeObject) activeObject.visible = true;
-
-                                if (appState === 'PLACING' || appState === 'EDITING') {
-                                    // 衝突判定ロジック
-                                    let isColliding = false;
-                                    if (activeObject) { // activeObjectが存在する場合のみ衝突判定を行う
-                                        const activeObjectBox = new THREE.Box3().setFromObject(activeObject);
-                                        for (const placedObj of placedObjects) {
-                                            if (placedObj === activeObject) continue; // 自身とは衝突判定しない
-                                            const placedObjBox = new THREE.Box3().setFromObject(placedObj);
-                                            if (activeObjectBox.intersectsBox(placedObjBox)) {
-                                                isColliding = true;
-                                                break;
-                                            }
-                                        }
-                                    }
-
-                                    isPlaceable = isOnFloor && !isColliding;
-
-                                    if(reticle) reticle.visible = isPlaceable; // 配置可能な場合のみレティクル表示
-                                    crossMark.visible = !isPlaceable; // 配置不可能な場合のみクロスマーク表示
-
-                                    if (crossMark.visible && activeObject) {
-                                        crossMark.position.copy(activeObject.position);
-                                        // 家具の底面中央に十字マークを合わせるためのオフセット調整
-                                        const box = new THREE.Box3().setFromObject(activeObject);
-                                        const center = new THREE.Vector3();
-                                        box.getCenter(center);
-                                        const size = box.getSize(new THREE.Vector3());
-                                        crossMark.position.y = activeObject.position.y + (size.y / 2) + 0.01; // 家具の底面から少し上に配置
-
-                                        const scale = activeObject.userData.crossMarkScale * 0.2; // ❌マークの大きさを0.2に修正
-                                        crossMark.scale.set(scale, scale, scale);
-                                        crossMark.quaternion.copy(camera.quaternion); // カメラの向きに合わせる
-                                    }
-                                } else {
-                                    if(reticle) reticle.visible = true;
-                                    crossMark.visible = false;
-                                }
-                            } else {
-                                if(reticle) reticle.visible = false;
-                                crossMark.visible = false;
-                            }
-                        } else {
-                            isPlaceable = false;
-                            if(reticle) reticle.visible = false;
-                            crossMark.visible = false;
-                            if (activeObject) activeObject.visible = false;
-                            if (instructionText.style.display !== 'block' && !isFloorDetected) {
-                                instructionText.style.display = 'block';
-                                startDotAnimation();
-                            }
-                        }
-                    }
-                }
-
-                if (isEditMode && (appState === 'PLACING' || appState === 'EDITING')) {
-                    const decisionConfirmButton = document.querySelector('#decision-controls #confirm-button');
-                    decisionConfirmButton.disabled = !isPlaceable;
-                }
-
-                if (!hitTestSourceRequested && renderer.xr.getSession()) {
-                    const session = renderer.xr.getSession();
-                    session.requestReferenceSpace('viewer').then((referenceSpace) => {
-                        session.requestHitTestSource({ space: referenceSpace }).then((source) => {
-                            hitTestSource = source;
-                        });
-                    });
-                    session.addEventListener('end', () => {
-                        hitTestSourceRequested = false; hitTestSource = null;
-                    });
-                    hitTestSourceRequested = true;
-                }
-
-                renderer.render(scene, camera);
-            }
-        }
+        } // setupWebXR() の終わり
 
         main();
     </script>
