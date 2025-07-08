@@ -5,7 +5,7 @@
     <title>AR家具配置アプリ</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
     <style>
-        body { 
+        body {
             margin: 0;
             background-color: #1A202C;
             color: white;
@@ -107,7 +107,7 @@
             min-width: 260px;
             box-sizing: border-box;
         }
-        
+
         #bottom-bar {
             position: absolute;
             bottom: 0;
@@ -219,11 +219,11 @@
         #rotate-right-button {
             border-left: 1px solid rgba(255, 255, 255, 0.3);
         }
-        
+
         .rotation-button-group .group-button svg {
             transform: rotate(180deg);
         }
-        
+
         #add-button, #edit-button {
             position: absolute;
             bottom: 90px;
@@ -269,7 +269,7 @@
             align-items: center;
             gap: 5px;
             pointer-events: auto;
-            white-space: nowrap; 
+            white-space: nowrap;
             transition: opacity 0.2s ease;
         }
         .mode-label {
@@ -285,15 +285,15 @@
             color: #1A202C;
             background-color: white;
         }
-        
+
         #top-left-controls {
             position: absolute;
-            top: 40px; 
+            top: 40px;
             left: 20px;
             z-index: 11;
         }
         #top-right-controls {
-            position: absolute; 
+            position: absolute;
             top: 40px;
             right: 20px;
             z-index: 11;
@@ -321,7 +321,7 @@
             border-radius: 20px;
             width: 90%;
             max-width: 520px;
-            height: 580px; 
+            height: 580px;
             max-height: 85vh;
             display: flex;
             flex-direction: column;
@@ -373,8 +373,8 @@
         }
         .help-page-content {
             overflow-y: auto;
-            padding-right: 10px; 
-            flex: 1; 
+            padding-right: 10px;
+            flex: 1;
             min-height: 0;
         }
         .help-page {
@@ -446,7 +446,7 @@
         .gesture-svg .arrow {
             fill: #CBD5E0;
         }
-        
+
         .dialog-container {
             position: fixed;
             top: 0;
@@ -456,7 +456,7 @@
             background-color: rgba(0,0,0,0.6);
             backdrop-filter: blur(5px);
             -webkit-backdrop-filter: blur(5px);
-            display: none; 
+            display: none;
             justify-content: center;
             align-items: center;
             z-index: 300;
@@ -494,10 +494,10 @@
             color: white;
         }
         #confirm-delete-yes {
-            background-color: #E53E3E; 
+            background-color: #E53E3E;
             color: white;
         }
-        
+
         #furniture-modal {
             position: fixed;
             top: 0;
@@ -537,7 +537,7 @@
         }
         #close-modal-button {
             position: absolute;
-            bottom: -85px; 
+            bottom: -85px;
             left: 50%;
             transform: translateX(-50%);
             background: rgba(255,255,255,0.2);
@@ -603,7 +603,7 @@
             min-height: 0; /* flexアイテムの最小高さを設定 */
             box-sizing: border-box; /* paddingを含めて幅を計算 */
         }
-        
+
         .grid-item {
             cursor: pointer;
             text-align: center;
@@ -656,9 +656,9 @@
         <div id="ios-ar-links">
         </div>
     </div>
-    
+
     <div id="overlay">
-        
+
         <div id="help-modal">
             <div id="help-content-container">
                 <button id="close-help-button">&times;</button>
@@ -826,7 +826,7 @@
             <span style="font-size: 1.25em; font-weight: bold;">床を認識中<span id="loading-dots"></span></span><br><br>
             カメラをゆっくりと<br>床に向けて<br>動かしてください
         </div>
-        
+
         <button id="mode-switch-button">
             <span id="edit-mode-label" class="mode-label">編集モード</span>
             <span id="view-mode-label" class="mode-label">鑑賞モード</span>
@@ -846,11 +846,11 @@
                 </svg>
             </button>
         </div>
-        
+
         <div id="bottom-bar">
             <button id="add-button" class="circle-button"></button>
             <button id="edit-button" class="circle-button"></button>
-            
+
             <div id="transform-controls">
                 <div id="scale-slider-container">
                     <span class="slider-icon">-</span>
@@ -903,7 +903,7 @@
             }
         }
     </script>
-    
+
     <script type="module">
         import * as THREE from 'three';
         import { ARButton } from 'three/addons/webxr/ARButton.js';
@@ -923,17 +923,18 @@
             let floorY = null;
             let crossMark;
             let scaleSliderContainer, sliderTrack, sliderHandle;
-            
-            let isDraggingSlider = false; 
+
+            let isDraggingSlider = false;
             let dotAnimationTimer = null;
-            
+
             let helpModal, closeHelpButton;
             let tabButtons, helpPages;
             let confirmDialog, objectPendingDeletion = null;
 
+            // 家具データ
             const furnitureData = [
                 { name: 'イス',   file: 'chair.glb',      height: 0.79, category: 'チェア', thumbnail: 'thumbnails/chair_thumb.png' },
-                { name: '本棚',   file: 'bookshelf.glb', height: 1.8,  category: '収納', thumbnail: 'thumbnails/bookshelf_thumb.png' }, 
+                { name: '本棚',   file: 'bookshelf.glb', height: 1.8,  category: '収納', thumbnail: 'thumbnails/bookshelf_thumb.png' },
                 { name: '脚立',   file: 'stand.glb',      height: 1.2,  category: 'その他', thumbnail: 'thumbnails/stand_thumb.png' },
                 { name: 'ダイニングテーブル', file: 'dining_table.glb', height: 0.75, category: 'テーブル', thumbnail: 'thumbnails/dining_table_thumb.png' },
                 { name: 'ソファ', file: 'sofa.glb', height: 0.7, category: 'ソファ', thumbnail: 'thumbnails/sofa_thumb.png' },
@@ -949,10 +950,10 @@
             let selectedObject = null;
             let hoveredObject = null;
             let appState = 'IDLE';
-            let isEditMode = false; 
+            let isEditMode = false;
             let isFloorDetected = false;
 
-            const objectsToDelete = []; 
+            const objectsToDelete = [];
             const clock = new THREE.Clock();
 
             const gestureState = {
@@ -966,12 +967,12 @@
                 startY: 0,
                 longPressTimer: null,
             };
-            
+
             let isRotatingContinuously = false;
             let continuousRotationDirection = 0;
-            
+
             init();
-            
+
             function createCrossMark() {
                 const canvas = document.createElement('canvas');
                 const size = 256;
@@ -993,10 +994,10 @@
                 context.lineTo(margin, size - margin);
                 context.stroke();
                 const texture = new THREE.CanvasTexture(canvas);
-                const material = new THREE.MeshBasicMaterial({ 
-                    map: texture, 
+                const material = new THREE.MeshBasicMaterial({
+                    map: texture,
                     transparent: true,
-                    depthTest: false 
+                    depthTest: false
                 });
                 const geometry = new THREE.PlaneGeometry(1, 1);
                 const plane = new THREE.Mesh(geometry, material);
@@ -1018,7 +1019,7 @@
                     .then(() => console.log("すべてのモデルの事前読み込みが完了しました！"))
                     .catch(error => console.error("モデルの事前読み込み中にエラーが発生しました。", error));
             }
-            
+
             function resetScene() {
                 placedObjects.forEach(object => scene.remove(object));
                 placedObjects.length = 0;
@@ -1030,7 +1031,7 @@
 
                 if(reticle) scene.remove(reticle);
                 reticle = null;
-                
+
                 appState = 'IDLE';
                 isFloorDetected = false;
                 floorY = null;
@@ -1044,13 +1045,13 @@
                 scene = new THREE.Scene();
                 camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
                 scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, 3));
-                
+
                 crossMark = createCrossMark();
                 scene.add(crossMark);
-                
-                renderer = new THREE.WebGLRenderer({ 
-                    antialias: true, 
-                    alpha: true, 
+
+                renderer = new THREE.WebGLRenderer({
+                    antialias: true,
+                    alpha: true,
                 });
                 renderer.setPixelRatio(window.devicePixelRatio);
                 renderer.setSize(window.innerWidth, window.innerHeight);
@@ -1061,12 +1062,12 @@
                 overlay.addEventListener('touchstart', handleTouchStart, { passive: false });
                 overlay.addEventListener('touchmove', handleTouchMove, { passive: false });
                 overlay.addEventListener('touchend', handleTouchEnd);
-                
+
                 document.getElementById('add-button').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2.5" stroke="currentColor" style="width: 32px; height: 32px;"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15" /></svg>`;
                 document.getElementById('edit-button').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L6.832 19.82a4.5 4.5 0 0 1-1.897 1.13l-2.685.8.8-2.685a4.5 4.5 0 0 1 1.13-1.897L16.863 4.487Zm0 0L19.5 7.125" /></svg>`;
                 document.getElementById('delete-button').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.134-2.09-2.134H8.09a2.09 2.09 0 0 0-2.09 2.134v.916m7.5 0a48.667 48.667 0 0 0-7.5 0" /></svg>`;
                 document.getElementById('confirm-button').innerHTML = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="3" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5" /></svg>`;
-                
+
                 const rotateLeftIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="M9 15 3 9m0 0 6-6M3 9h12a6 6 0 0 1 0 12h-3" /></svg>`;
                 const rotateRightIconSVG = `<svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke-width="2" stroke="currentColor" style="width: 28px; height: 28px;"><path stroke-linecap="round" stroke-linejoin="round" d="m15 15 6-6m0 0-6-6m6 6H9a6 6 0 0 0 0 12h3" /></svg>`;
                 document.getElementById('rotate-left-button').innerHTML = rotateLeftIconSVG;
@@ -1075,7 +1076,7 @@
                 renderer.xr.addEventListener('sessionstart', () => {
                     document.getElementById('title-container').style.display = 'none';
                     resetScene();
-                    isEditMode = true; 
+                    isEditMode = true;
                     updateUI();
                     initializeARExperience();
                     preloadModels();
@@ -1087,9 +1088,9 @@
                     document.getElementById('exit-ar-button').style.display = 'none';
                     document.getElementById('help-button').style.display = 'none';
                     document.getElementById('mode-switch-button').style.display = 'none';
-                    stopDotAnimation(); 
+                    stopDotAnimation();
                 });
-                
+
                 animate();
 
                 document.body.appendChild(ARButton.createButton(renderer, {
@@ -1100,42 +1101,39 @@
             }
 
             function initializeARExperience() {
-                reticle = new THREE.Mesh( 
-                    new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2), 
+                reticle = new THREE.Mesh(
+                    new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2),
                     new THREE.MeshBasicMaterial()
                 );
                 reticle.matrixAutoUpdate = false;
                 reticle.visible = false;
                 scene.add(reticle);
-                setupUI();
+                setupUI(); // ★ ここで setupUI を呼び出し、UI要素のイベントリスナーを設定する
             }
 
-            // ★ setupUI 関数の変更開始
             function setupUI() {
                 const furnitureModal = document.getElementById('furniture-modal');
                 const closeModalButton = document.getElementById('close-modal-button');
-                // furnitureGrid は displayFurniture 関数内で操作されるため、ここでinnerHTMLクリアは不要
-                // const furnitureGrid = document.getElementById('furniture-grid');
-                // furnitureGrid.innerHTML = ''; 
-                
+                const categoryTabsContainer = document.getElementById('category-tabs'); // ★追加
+
                 // ★カテゴリタブを生成・表示
-                populateCategoryTabs(); 
+                populateCategoryTabs();
 
-                // ★すべての家具を表示する初期呼び出し（デフォルトカテゴリとして）
-                displayFurniture('全て'); 
+                // ★全ての家具を表示する初期呼び出し（デフォルトカテゴリとして）
+                displayFurniture('全て');
 
-                // --- 既存のイベントリスナー設定 ---
+                // --- 既存のイベントリスナー設定（変更なし、または修正済み） ---
                 document.getElementById('add-button').addEventListener('click', (e) => {
                     e.stopPropagation();
                     if (appState === 'IDLE') {
                         furnitureModal.style.display = 'flex';
                         // モーダルが開くときに「全て」タブをアクティブにして表示を更新
-                        displayFurniture('全て'); 
-                        const defaultTabButton = document.querySelector('.category-tab-button[data-category="全て"]'); 
-                        if (defaultTabButton) { 
-                            document.querySelectorAll('.category-tab-button').forEach(btn => btn.classList.remove('active')); 
-                            defaultTabButton.classList.add('active'); 
-                        } 
+                        displayFurniture('全て');
+                        const defaultTabButton = document.querySelector('.category-tab-button[data-category="全て"]');
+                        if (defaultTabButton) {
+                            document.querySelectorAll('.category-tab-button').forEach(btn => btn.classList.remove('active'));
+                            defaultTabButton.classList.add('active');
+                        }
                     }
                 });
 
@@ -1157,7 +1155,7 @@
                         currentSession.end();
                     }
                 }
-                
+
                 helpModal = document.getElementById('help-modal');
                 closeHelpButton = document.getElementById('close-help-button');
                 document.getElementById('help-button').addEventListener('click', (e) => {
@@ -1173,7 +1171,7 @@
                         helpModal.style.display = 'none';
                     }
                 });
-                
+
                 tabButtons = document.querySelectorAll('.help-tab-button'); // ヘルプモーダル用のタブボタン
                 helpPages = document.querySelectorAll('.help-page'); // ヘルプモーダル用のページ
                 tabButtons.forEach(button => {
@@ -1187,7 +1185,7 @@
                         });
                     });
                 });
-                
+
                 confirmDialog = document.getElementById('confirm-dialog');
                 const confirmYesBtn = document.getElementById('confirm-delete-yes');
                 const confirmNoBtn = document.getElementById('confirm-delete-no');
@@ -1222,7 +1220,7 @@
                 });
 
                 document.getElementById('edit-button').addEventListener('click', (e) => { e.stopPropagation(); onSelect(); });
-                
+
                 const rotateLeftButton = document.getElementById('rotate-left-button');
                 const rotateRightButton = document.getElementById('rotate-right-button');
                 setupRotationButtonEvents(rotateLeftButton, 1);
@@ -1230,7 +1228,7 @@
 
                 document.getElementById('delete-button').addEventListener('click', (e) => { e.stopPropagation(); onDelete(); });
                 document.getElementById('confirm-button').addEventListener('click', (e) => { e.stopPropagation(); onConfirm(); });
-                
+
                 scaleSliderContainer = document.getElementById('scale-slider-container');
                 sliderTrack = document.getElementById('slider-track');
                 sliderHandle = document.getElementById('slider-handle');
@@ -1246,7 +1244,7 @@
                     percent = Math.max(0, Math.min(1, percent));
                     updateScaleFromSlider(percent);
                 };
-                
+
                 sliderHandle.addEventListener('mousedown', onSliderDragStart);
                 document.addEventListener('mousemove', onSliderDragMove);
                 document.addEventListener('mouseup', onSliderDragEnd);
@@ -1254,7 +1252,6 @@
                 document.addEventListener('touchmove', onSliderDragMove, { passive: false });
                 document.addEventListener('touchend', onSliderDragEnd);
             }
-            // ★ setupUI 関数の変更終了
 
             function setupRotationButtonEvents(button, direction) {
                 let pressTimer = null;
@@ -1278,20 +1275,20 @@
                 button.addEventListener('touchend', pressEnd);
                 button.addEventListener('mouseleave', pressEnd);
             }
-            
+
             function getDistance(touches) {
                 const dx = touches[0].clientX - touches[1].clientX;
                 const dy = touches[0].clientY - touches[1].clientY;
                 return Math.sqrt(dx * dx + dy * dy);
             }
-            
+
             function onObjectTap(event) {
                 const touch = event.changedTouches[0];
                 const tapPosition = new THREE.Vector2(
                     (touch.clientX / window.innerWidth) * 2 - 1,
                     - (touch.clientY / window.innerHeight) * 2 + 1
                 );
-                
+
                 raycaster.setFromCamera(tapPosition, camera);
 
                 if (appState === 'PLACING' || appState === 'EDITING') {
@@ -1315,7 +1312,7 @@
                     }
                 }
             }
-            
+
             function handleLongPress(tappedObject) {
                 if (!tappedObject || confirmDialog.style.display === 'flex') return;
                 objectPendingDeletion = tappedObject;
@@ -1330,13 +1327,13 @@
                 gestureState.startTime = Date.now();
                 gestureState.startX = event.touches[0].clientX;
                 gestureState.startY = event.touches[0].clientY;
-                
+
                 if (gestureState.touchCount === 1) {
                     if (!isEditMode) return;
                     clearTimeout(gestureState.longPressTimer);
                     gestureState.longPressTimer = setTimeout(() => {
-                        gestureState.longPressTimer = null; 
-                        
+                        gestureState.longPressTimer = null;
+
                         const tapPosition = new THREE.Vector2(
                             (gestureState.startX / window.innerWidth) * 2 - 1,
                             - (gestureState.startY / window.innerHeight) * 2 + 1
@@ -1351,7 +1348,7 @@
                         } else if (appState === 'EDITING' && selectedObject) {
                             objectsToCheck = [selectedObject];
                         }
-                        
+
                         const intersects = raycaster.intersectObjects(objectsToCheck, true);
 
                         if (intersects.length > 0) {
@@ -1374,10 +1371,10 @@
                 if (gestureState.touchCount === 1) {
                     gestureState.lastX = event.touches[0].clientX;
                 } else if (gestureState.touchCount >= 2) {
-                    clearTimeout(gestureState.longPressTimer); 
+                    clearTimeout(gestureState.longPressTimer);
                     gestureState.initialDistance = getDistance(event.touches);
                     if (activeObject) {
-                        gestureState.originalMultiplier = activeObject.userData.scaleMultiplier || 1.0; 
+                        gestureState.originalMultiplier = activeObject.userData.scaleMultiplier || 1.0;
                     }
                 }
             }
@@ -1385,12 +1382,12 @@
             function handleTouchMove(event) {
                 if (event.target !== event.currentTarget || confirmDialog.style.display === 'flex') return;
                 event.preventDefault();
-                
+
                 if (gestureState.longPressTimer) {
                     const moveX = event.touches[0].clientX;
                     const moveY = event.touches[0].clientY;
                     const distance = Math.sqrt(Math.pow(moveX - gestureState.startX, 2) + Math.pow(moveY - gestureState.startY, 2));
-                    if (distance > 10) { 
+                    if (distance > 10) {
                        clearTimeout(gestureState.longPressTimer);
                        gestureState.longPressTimer = null;
                     }
@@ -1407,10 +1404,10 @@
                     gestureState.lastX = currentX;
 
                 } else if (gestureState.touchCount >= 2 && event.touches.length >= 2) {
-                    if (gestureState.initialDistance === 0) return; 
+                    if (gestureState.initialDistance === 0) return;
                     const currentDistance = getDistance(event.touches);
                     const scaleRatio = currentDistance / gestureState.initialDistance;
-                    
+
                     let newMultiplier = gestureState.originalMultiplier * scaleRatio;
                     newMultiplier = Math.max(0.5, Math.min(2.0, newMultiplier));
 
@@ -1424,23 +1421,23 @@
 
             function handleTouchEnd(event) {
                 if (event.target !== event.currentTarget) return;
-                
+
                 const wasLongPressTriggered = !gestureState.longPressTimer;
                 clearTimeout(gestureState.longPressTimer);
                 gestureState.longPressTimer = null;
-                
+
                 const touchDuration = Date.now() - gestureState.startTime;
                 const touchEndX = event.changedTouches[0].clientX;
                 const touchEndY = event.changedTouches[0].clientY;
                 const distanceMoved = Math.sqrt(
-                    Math.pow(touchEndX - gestureState.startX, 2) + 
+                    Math.pow(touchEndX - gestureState.startX, 2) +
                     Math.pow(touchEndY - gestureState.startY, 2)
                 );
 
                 if (!wasLongPressTriggered && touchDuration < 200 && distanceMoved < 10) {
                     onObjectTap(event);
                 }
-                
+
                 if (event.touches.length === 0) {
                     gestureState.isInteracting = false;
                 }
@@ -1449,7 +1446,7 @@
                 }
                 gestureState.touchCount = event.touches.length;
             }
-            
+
             function updateSliderForObject(object) {
                 if (!object) return;
                 const multiplier = object.userData.scaleMultiplier || 1.0;
@@ -1461,7 +1458,7 @@
                 const handleWidth = sliderHandle.offsetWidth;
                 const trackWidth = sliderTrack.offsetWidth;
                 sliderHandle.style.left = `calc(${percent * 100}% - ${handleWidth * percent}px)`;
-                
+
                 const scale = 0.8 + 0.4 * percent;
                 sliderHandle.style.transform = `translateY(-50%) scale(${scale})`;
             }
@@ -1469,55 +1466,55 @@
             function updateScaleFromSlider(percent) {
                 const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
                 if (!activeObject) return;
-                
+
                 const multiplier = 0.5 + percent * 1.5;
                 activeObject.userData.scaleMultiplier = multiplier;
-                
+
                 const initialScale = activeObject.userData.initialScale;
                 activeObject.scale.copy(initialScale).multiplyScalar(multiplier);
 
                 updateSliderHandlePosition(percent);
             }
 
-            function updatePreviewObject() { 
+            function updatePreviewObject() {
                 if (previewObject) {
                     scene.remove(previewObject);
                     previewObject = null;
                 }
                 const gltf = preloadedModels.get(currentFurniture.file);
                 if (!gltf) return;
-                
+
                 previewObject = gltf.scene.clone();
                 setObjectTransparency(previewObject, true);
 
                 const initialBox = new THREE.Box3().setFromObject(previewObject);
                 const initialCenter = new THREE.Vector3();
                 initialBox.getCenter(initialCenter);
-                
+
                 const size = initialBox.getSize(new THREE.Vector3());
                 const scaleFactor = currentFurniture.height / size.y;
                 previewObject.scale.set(scaleFactor, scaleFactor, scaleFactor);
-                
+
                 previewObject.userData.initialScale = previewObject.scale.clone();
                 previewObject.userData.scaleMultiplier = 1.0;
                 previewObject.userData.centerOffset = initialCenter.multiplyScalar(scaleFactor);
-                // ❌マークの大きさを調整
+                // ❌マークの大きさを調整 (0.2に修正)
                 previewObject.userData.crossMarkScale = Math.max(size.x, size.z) * scaleFactor;
 
                 previewObject.visible = false;
                 scene.add(previewObject);
                 updateSliderForObject(previewObject);
             }
-            
+
             function onSelect() {
                 if (hoveredObject) {
                     selectAndEditObject(hoveredObject);
                 }
             }
-            
+
             function selectAndEditObject(objectToEdit) {
                 if (!isEditMode || appState !== 'IDLE' || !objectToEdit) return;
-                
+
                 if (selectedObject) {
                     setObjectTransparency(selectedObject, false);
                 }
@@ -1525,7 +1522,7 @@
                 if (hoveredObject === selectedObject) {
                     hoveredObject = null;
                 }
-                
+
                 setObjectTransparency(selectedObject, true);
                 appState = 'EDITING';
                 updateUI();
@@ -1542,17 +1539,17 @@
                     updateUI();
                 }
             }
-            
+
             function onRotate(direction) {
                 const target = (appState === 'PLACING') ? previewObject : selectedObject;
                 if (target) {
                     target.rotation.y += (Math.PI / 4) * direction;
                 }
             }
-            
+
             function startDeleteAnimation(objectToDelete) {
                 if (!objectToDelete) return;
-                
+
                 const indexInPlaced = placedObjects.indexOf(objectToDelete);
                 if (indexInPlaced > -1) {
                     placedObjects.splice(indexInPlaced, 1);
@@ -1564,18 +1561,18 @@
                     duration: 0.3,
                     initialY: objectToDelete.position.y
                 });
-                
+
                 if (objectToDelete === selectedObject) {
                     selectedObject = null;
                     appState = 'IDLE';
                     updateUI();
                 } else if (appState === 'PLACING' && objectToDelete === previewObject) {
                     previewObject = null;
-                    appState = 'IDLE'; 
+                    appState = 'IDLE';
                     updateUI();
                 }
             }
-            
+
             function onDelete() {
                 if (appState === 'EDITING' && selectedObject) {
                     handleLongPress(selectedObject);
@@ -1583,8 +1580,8 @@
                     handleLongPress(previewObject);
                 }
             }
-            
-            function placeNewObject() { 
+
+            function placeNewObject() {
                 if (!previewObject) return;
                 const solidObject = previewObject.clone();
                 setObjectTransparency(solidObject, false);
@@ -1601,73 +1598,95 @@
                 appState = 'IDLE';
                 updateUI();
             }
-            
+
             function setObjectTransparency(object, isTransparent, opacity = 0.7) {
                 if (!object) return;
                 object.traverse(child => {
                     if (child.isMesh) {
-                        child.material.transparent = true; 
+                        child.material.transparent = true;
                         child.material.opacity = isTransparent ? opacity : 1.0;
                     }
                 });
             }
 
-            function updateUI() {
-                const addButton = document.getElementById('add-button');
-                const editButton = document.getElementById('edit-button');
-                const modeSwitchButton = document.getElementById('mode-switch-button');
-                const editModeLabel = document.getElementById('edit-mode-label');
-                const viewModeLabel = document.getElementById('view-mode-label');
-                
-                const helpButton = document.getElementById('help-button');
-                const transformControls = document.getElementById('transform-controls');
-                const decisionControls = document.getElementById('decision-controls');
-                const decisionConfirmButton = document.querySelector('#decision-controls #confirm-button');
-                
-                document.getElementById('exit-ar-button').style.display = 'flex';
-                helpButton.style.display = 'flex';
-                modeSwitchButton.style.display = 'flex';
+            // ★ populateCategoryTabs 関数
+            let currentCategory = '全て'; // 現在選択されているカテゴリ
 
-                if (appState === 'PLACING' || appState === 'EDITING') {
-                    modeSwitchButton.style.opacity = '0.5';
-                    modeSwitchButton.style.cursor = 'not-allowed';
-                } else {
-                    modeSwitchButton.style.opacity = '1';
-                    modeSwitchButton.style.cursor = 'pointer';
-                }
+            function populateCategoryTabs() {
+                const categoryTabsContainer = document.getElementById('category-tabs');
+                categoryTabsContainer.innerHTML = ''; // 既存のタブをクリア
 
-                if (isEditMode) {
-                    editModeLabel.classList.add('active');
-                    viewModeLabel.classList.remove('active');
+                // ユニークなカテゴリを取得（重複なし）
+                const categories = new Set(furnitureData.map(item => item.category));
+                const uniqueCategories = ['全て', ...Array.from(categories)].sort(); // 「全て」タブを追加しソート
 
-                    addButton.style.display = 'none';
-                    editButton.style.display = 'none';
-                    transformControls.style.display = 'none';
-                    decisionControls.style.display = 'none';
+                uniqueCategories.forEach(category => {
+                    const button = document.createElement('button');
+                    button.className = 'category-tab-button';
+                    button.textContent = category;
+                    button.dataset.category = category; // データ属性にカテゴリ名を保存
 
-                    switch (appState) {
-                        case 'IDLE':
-                            addButton.style.display = isFloorDetected ? 'flex' : 'none';
-                            if (hoveredObject) {
-                                editButton.style.display = 'flex';
-                            }
-                            break;
-                        case 'PLACING':
-                        case 'EDITING':
-                            transformControls.style.display = 'flex';
-                            decisionControls.style.display = 'flex';
-                            break;
-                    }
-                } else { 
-                    editModeLabel.classList.remove('active');
-                    viewModeLabel.classList.add('active');
-                    
-                    addButton.style.display = 'none';
-                    editButton.style.display = 'none';
-                    transformControls.style.display = 'none';
-                    decisionControls.style.display = 'none';
+                    button.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        // すべてのタブからactiveクラスを削除
+                        document.querySelectorAll('.category-tab-button').forEach(btn => btn.classList.remove('active'));
+                        // クリックされたタブにactiveクラスを追加
+                        button.classList.add('active');
+                        // 選択されたカテゴリの家具を表示
+                        displayFurniture(category);
+                        currentCategory = category; // 現在のカテゴリを更新
+                    });
+
+                    categoryTabsContainer.appendChild(button);
+                });
+
+                // 初期状態で「全て」タブをアクティブにする
+                const allTabButton = document.querySelector('.category-tab-button[data-category="全て"]');
+                if (allTabButton) {
+                    allTabButton.classList.add('active');
                 }
             }
+
+            // ★ displayFurniture 関数
+            function displayFurniture(categoryToShow) {
+                const furnitureGrid = document.getElementById('furniture-grid');
+                furnitureGrid.innerHTML = ''; // 現在のグリッドをクリア
+
+                const filteredFurniture = (categoryToShow === '全て')
+                    ? furnitureData
+                    : furnitureData.filter(item => item.category === categoryToShow);
+
+                filteredFurniture.forEach(item => {
+                    const gridItem = document.createElement('div');
+                    gridItem.className = 'grid-item';
+                    gridItem.dataset.category = item.category; // カテゴリをデータ属性に保存
+
+                    // サムネイル画像を追加 (画像パスは適切に設定してください)
+                    const img = document.createElement('img');
+                    img.src = item.thumbnail; // item.thumbnailは'thumbnails/chair_thumb.png'のようなパスを想定
+                    img.alt = item.name;
+                    img.onerror = () => { img.src = 'placeholder.png'; console.warn(`サムネイル画像が見つかりません: ${item.thumbnail}`); }; // 画像が見つからない場合のフォールバック
+                    gridItem.appendChild(img);
+
+                    // 家具名テキストを追加
+                    const p = document.createElement('p');
+                    p.textContent = item.name;
+                    gridItem.appendChild(p);
+
+                    // ★ ここでクリックイベントリスナーを設定する
+                    gridItem.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        currentFurniture = item;
+                        updatePreviewObject();
+                        appState = 'PLACING';
+                        document.getElementById('furniture-modal').style.display = 'none';
+                        updateUI();
+                    });
+
+                    furnitureGrid.appendChild(gridItem);
+                });
+            }
+
 
             function handleHover() {
                 if (gestureState.isInteracting || isRotatingContinuously || gestureState.longPressTimer) {
@@ -1687,7 +1706,7 @@
                     }
                     return;
                 }
-                
+
                 raycaster.setFromCamera({ x: 0, y: 0 }, camera);
                 const intersects = raycaster.intersectObjects(placedObjects, true);
                 let newHoveredObject = null;
@@ -1696,12 +1715,12 @@
                     while (currentObject) {
                         if (placedObjects.includes(currentObject)) {
                             newHoveredObject = currentObject;
-                            break; 
+                            break;
                         }
                         currentObject = currentObject.parent;
                     }
                 }
-                
+
                 if (newHoveredObject !== hoveredObject) {
                     if (hoveredObject) setObjectTransparency(hoveredObject, false);
                     if (newHoveredObject && newHoveredObject !== selectedObject) {
@@ -1711,19 +1730,19 @@
                     updateUI();
                 }
             }
-            
+
             function startDotAnimation() {
-                if (dotAnimationTimer) return; 
+                if (dotAnimationTimer) return;
                 const dotsElement = document.getElementById('loading-dots');
                 if (!dotsElement) return;
 
                 let dotCount = 0;
                 const dots = ['・', '・・', '・・・'];
-                
+
                 dotAnimationTimer = setInterval(() => {
                     dotsElement.textContent = dots[dotCount % dots.length];
                     dotCount++;
-                }, 400); 
+                }, 400);
             }
 
             function stopDotAnimation() {
@@ -1743,7 +1762,7 @@
                 for (let i = objectsToDelete.length - 1; i >= 0; i--) {
                     const item = objectsToDelete[i];
                     const progress = (elapsedTime - item.startTime) / item.duration;
-                    
+
                     if (progress < 1) {
                         item.object.position.y = item.initialY + progress * 0.5;
                         const opacity = 1.0 - progress;
@@ -1757,7 +1776,7 @@
                 if (!renderer.xr.isPresenting) {
                     return;
                 }
-                
+
                 if (isRotatingContinuously && (appState === 'PLACING' || appState === 'EDITING')) {
                     const target = (appState === 'PLACING') ? previewObject : selectedObject;
                     if (target) {
@@ -1767,7 +1786,7 @@
                 }
 
                 handleHover();
-                
+
                 const instructionText = document.getElementById('instruction-text');
                 let isPlaceable = false;
                 const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
@@ -1782,30 +1801,30 @@
                             const hit = hitTestResults[0];
                             const hitPose = hit.getPose(referenceSpace);
                             const hitY = hitPose.transform.position.y;
-                            
+
                             if (floorY === null) floorY = hitY;
-                            
+
                             if (!isFloorDetected) {
                                 isFloorDetected = true;
                                 updateUI();
                             }
-                            
+
                             const Y_TOLERANCE = 0.2; // 20cmの許容範囲
                             const isOnFloor = Math.abs(hitY - floorY) < Y_TOLERANCE;
-                            
+
                             if(reticle) reticle.matrix.fromArray(hitPose.transform.matrix);
-                            
+
                             if (instructionText.style.display !== 'none') {
                                 instructionText.style.display = 'none';
                                 stopDotAnimation();
                             }
 
                             if (isEditMode) {
-                                if (activeObject && !gestureState.isInteracting && !isRotatingContinuously) { 
+                                if (activeObject && !gestureState.isInteracting && !isRotatingContinuously) {
                                     activeObject.position.setFromMatrixPosition(reticle.matrix);
                                 }
                                 if(activeObject) activeObject.visible = true;
-                                
+
                                 if (appState === 'PLACING' || appState === 'EDITING') {
                                     // 衝突判定ロジック
                                     let isColliding = false;
@@ -1834,7 +1853,7 @@
                                         box.getCenter(center);
                                         const size = box.getSize(new THREE.Vector3());
                                         crossMark.position.y = activeObject.position.y + (size.y / 2) + 0.01; // 家具の底面から少し上に配置
-                                        
+
                                         const scale = activeObject.userData.crossMarkScale * 0.2; // ❌マークの大きさを0.2に修正
                                         crossMark.scale.set(scale, scale, scale);
                                         crossMark.quaternion.copy(camera.quaternion); // カメラの向きに合わせる
@@ -1843,7 +1862,7 @@
                                     if(reticle) reticle.visible = true;
                                     crossMark.visible = false;
                                 }
-                            } else { 
+                            } else {
                                 if(reticle) reticle.visible = false;
                                 crossMark.visible = false;
                             }
@@ -1859,12 +1878,12 @@
                         }
                     }
                 }
-                
+
                 if (isEditMode && (appState === 'PLACING' || appState === 'EDITING')) {
                     const decisionConfirmButton = document.querySelector('#decision-controls #confirm-button');
                     decisionConfirmButton.disabled = !isPlaceable;
                 }
-                
+
                 if (!hitTestSourceRequested && renderer.xr.getSession()) {
                     const session = renderer.xr.getSession();
                     session.requestReferenceSpace('viewer').then((referenceSpace) => {
@@ -1877,11 +1896,11 @@
                     });
                     hitTestSourceRequested = true;
                 }
-                
+
                 renderer.render(scene, camera);
             }
         }
-        
+
         main();
     </script>
 </body>
