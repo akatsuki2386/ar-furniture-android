@@ -1524,6 +1524,8 @@
                 document.addEventListener('touchend', onSliderDragEnd);
                 
                 // ★家具モーダルでのスワイプイベントリスナーをmodalContentに設定
+                let modalContent = document.getElementById('furniture-modal-inner');
+                
                 let touchStartX = 0;
                 let touchEndX = 0;
                 const swipeThreshold = 50; // スワイプと認識する最小距離（ピクセル）
