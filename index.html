@@ -522,6 +522,21 @@
             /* ▲▲▲ 追加・変更箇所 ▲▲▲ */
         }
 
+        /* ▼▼▼ 新しい要素 #furniture-modal-inner のスタイルを追加 ▼▼▼ */
+        #furniture-modal-inner {
+            max-width: 380px; /* モーダルコンテンツの最大幅 */
+            width: 90%; /* 必要に応じて幅を調整 */
+            height: 60vh; /* ここでモーダルコンテンツの縦幅を固定 */
+            border-radius: 20px;
+            display: flex;
+            flex-direction: column;
+            animation: fadeIn 0.3s ease-out;
+            position: relative;
+            background-color: rgba(45, 55, 72, 0.85); /* モーダルコンテンツの背景色 */
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        /* ▲▲▲ 新しい要素 #furniture-modal-inner のスタイルを追加 ▲▲▲ */
+
         /* modal-content スタイルの変更（縦スクロール向け） */
         #modal-content {
             /*max-width: 380px; /* 例: 縦スクロールでも片手で操作しやすい幅 */
