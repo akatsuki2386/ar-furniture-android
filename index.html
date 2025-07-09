@@ -1170,7 +1170,7 @@
                 updateUI();
             }
 
-            function init() {
+            function init() { // initializeARExperience() の呼び出しは init() 内で維持
                 scene = new THREE.Scene();
                 camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
                 scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, 3));
@@ -1209,6 +1209,8 @@
                     updateUI();
                     initializeARExperience();
                     preloadModels();
+                    // ★Android対応: ARセッション開始時に初期ビューポート高さを再取得
+                    initialViewportHeight = window.innerHeight;
                 });
 
                 renderer.xr.addEventListener('sessionend', () => {
