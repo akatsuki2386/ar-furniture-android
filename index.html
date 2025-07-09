@@ -500,9 +500,10 @@
 
         #furniture-modal {
             position: fixed;
+            top: 0; /* 画面上部から */
             left: 0;
             width: 100%;
-            /*height: auto;*/ /* 高さを自動調整 */
+            height: 100%; /* 高さを自動調整 */
             background-color: rgba(0,0,0,0.5);
             backdrop-filter: blur(8px);
             -webkit-backdrop-filter: blur(8px);
@@ -517,23 +518,25 @@
             bottom: 0; /* 初期位置は画面下 */
             /*max-height: 80vh;*/ /* 最大高さを設定 */
             /* ▼▼▼ 追加・変更箇所 ▼▼▼ */
-            height: 60vh; /* 例えば、ビューポートの60%に固定 */
+            /*height: 60vh; /* 例えば、ビューポートの60%に固定 */
             /* ▲▲▲ 追加・変更箇所 ▲▲▲ */
         }
 
         /* modal-content スタイルの変更（縦スクロール向け） */
         #modal-content {
-            max-width: 380px; /* 例: 縦スクロールでも片手で操作しやすい幅 */
+            /*max-width: 380px; /* 例: 縦スクロールでも片手で操作しやすい幅 */
             /*height: auto;*/ /* コンテンツに合わせて高さを自動調整 */
-            border-radius: 20px; /* 角の丸み */
+            /*border-radius: 20px; /* 角の丸み */
+            flex: 1; /* 親のFlexコンテナ内で残りのスペースを埋める */
+            min-height: 0; /* flexアイテムの最小高さを設定 */
             display: flex; /* Flexboxにして子要素の配置を制御 */
             flex-direction: column; /* 垂直方向に要素を並べる */
-            animation: fadeIn 0.3s ease-out;
-            position: relative;
-            background-color: rgba(45, 55, 72, 0.85); /* background-colorを直接指定 */
-            border: 1px solid rgba(255, 255, 255, 0.2); /* ボーダーを追加 */
+            /*animation: fadeIn 0.3s ease-out;
+            /*position: relative;
+            /*background-color: rgba(45, 55, 72, 0.85); /* background-colorを直接指定 */
+            /*border: 1px solid rgba(255, 255, 255, 0.2); /* ボーダーを追加 */
             /* ▼▼▼ 追加・変更箇所 ▼▼▼ */
-            height: 100%; /* 親要素の #furniture-modal の高さに合わせる */
+            /*height: 100%; /* 親要素の #furniture-modal の高さに合わせる */
             /* ▲▲▲ 追加・変更箇所 ▲▲▲ */
         }
 
@@ -716,12 +719,12 @@
         /* キーボード表示時のモーダル位置調整用クラス */
         .modal-above-keyboard {
             padding-bottom: 0 !important; /* 通常の padding-bottom をリセット */
-            height: auto; /* 高さを自動調整 */
+            height: 100%; /* 高さを自動調整 */
             bottom: var(--keyboard-height, 0px); /* JavaScriptで設定されるカスタムプロパティ */
-            transform: none; /* flex-endで配置されるため transform は不要 */
+            /*transform: none; /* flex-endで配置されるため transform は不要 */
             align-items: flex-end; /* 下に寄せる */
         }
-        .modal-above-keyboard #modal-content {
+        .modal-above-keyboard #furniture-modal-inner {
             border-radius: 20px 20px 0 0; /* 下部の角を直角に */
         }
     </style>
@@ -961,7 +964,7 @@
         </div>
 
         <div id="furniture-modal">
-            <div id="modal-content">
+            <div id="furniture-modal-inner">
                 <div id="search-container">
                     <input type="text" id="search-input" placeholder="家具を検索...">
                     <span class="search-icon">
@@ -970,6 +973,23 @@
                         </svg>
                     </span>
                     <button class="clear-search-button" id="clear-search-button">&times;</button>
+                    <ul id="search-suggestions" style="
+                        position: absolute;
+                        top: calc(100% + 5px);
+                        left: 20px;
+                        right: 20px;
+                        background-color: rgba(45, 55, 72, 0.95);
+                        border-radius: 8px;
+                        list-style: none;
+                        padding: 0;
+                        margin: 0;
+                        max-height: 150px;
+                        overflow-y: auto;
+                        border: 1px solid rgba(255, 255, 255, 0.2);
+                        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.3);
+                        display: none;
+                        z-index: 10;
+                    "></ul>
                 </div>
                 <div id="category-tabs">
                 </div>
