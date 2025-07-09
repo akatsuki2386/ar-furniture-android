@@ -1309,12 +1309,12 @@
                         gridItem.dataset.category = item.category; // アイテムにもカテゴリ情報を持たせる
 
                         // サムネイル画像を作成
-                        const img = document.createElement('img');
-                        img.src = item.thumbnail;
-                        img.alt = item.name;
+                        //const img = document.createElement('img');
+                        //img.src = item.thumbnail;
+                        //img.alt = item.name;
                         // 画像の読み込みエラー時のフォールバック（画像がない場合、非表示にする）
-                        img.onerror = () => { img.style.display = 'none'; console.warn(`Thumbnail not found or failed to load: ${item.thumbnail}`); };
-                        gridItem.appendChild(img);
+                        //img.onerror = () => { img.style.display = 'none'; console.warn(`Thumbnail not found or failed to load: ${item.thumbnail}`); };
+                        //gridItem.appendChild(img);
 
                         // 家具名テキストを作成
                         const p = document.createElement('p');
