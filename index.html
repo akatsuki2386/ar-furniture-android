@@ -1102,6 +1102,12 @@
 
             init();
 
+            // --- ここから追加・変更する変数（setupWebXRスコープ） ---
+            let isSearchInputFocused = false; // 新しく追加する変数
+            let initialViewportHeight = window.innerHeight; // 新しく追加する変数
+            let currentKeyboardHeight = 0; // 新しく追加する変数
+            // --- ここまで追加・変更する変数 ---
+
             function createCrossMark() {
                 const canvas = document.createElement('canvas');
                 const size = 256;
@@ -1242,9 +1248,10 @@
 
             // ★カテゴリタブとスワイプ機能関連の変数と関数
             const categoryTabsContainer = document.getElementById('category-tabs');
-            const modalContent = document.getElementById('modal-content'); // スワイプイベントリスナーの親要素
+            const modalContent = document.getElementById('furniture-modal-inner'); // スワイプイベントリスナーの親要素
             const searchInput = document.getElementById('search-input');
             const clearSearchButton = document.getElementById('clear-search-button');
+            const searchSuggestionsList = document.getElementById('search-suggestions'); // ここも追加済み
 
             let allCategories = []; // すべてのカテゴリを保持する配列
             let currentCategoryIndex = 0; // 現在選択されているカテゴリのインデックス
@@ -1335,12 +1342,27 @@
                 }
             }
 
+            // --- ここから追加・変更する関数 ---
+            // 日本語のひらがな/カタカナ/漢字を考慮した比較を行うヘルパー関数 (簡易版)
+            /*function normalizeString(str) {
+                // 全角カタカナを全角ひらがなに変換 (JIS X 0208範囲)
+                str = str.replace(/[\u30a1-\u30f6]/g, function(match) {
+                    return String.fromCharCode(match.charCodeAt(0) - 0x60);
+                });
+                // 半角カナを全角ひらがなに変換 (これも簡易版で完全ではない)
+                str = str.replace(/[\uff61-\uff9f]/g, function(match) {
+                    return String.fromCharCode(match.charCodeAt(0) - 0xfec0);
+                });
+                return str.toLowerCase(); // 小文字に変換*/
+            }
+            // --- ここまで追加・変更する関数 ---
+
             // ★キーボードの表示/非表示を検知してモーダル位置を調整する
-            let initialViewportHeight = window.innerHeight;
-            let currentKeyboardHeight = 0;
+            //let initialViewportHeight = window.innerHeight;
+            //let currentKeyboardHeight = 0;
 
             function adjustModalForKeyboard() {
-                const furnitureModal = document.getElementById('furniture-modal');
+                //const furnitureModal = document.getElementById('furniture-modal');
                 // Viewport height changes are often an indicator of keyboard appearance/disappearance
                 const newViewportHeight = window.innerHeight;
 
@@ -1353,7 +1375,7 @@
                     currentKeyboardHeight = initialViewportHeight - newViewportHeight;
                 }
 
-                if (currentKeyboardHeight > 50) { // 50px以上変化したらキーボードが表示されたと判断
+                if (isSearchInputFocused && currentKeyboardHeight > 50) { // 50px以上変化したらキーボードが表示されたと判断
                     furnitureModal.classList.add('modal-above-keyboard');
                     furnitureModal.style.setProperty('--keyboard-height', `${currentKeyboardHeight}px`);
                 } else {
@@ -1388,8 +1410,8 @@
                     e.stopPropagation();
                     furnitureModal.style.display = 'none';
                     searchInput.blur(); // モーダルを閉じるときに検索フィールドからフォーカスを外す
-                    currentKeyboardHeight = 0; // キーボードの高さをリセット
-                    adjustModalForKeyboard(); // モーダル位置をリセット
+                    //currentKeyboardHeight = 0; // キーボードの高さをリセット
+                    //adjustModalForKeyboard(); // モーダル位置をリセット
                 };
                 closeModalButton.addEventListener('click', closeModal);
                 furnitureModal.addEventListener('click', (e) => {
@@ -1402,7 +1424,10 @@
                 searchInput.addEventListener('input', (e) => {
                     const searchTerm = e.target.value;
                     const activeCategory = document.querySelector('.category-tab-button.active')?.dataset.category || 'すべて';
+
+                    updateSearchSuggestions(searchTerm, activeCategory); // 検索候補を更新
                     displayFurniture(activeCategory, searchTerm);
+                    
                     if (searchTerm.length > 0) {
                         clearSearchButton.style.display = 'block';
                     } else {
@@ -1410,9 +1435,29 @@
                     }
                 });
 
+                // ★★★ ここから前回追加・修正した部分（setupUI関数内） ★★★
+
+                searchInput.addEventListener('focus', () => {
+                    isSearchInputFocused = true; // フォーカスされたら状態を更新
+                    adjustModalForKeyboard(); // キーボード追従ロジックを適用
+                    searchSuggestionsList.style.zIndex = '1000'; // 候補リストを手前に
+                });
+
+                searchInput.addEventListener('blur', () => {
+                    setTimeout(() => {
+                        isSearchInputFocused = false; // フォーカスが外れたら状態を更新
+                        adjustModalForKeyboard(); // モーダルの位置をデフォルトに戻す
+                        searchSuggestionsList.style.display = 'none';
+                        searchSuggestionsList.style.zIndex = '10'; // Z-indexを元に戻す
+                    }, 150);
+                });
+
+                // ★★★ ここまで前回追加・修正した部分（setupUI関数内） ★★★
+                
                 clearSearchButton.addEventListener('click', () => {
                     searchInput.value = '';
                     clearSearchButton.style.display = 'none';
+                    searchSuggestionsList.style.display = 'none';
                     const activeCategory = document.querySelector('.category-tab-button.active')?.dataset.category || 'すべて';
                     displayFurniture(activeCategory);
                     searchInput.focus(); // クリア後に再度フォーカス
