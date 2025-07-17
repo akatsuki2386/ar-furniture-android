@@ -1052,6 +1052,8 @@
             let tabButtons, helpPages;
             let confirmDialog, objectPendingDeletion = null;
 
+            let initialViewportHeight = window.innerHeight; // ARセッション開始時に初期ビューポート高さを再取得するため、ここに移動
+
             // ★家具データ（カテゴリとサムネイルパスを追加）
             const furnitureData = [
                 // 既存の家具
