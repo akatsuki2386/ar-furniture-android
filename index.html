@@ -734,13 +734,13 @@
         /* キーボード表示時のモーダル位置調整用クラス */
         .modal-above-keyboard {
             padding-bottom: 0 !important; /* 通常の padding-bottom をリセット */
-            height: 100%; /* 高さを自動調整 */
             bottom: var(--keyboard-height, 0px); /* JavaScriptで設定されるカスタムプロパティ */
             /*transform: none; /* flex-endで配置されるため transform は不要 */
             align-items: flex-end; /* 下に寄せる */
         }
         .modal-above-keyboard #furniture-modal-inner {
             border-radius: 20px 20px 0 0; /* 下部の角を直角に */
+            max-height: calc(85vh - var(--keyboard-height, 0px) - 20px); /* キーボード分を引いた最大の高さ */
         }
     </style>
 </head>
