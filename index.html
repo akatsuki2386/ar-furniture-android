@@ -1343,31 +1343,30 @@
 
             function adjustModalForKeyboard() {
                 const furnitureModal = document.getElementById('furniture-modal');
-                // Viewport height changes are often an indicator of keyboard appearance/disappearance
                 const newViewportHeight = window.innerHeight;
-
-                // iOSのvisualViewport APIを優先的に使用
+            
+                let detectedKeyboardHeight = 0;
                 if (window.visualViewport) {
-                    // visualViewport.height はキーボードが表示されている場合に小さくなる
-                    currentKeyboardHeight = initialViewportHeight - window.visualViewport.height;
+                    detectedKeyboardHeight = initialViewportHeight - window.visualViewport.height;
+                    detectedKeyboardHeight = Math.max(0, detectedKeyboardHeight);
                 } else {
-                    // Androidなど、visualViewportがない場合のフォールバック（少し不安定な場合がある）
-                    currentKeyboardHeight = initialViewportHeight - newViewportHeight;
+                    detectedKeyboardHeight = initialViewportHeight - newViewportHeight;
+                    detectedKeyboardHeight = Math.max(0, detectedKeyboardHeight);
                 }
-
-                if (currentKeyboardHeight > 50) { // 50px以上変化したらキーボードが表示されたと判断
+            
+                // console.log(`initialViewportHeight: ${initialViewportHeight}, newViewportHeight: ${newViewportHeight}, detectedKeyboardHeight: ${detectedKeyboardHeight}`);
+                // console.log(`visualViewport.height: ${window.visualViewport ? window.visualViewport.height : 'N/A'}`);
+            
+                currentKeyboardHeight = (detectedKeyboardHeight > 50) ? detectedKeyboardHeight : 0; // 閾値 50 を調整してみる
+                // console.log(`Calculated currentKeyboardHeight: ${currentKeyboardHeight}`);
+            
+                if (currentKeyboardHeight > 0) {
                     furnitureModal.classList.add('modal-above-keyboard');
                     furnitureModal.style.setProperty('--keyboard-height', `${currentKeyboardHeight}px`);
                 } else {
                     furnitureModal.classList.remove('modal-above-keyboard');
                     furnitureModal.style.removeProperty('--keyboard-height');
                 }
-            }
-            // Safari/Chrome on iOS, Chrome on Android でのキーボード表示を検知
-            if (window.visualViewport) {
-                window.visualViewport.addEventListener('resize', adjustModalForKeyboard);
-            } else {
-                window.addEventListener('resize', adjustModalForKeyboard);
             }
 
 
