@@ -967,6 +967,9 @@
             let floorY = null;
             let crossMark;
             let scaleSliderContainer, sliderTrack, sliderHandle;
+            
+            // 床認識前の固定レティクルを追加
+            let fixedReticle; 
 
             let isDraggingSlider = false;
             let dotAnimationTimer = null;
@@ -978,8 +981,7 @@
             // 家具データ（カテゴリとサムネイルパスを追加）
             const furnitureData = [
                 // 既存の家具
-                { name: 'イス(生成AI)', file: 'AI_chiar.glb', height: 0.79, category: 'チェア', thumbnail: 'thumbnails/chair_thumb.png' },
-                { name: 'イス(フォトグラメトリ)', file: 'photochair.glb', height: 0.79, category: 'チェア', thumbnail: 'thumbnails/chair_thumb.png' },
+                { name: 'イス', file: 'chair.glb', height: 0.79, category: 'チェア', thumbnail: 'thumbnails/chair_thumb.png' },
                 { name: '本棚', file: 'bookshelf.glb', height: 1.8, category: '収納', thumbnail: 'thumbnails/bookshelf_thumb.png' },
                 { name: '脚立', file: 'stand.glb', height: 1.2, category: 'その他', thumbnail: 'thumbnails/stand_thumb.png' },
 
@@ -1083,6 +1085,10 @@
 
                 if(reticle) scene.remove(reticle);
                 reticle = null;
+                
+                // 固定レティクルもリセット
+                if (fixedReticle) scene.remove(fixedReticle);
+                fixedReticle = null;
 
                 appState = 'IDLE';
                 isFloorDetected = false;
@@ -1097,6 +1103,20 @@
                 scene = new THREE.Scene();
                 camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
                 scene.add(new THREE.HemisphereLight(0xffffff, 0xbbbbff, 3));
+
+                // 床認識前の固定レティクル
+                const fixedReticleGeometry = new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2);
+                fixedReticle = new THREE.Mesh(fixedReticleGeometry, new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8 }));
+                fixedReticle.position.set(0, 0, -1); // カメラの目の前に配置
+                fixedReticle.visible = false;
+                scene.add(fixedReticle);
+
+                // 床認識後のレティクル
+                const reticleGeometry = new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2);
+                reticle = new THREE.Mesh(reticleGeometry, new THREE.MeshBasicMaterial());
+                reticle.matrixAutoUpdate = false;
+                reticle.visible = false;
+                scene.add(reticle);
 
                 crossMark = createCrossMark();
                 scene.add(crossMark);
@@ -2014,11 +2034,12 @@
                 let isPlaceable = false;
                 const activeObject = (appState === 'PLACING') ? previewObject : selectedObject;
 
-                if (renderer.xr.getFrame()) {
-                    const frame = renderer.xr.getFrame();
+                const xrFrame = renderer.xr.getFrame();
+
+                if (xrFrame) {
                     const referenceSpace = renderer.xr.getReferenceSpace();
                     if (hitTestSource) {
-                        const hitTestResults = frame.getHitTestResults(hitTestSource);
+                        const hitTestResults = xrFrame.getHitTestResults(hitTestSource);
 
                         if (hitTestResults.length > 0) {
                             const hit = hitTestResults[0];
@@ -2039,6 +2060,7 @@
                                 instructionText.style.display = 'none';
                                 stopDotAnimation();
                             }
+                            fixedReticle.visible = false;
 
                             if (isEditMode) {
                                 if (activeObject && !gestureState.isInteracting && !isRotatingContinuously) {
@@ -2092,10 +2114,11 @@
                             if(reticle) reticle.visible = false;
                             crossMark.visible = false;
                             if (activeObject) activeObject.visible = false;
-                            if (instructionText.style.display !== 'block' && !isFloorDetected) {
+                            if (instructionText.style.display !== 'block' && !isFloorDetected && isEditMode) {
                                 instructionText.style.display = 'block';
                                 startDotAnimation();
                             }
+                            fixedReticle.visible = isEditMode;
                         }
                     }
                 }
