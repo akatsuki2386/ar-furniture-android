@@ -979,7 +979,7 @@
             const furnitureData = [
                 // 既存の家具
                 { name: 'イス(生成AI)', file: 'AI_chiar.glb', height: 0.79, category: 'チェア', thumbnail: 'thumbnails/chair_thumb.png' },
-                { name: 'イス(フォトグラメトリ)', file: 'photochair.glb', height: 0.79, category: 'チェア', thumbnail: 'thumbnails/chair_thumb.png' },                
+                { name: 'イス(フォトグラメトリ)', file: 'photochair.glb', height: 0.79, category: 'チェア', thumbnail: 'thumbnails/chair_thumb.png' },
                 { name: '本棚', file: 'bookshelf.glb', height: 1.8, category: '収納', thumbnail: 'thumbnails/bookshelf_thumb.png' },
                 { name: '脚立', file: 'stand.glb', height: 1.2, category: 'その他', thumbnail: 'thumbnails/stand_thumb.png' },
 
@@ -1387,18 +1387,22 @@
 
                 document.getElementById('mode-switch-button').addEventListener('click', (e) => {
                     e.stopPropagation();
-                    if (appState === 'PLACING' || appState === 'EDITING') {
-                        return;
+                    // 家具の配置中や編集中でなければモードを切り替える
+                    if (appState === 'IDLE') {
+                        isEditMode = !isEditMode;
+                        if (!isEditMode) {
+                            // 鑑賞モードに切り替える際、念のため選択状態やホバー状態をリセット
+                            if (selectedObject) {
+                                setObjectTransparency(selectedObject, false);
+                                selectedObject = null;
+                            }
+                            if (hoveredObject) {
+                                setObjectTransparency(hoveredObject, false);
+                                hoveredObject = null;
+                            }
+                        }
                     }
-                    isEditMode = !isEditMode;
-                    if (!isEditMode) {
-                        appState = 'IDLE';
-                        if (selectedObject) setObjectTransparency(selectedObject, false);
-                        if (hoveredObject) setObjectTransparency(hoveredObject, false);
-                        selectedObject = null;
-                        hoveredObject = null;
-                    }
-                    updateUI();
+                    updateUI(); // UIを更新
                 });
 
                 document.getElementById('edit-button').addEventListener('click', (e) => { e.stopPropagation(); onSelect(); });
@@ -1861,15 +1865,17 @@
                 document.getElementById('exit-ar-button').style.display = 'flex';
                 helpButton.style.display = 'flex';
                 modeSwitchButton.style.display = 'flex';
-
+                
+                // モード切り替えボタンのスタイルを調整
                 if (appState === 'PLACING' || appState === 'EDITING') {
                     modeSwitchButton.style.opacity = '0.5';
-                    modeSwitchButton.style.cursor = 'not-allowed';
+                    modeSwitchButton.style.pointerEvents = 'none'; // クリックできないようにする
                 } else {
                     modeSwitchButton.style.opacity = '1';
-                    modeSwitchButton.style.cursor = 'pointer';
+                    modeSwitchButton.style.pointerEvents = 'auto'; // クリックできるようにする
                 }
 
+                // UI要素の表示/非表示をモードに応じて切り替え
                 if (isEditMode) {
                     editModeLabel.classList.add('active');
                     viewModeLabel.classList.remove('active');
@@ -1878,7 +1884,7 @@
                     editButton.style.display = 'none';
                     transformControls.style.display = 'none';
                     decisionControls.style.display = 'none';
-
+                    
                     switch (appState) {
                         case 'IDLE':
                             addButton.style.display = isFloorDetected ? 'flex' : 'none';
@@ -1892,10 +1898,12 @@
                             decisionControls.style.display = 'flex';
                             break;
                     }
+
                 } else {
                     editModeLabel.classList.remove('active');
                     viewModeLabel.classList.add('active');
 
+                    // 鑑賞モードの場合、すべての編集ボタンを非表示にする
                     addButton.style.display = 'none';
                     editButton.style.display = 'none';
                     transformControls.style.display = 'none';
@@ -2027,8 +2035,6 @@
                             const Y_TOLERANCE = 0.2; // 20cmの許容範囲
                             const isOnFloor = Math.abs(hitY - floorY) < Y_TOLERANCE;
 
-                            if(reticle) reticle.matrix.fromArray(hitPose.transform.matrix);
-
                             if (instructionText.style.display !== 'none') {
                                 instructionText.style.display = 'none';
                                 stopDotAnimation();
@@ -2120,6 +2126,3 @@
     </script>
 </body>
 </html>
-
-
-
