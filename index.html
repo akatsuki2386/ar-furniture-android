@@ -2233,6 +2233,12 @@
                 }
 
                 renderer.render(scene, camera);
+
+                // AR開始時にautoloadレイアウトがあれば読み込む
+            const autoloadLayout = sessionStorage.getItem(AUTOLOAD_LAYOUT_KEY);
+            if (autoloadLayout) {
+                setTimeout(()=>{ loadLayout(autoloadLayout); }, 1000); // scene/render初期化後に呼ぶ
+                sessionStorage.removeItem(AUTOLOAD_LAYOUT_KEY);
             }
         }
 
@@ -2240,4 +2246,5 @@
     </script>
 </body>
 </html>
+
 
