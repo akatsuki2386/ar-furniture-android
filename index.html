@@ -671,6 +671,80 @@
         .modal-above-keyboard #furniture-modal-inner {
             border-radius: 20px 20px 0 0;
         }
+
+        /* --- レイアウト管理パネル追加 --- */
+        #layout-panel {
+            position:fixed;
+            top:120px;
+            right:20px;
+            z-index:300;
+            display:flex;
+            flex-direction:column;
+            align-items:flex-end;
+        }
+        #show-layouts-btn {
+            margin-bottom:8px;
+        }
+        #layouts-modal {
+            display:none;
+            background:rgba(45,55,72,0.97);
+            padding:18px 22px 12px 22px;
+            border-radius:16px;
+            box-shadow:0 10px 24px rgba(0,0,0,0.13);
+            width:320px;
+        }
+        #layouts-modal input {
+            flex:1;
+            padding:6px 10px;
+            border-radius:8px;
+            border:none;
+        }
+        #layouts-modal button {
+            padding:6px 14px;
+            border-radius:8px;
+            border:none;
+        }
+        #layouts-modal ul {
+            max-height:180px;
+            overflow-y:auto;
+            padding:0;
+            margin:0;
+            list-style:none;
+        }
+        #layouts-modal li {
+            display:flex;
+            align-items:center;
+            justify-content:space-between;
+            margin-bottom:3px;
+            padding:3px 0;
+        }
+        #layouts-modal .layout-load-btn {
+            background:none;
+            border:none;
+            color:#90cdf4;
+            font-weight:bold;
+            cursor:pointer;
+            padding:2px 6px;
+            border-radius:5px;
+        }
+        #layouts-modal .layout-del-btn {
+            margin-left:8px;
+            background:rgba(255,255,255,0.08);
+            border:none;
+            color:#f56565;
+            padding:2px 9px;
+            border-radius:6px;
+            cursor:pointer;
+        }
+        #layouts-modal .close-btn {
+            margin-top:10px;
+            padding:6px 18px;
+            border-radius:8px;
+            background:rgba(255,255,255,0.09);
+            color:#fff;
+            border:none;
+            cursor:pointer;
+        }
     </style>
 </head>
 <body>
@@ -680,8 +754,24 @@
 
     <div id="overlay">
 
+        <!-- レイアウト管理パネル -->
+        <div id="layout-panel">
+            <button id="show-layouts-btn" class="circle-button">💾</button>
+            <div id="layouts-modal">
+                <div style="margin-bottom:8px;display:flex;gap:8px;">
+                    <input id="layout-name-input" placeholder="新しいレイアウト名">
+                    <button id="save-layout-btn" style="background:#4299e1;color:white;font-weight:bold;">保存</button>
+                </div>
+                <div>
+                    <div style="font-size:0.9em;color:#A0AEC0;margin-bottom:4px;">保存済みレイアウト</div>
+                    <ul id="layout-list"></ul>
+                </div>
+                <button id="close-layouts-btn" class="close-btn">閉じる</button>
+            </div>
+        </div>
+
         <div id="help-modal">
-            <div id="help-content-container">
+        <div id="help-content-container">
                 <button id="close-help-button">&times;</button>
                 <div class="help-tabs">
                     <button class="help-tab-button active" data-tab="page1">基本操作</button>
@@ -977,13 +1067,11 @@
 
             // 家具データ（カテゴリとサムネイルパスを追加）
             const furnitureData = [
-                // 既存の家具
                 { name: 'イス(生成AI)', file: 'AI_chiar.glb', height: 0.79, category: 'チェア', thumbnail: 'thumbnails/chair_thumb.png' },
                 { name: 'イス(フォトグラメトリ)', file: 'photochair.glb', height: 0.79, category: 'チェア', thumbnail: 'thumbnails/chair_thumb.png' },
                 { name: '本棚', file: 'bookshelf.glb', height: 1.8, category: '収納', thumbnail: 'thumbnails/bookshelf_thumb.png' },
                 { name: '脚立', file: 'stand.glb', height: 1.2, category: 'その他', thumbnail: 'thumbnails/stand_thumb.png' },
 
-                // ここから新しい家具を追加
                 { name: 'ダイニングテーブル', file: 'dining_table.glb', height: 0.75, category: 'テーブル', thumbnail: 'thumbnails/dining_table_thumb.png' },
                 { name: 'ソファ', file: 'sofa.glb', height: 0.7, category: 'ソファ', thumbnail: 'thumbnails/sofa_thumb.png' },
                 { name: 'フロアランプ', file: 'floor_lamp.glb', height: 1.5, category: '照明', thumbnail: 'thumbnails/floor_lamp_thumb.png' },
@@ -998,6 +1086,109 @@
             let currentFurniture = furnitureData[0];
             let previewObject = null;
             const placedObjects = [];
+
+            // --- レイアウト保存・読込機能 ---
+            const LAYOUTS_KEY = 'ar-furniture-layouts';
+
+            // レイアウト管理UI
+            const showLayoutsBtn = document.getElementById('show-layouts-btn');
+            const layoutsModal = document.getElementById('layouts-modal');
+            const closeLayoutsBtn = document.getElementById('close-layouts-btn');
+            const saveLayoutBtn = document.getElementById('save-layout-btn');
+            const layoutNameInput = document.getElementById('layout-name-input');
+            const layoutList = document.getElementById('layout-list');
+
+            showLayoutsBtn.onclick = () => {
+                layoutsModal.style.display = 'block';
+                updateLayoutList();
+            };
+            closeLayoutsBtn.onclick = () => {
+                layoutsModal.style.display = 'none';
+            };
+            saveLayoutBtn.onclick = () => {
+                const name = layoutNameInput.value.trim();
+                if (!name) return alert('レイアウト名を入力してください。');
+                const layouts = JSON.parse(localStorage.getItem(LAYOUTS_KEY) || '{}');
+                layouts[name] = serializeCurrentLayout();
+                localStorage.setItem(LAYOUTS_KEY, JSON.stringify(layouts));
+                updateLayoutList();
+                layoutNameInput.value = '';
+            };
+
+            function updateLayoutList() {
+                const layouts = JSON.parse(localStorage.getItem(LAYOUTS_KEY) || '{}');
+                layoutList.innerHTML = '';
+                Object.keys(layouts).forEach(name => {
+                    const li = document.createElement('li');
+                    // 読込ボタン
+                    const loadBtn = document.createElement('button');
+                    loadBtn.textContent = name;
+                    loadBtn.className = 'layout-load-btn';
+                    loadBtn.onclick = () => loadLayout(name);
+                    li.appendChild(loadBtn);
+                    // 削除ボタン
+                    const delBtn = document.createElement('button');
+                    delBtn.textContent = '削除';
+                    delBtn.className = 'layout-del-btn';
+                    delBtn.onclick = () => {
+                        if (confirm(`「${name}」を削除しますか？`)) {
+                            delete layouts[name];
+                            localStorage.setItem(LAYOUTS_KEY, JSON.stringify(layouts));
+                            updateLayoutList();
+                        }
+                    };
+                    li.appendChild(delBtn);
+                    layoutList.appendChild(li);
+                });
+            }
+
+            function serializeCurrentLayout() {
+                return placedObjects.map(obj => ({
+                    name: obj.userData.name,
+                    file: obj.userData.file,
+                    position: obj.position.toArray(),
+                    rotation: [
+                        obj.rotation.x,
+                        obj.rotation.y,
+                        obj.rotation.z,
+                        obj.rotation.order || "XYZ"
+                    ],
+                    scale: obj.scale.toArray()
+                }));
+            }
+
+            function loadLayout(name) {
+                if (!confirm('現在の配置を上書きしますか？')) return;
+                // 現在の家具を全削除
+                placedObjects.forEach(obj => {
+                    scene.remove(obj);
+                });
+                placedObjects.length = 0;
+                // 保存データから復元
+                const layouts = JSON.parse(localStorage.getItem(LAYOUTS_KEY) || '{}');
+                const layout = layouts[name];
+                if (!layout) return;
+                layout.forEach(item => {
+                    const furniture = furnitureData.find(f => f.file === item.file);
+                    if (furniture) {
+                        loader.load(furniture.file, gltf => {
+                            const model = gltf.scene;
+                            model.position.fromArray(item.position);
+                            // 回転
+                            if (item.rotation && item.rotation.length >= 3) {
+                                model.rotation.set(item.rotation[0], item.rotation[1], item.rotation[2], item.rotation[3] || "XYZ");
+                            }
+                            model.scale.fromArray(item.scale);
+                            model.userData = {...furniture};
+                            scene.add(model);
+                            placedObjects.push(model);
+                        });
+                    }
+                });
+                layoutsModal.style.display = 'none';
+            }
+            // --- end レイアウト保存・読込 ---
+
             const raycaster = new THREE.Raycaster();
             let selectedObject = null;
             let hoveredObject = null;
@@ -2121,4 +2312,3 @@
     </script>
 </body>
 </html>
-
