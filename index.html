@@ -74,7 +74,6 @@
             min-width: 260px;
             box-sizing: border-box;
         }
-
         #bottom-bar {
             position: absolute;
             bottom: 0;
@@ -89,7 +88,6 @@
             padding-bottom: 80px;
             box-sizing: border-box;
         }
-
         #transform-controls, #decision-controls {
             display: none;
             align-items: center;
@@ -98,7 +96,6 @@
             max-width: 400px;
             justify-content: center;
         }
-
         #transform-controls {
             gap: 15px;
             margin-bottom: 20px;
@@ -111,7 +108,6 @@
             overflow: hidden;
             width: auto;
         }
-
         #scale-slider-container {
             width: 50%;
             display: flex;
@@ -184,11 +180,9 @@
         #rotate-right-button {
             border-left: 1px solid rgba(255, 255, 255, 0.3);
         }
-
         .rotation-button-group .group-button svg {
             transform: rotate(180deg);
         }
-
         #add-button, #edit-button {
             position: absolute;
             bottom: 90px;
@@ -247,7 +241,6 @@
             color: #1A202C;
             background-color: white;
         }
-
         #top-left-controls {
             position: absolute;
             top: 40px;
@@ -405,7 +398,6 @@
         .gesture-svg .arrow {
             fill: #CBD5E0;
         }
-
         .dialog-container {
             position: fixed;
             top: 0;
@@ -455,7 +447,6 @@
             background-color: #E53E3E;
             color: white;
         }
-
         #furniture-modal {
             position: fixed;
             top: 0;
@@ -473,7 +464,6 @@
             transition: bottom 0.3s ease-out;
             bottom: 0;
         }
-
         #furniture-modal-inner {
             max-width: 380px;
             width: 90%;
@@ -486,7 +476,6 @@
             background-color: rgba(45, 55, 72, 0.85);
             border: 1px solid rgba(255, 255, 255, 0.2);
         }
-
         #modal-header {
             padding: 15px 20px 10px;
             display: flex;
@@ -518,8 +507,6 @@
             line-height: 48px;
             text-align: center;
         }
-
-        /* 検索バーのスタイル */
         #search-container {
             padding: 10px 20px;
             background-color: rgba(0, 0, 0, 0.2);
@@ -564,8 +551,6 @@
             padding: 5px;
             display: none;
         }
-
-        /* カテゴリタブのスタイル */
         #category-tabs {
             display: flex;
             justify-content: flex-start;
@@ -578,7 +563,6 @@
             flex-shrink: 0;
             border-radius: 0 0 0 0;
         }
-
         .category-tab-button {
             background-color: rgba(255, 255, 255, 0.1);
             border: 1px solid rgba(255, 255, 255, 0.2);
@@ -591,17 +575,13 @@
             transition: background-color 0.2s ease, color 0.2s ease;
             flex-shrink: 0;
         }
-
         .category-tab-button.active {
             background-color: white;
             color: #1A202C;
         }
-
         .category-tab-button:hover {
             background-color: rgba(255, 255, 255, 0.2);
         }
-
-        /* 家具グリッドのスタイル調整（縦スクロール対応） */
         #furniture-grid {
             display: grid;
             grid-template-columns: repeat(3, 1fr);
@@ -613,7 +593,6 @@
             min-height: 0;
             box-sizing: border-box;
         }
-
         .grid-item {
             cursor: pointer;
             text-align: center;
@@ -660,8 +639,6 @@
             from { opacity: 0; transform: translateY(20px); }
             to { opacity: 1; transform: translateY(0); }
         }
-
-        /* キーボード表示時のモーダル位置調整用クラス */
         .modal-above-keyboard {
             padding-bottom: 0 !important;
             height: 100%;
@@ -671,85 +648,47 @@
         .modal-above-keyboard #furniture-modal-inner {
             border-radius: 20px 20px 0 0;
         }
-
-        /* --- レイアウト管理パネル追加 --- */
-        #layout-panel {
-            position:fixed;
-            top:120px;
-            right:20px;
-            z-index:300;
-            display:flex;
-            flex-direction:column;
-            align-items:flex-end;
+        #save-layout-btn {
+            display: none;
+            position: absolute;
+            right: 30px;
+            bottom: 170px;
+            z-index: 101;
         }
-        #show-layouts-btn {
-            margin-bottom:8px;
+        #layout-list-on-title {
+            display: none;
+            text-align: center;
+            margin-top: 20px;
         }
-        #layouts-modal {
-            display:none;
-            background:rgba(45,55,72,0.97);
-            padding:18px 22px 12px 22px;
-            border-radius:16px;
-            box-shadow:0 10px 24px rgba(0,0,0,0.13);
-            width:320px;
+        #layout-list-title {
+            display: inline-block;
+            padding: 0;
+            margin: 0;
+            list-style: none;
         }
-        #layouts-modal input {
-            flex:1;
-            padding:6px 10px;
-            border-radius:8px;
-            border:none;
+        #layout-list-title li {
+            margin-bottom: 6px;
         }
-        #layouts-modal button {
-            padding:6px 14px;
-            border-radius:8px;
-            border:none;
-        }
-        #layouts-modal ul {
-            max-height:180px;
-            overflow-y:auto;
-            padding:0;
-            margin:0;
-            list-style:none;
-        }
-        #layouts-modal li {
-            display:flex;
-            align-items:center;
-            justify-content:space-between;
-            margin-bottom:3px;
-            padding:3px 0;
-        }
-        #layouts-modal .layout-load-btn {
-            background:none;
-            border:none;
-            color:#90cdf4;
-            font-weight:bold;
-            cursor:pointer;
-            padding:2px 6px;
-            border-radius:5px;
-        }
-        #layouts-modal .layout-del-btn {
-            margin-left:8px;
-            background:rgba(255,255,255,0.08);
-            border:none;
-            color:#f56565;
-            padding:2px 9px;
-            border-radius:6px;
-            cursor:pointer;
-        }
-        #layouts-modal .close-btn {
-            margin-top:10px;
-            padding:6px 18px;
-            border-radius:8px;
-            background:rgba(255,255,255,0.09);
-            color:#fff;
-            border:none;
-            cursor:pointer;
+        #layout-list-title button {
+            margin: 6px 10px 6px 0;
+            padding: 8px 18px;
+            border-radius: 14px;
+            background: #234e70;
+            color: #fff;
+            border: none;
+            cursor: pointer;
+            font-size: 1em;
         }
     </style>
 </head>
 <body>
     <div id="title-container">
         <h1>AR家具配置<br>シミュレーション</h1>
+        <button id="ARButton">START AR</button>
+        <div id="layout-list-on-title">
+            <div style="color:#A0AEC0;font-size:1em;margin-bottom:6px;">保存済みレイアウトから開始</div>
+            <ul id="layout-list-title"></ul>
+        </div>
     </div>
 
     <div id="overlay">
@@ -1037,16 +976,59 @@
             }
         }
     </script>
-
     <script type="module">
         import * as THREE from 'three';
         import { ARButton } from 'three/addons/webxr/ARButton.js';
         import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
 
-        function main() {
+        // ---- レイアウト保存/読込関連定数 ----
+        const LAYOUTS_KEY = 'ar-furniture-layouts';
+        const AUTOLOAD_LAYOUT_KEY = 'ar-furniture-autoload-layout';
+
+        // ---- タイトル画面のレイアウト一覧UI ----
+        function updateTitleLayoutList() {
+            const list = document.getElementById('layout-list-title');
+            const layouts = JSON.parse(localStorage.getItem(LAYOUTS_KEY) || '{}');
+            list.innerHTML = '';
+            Object.keys(layouts).forEach(name => {
+                const li = document.createElement('li');
+                const btn = document.createElement('button');
+                btn.textContent = name;
+                btn.onclick = () => {
+                    sessionStorage.setItem(AUTOLOAD_LAYOUT_KEY, name);
+                    startAR();
+                };
+                li.appendChild(btn);
+                list.appendChild(li);
+            });
+        }
+        function showTitleScreen() {
+            document.getElementById('title-container').style.display = 'block';
+            document.getElementById('layout-list-on-title').style.display = 'block';
+            updateTitleLayoutList();
+        }
+        function hideTitleScreen() {
+            document.getElementById('title-container').style.display = 'none';
+            document.getElementById('layout-list-on-title').style.display = 'none';
+        }
+
+        // ---- ARセッション開始 ----
+        function startAR() {
+            hideTitleScreen();
             setupWebXR();
         }
 
+        document.getElementById('ARButton').onclick = () => {
+            sessionStorage.removeItem(AUTOLOAD_LAYOUT_KEY);
+            startAR();
+        };
+
+        // ---- メイン ----
+        function main() {
+            showTitleScreen();
+        }
+
+        // ---- 家具・ARセットアップ ----
         function setupWebXR() {
             let camera, scene, renderer;
             let hitTestSource = null;
@@ -1054,24 +1036,17 @@
             let reticle;
             const loader = new GLTFLoader();
             const preloadedModels = new Map();
-            let floorY = null;
-            let crossMark;
             let scaleSliderContainer, sliderTrack, sliderHandle;
-
             let isDraggingSlider = false;
             let dotAnimationTimer = null;
-
             let helpModal, closeHelpButton;
             let tabButtons, helpPages;
             let confirmDialog, objectPendingDeletion = null;
-
-            // 家具データ（カテゴリとサムネイルパスを追加）
             const furnitureData = [
                 { name: 'イス(生成AI)', file: 'AI_chiar.glb', height: 0.79, category: 'チェア', thumbnail: 'thumbnails/chair_thumb.png' },
                 { name: 'イス(フォトグラメトリ)', file: 'photochair.glb', height: 0.79, category: 'チェア', thumbnail: 'thumbnails/chair_thumb.png' },
                 { name: '本棚', file: 'bookshelf.glb', height: 1.8, category: '収納', thumbnail: 'thumbnails/bookshelf_thumb.png' },
                 { name: '脚立', file: 'stand.glb', height: 1.2, category: 'その他', thumbnail: 'thumbnails/stand_thumb.png' },
-
                 { name: 'ダイニングテーブル', file: 'dining_table.glb', height: 0.75, category: 'テーブル', thumbnail: 'thumbnails/dining_table_thumb.png' },
                 { name: 'ソファ', file: 'sofa.glb', height: 0.7, category: 'ソファ', thumbnail: 'thumbnails/sofa_thumb.png' },
                 { name: 'フロアランプ', file: 'floor_lamp.glb', height: 1.5, category: '照明', thumbnail: 'thumbnails/floor_lamp_thumb.png' },
@@ -1080,68 +1055,28 @@
                 { name: 'シングルベッド', file: 'single_bed.glb', height: 0.6, category: 'ベッド', thumbnail: 'thumbnails/single_bed_thumb.png' },
                 { name: 'テレビボード', file: 'tv_board.glb', height: 0.4, category: '収納', thumbnail: 'thumbnails/tv_board_thumb.png' },
                 { name: 'ローテーブル', file: 'low_table.glb', height: 0.35, category: 'テーブル', thumbnail: 'thumbnails/low_table_thumb.png' },
-                { name: 'コートハンガー', file: 'coat_hanger.glb', height: 1.7, category: 'その他', thumbnail: 'thumbnails/coat_hanger_thumb.png' },
-                // 必要に応じてさらに家具を追加してください
+                { name: 'コートハンガー', file: 'coat_hanger.glb', height: 1.7, category: 'その他', thumbnail: 'thumbnails/coat_hanger_thumb.png' }
             ];
             let currentFurniture = furnitureData[0];
             let previewObject = null;
             const placedObjects = [];
-
-            // --- レイアウト保存・読込機能 ---
-            const LAYOUTS_KEY = 'ar-furniture-layouts';
-
-            // レイアウト管理UI
-            const showLayoutsBtn = document.getElementById('show-layouts-btn');
-            const layoutsModal = document.getElementById('layouts-modal');
-            const closeLayoutsBtn = document.getElementById('close-layouts-btn');
-            const saveLayoutBtn = document.getElementById('save-layout-btn');
-            const layoutNameInput = document.getElementById('layout-name-input');
-            const layoutList = document.getElementById('layout-list');
-
-            showLayoutsBtn.onclick = () => {
-                layoutsModal.style.display = 'block';
-                updateLayoutList();
-            };
-            closeLayoutsBtn.onclick = () => {
-                layoutsModal.style.display = 'none';
-            };
-            saveLayoutBtn.onclick = () => {
-                const name = layoutNameInput.value.trim();
-                if (!name) return alert('レイアウト名を入力してください。');
+            // 鑑賞/編集モード制御
+            let mode = "edit"; // "edit" or "view"
+            function setMode(newMode) {
+                mode = newMode;
+                document.getElementById('save-layout-btn').style.display = (mode === "view") ? "block" : "none";
+            }
+            setMode("edit");
+            // モード切り替えボタンのイベントでsetMode呼ぶなど
+            // ---- レイアウト保存 ----
+            document.getElementById('save-layout-btn').onclick = function() {
+                const name = prompt('レイアウト名を入力してください');
+                if (!name) return;
                 const layouts = JSON.parse(localStorage.getItem(LAYOUTS_KEY) || '{}');
                 layouts[name] = serializeCurrentLayout();
                 localStorage.setItem(LAYOUTS_KEY, JSON.stringify(layouts));
-                updateLayoutList();
-                layoutNameInput.value = '';
+                alert('レイアウトを保存しました');
             };
-
-            function updateLayoutList() {
-                const layouts = JSON.parse(localStorage.getItem(LAYOUTS_KEY) || '{}');
-                layoutList.innerHTML = '';
-                Object.keys(layouts).forEach(name => {
-                    const li = document.createElement('li');
-                    // 読込ボタン
-                    const loadBtn = document.createElement('button');
-                    loadBtn.textContent = name;
-                    loadBtn.className = 'layout-load-btn';
-                    loadBtn.onclick = () => loadLayout(name);
-                    li.appendChild(loadBtn);
-                    // 削除ボタン
-                    const delBtn = document.createElement('button');
-                    delBtn.textContent = '削除';
-                    delBtn.className = 'layout-del-btn';
-                    delBtn.onclick = () => {
-                        if (confirm(`「${name}」を削除しますか？`)) {
-                            delete layouts[name];
-                            localStorage.setItem(LAYOUTS_KEY, JSON.stringify(layouts));
-                            updateLayoutList();
-                        }
-                    };
-                    li.appendChild(delBtn);
-                    layoutList.appendChild(li);
-                });
-            }
-
             function serializeCurrentLayout() {
                 return placedObjects.map(obj => ({
                     name: obj.userData.name,
@@ -1156,15 +1091,10 @@
                     scale: obj.scale.toArray()
                 }));
             }
-
             function loadLayout(name) {
-                if (!confirm('現在の配置を上書きしますか？')) return;
-                // 現在の家具を全削除
-                placedObjects.forEach(obj => {
-                    scene.remove(obj);
-                });
+                // 全削除
+                placedObjects.forEach(obj => { scene.remove(obj); });
                 placedObjects.length = 0;
-                // 保存データから復元
                 const layouts = JSON.parse(localStorage.getItem(LAYOUTS_KEY) || '{}');
                 const layout = layouts[name];
                 if (!layout) return;
@@ -1174,7 +1104,6 @@
                         loader.load(furniture.file, gltf => {
                             const model = gltf.scene;
                             model.position.fromArray(item.position);
-                            // 回転
                             if (item.rotation && item.rotation.length >= 3) {
                                 model.rotation.set(item.rotation[0], item.rotation[1], item.rotation[2], item.rotation[3] || "XYZ");
                             }
@@ -1185,7 +1114,6 @@
                         });
                     }
                 });
-                layoutsModal.style.display = 'none';
             }
             // --- end レイアウト保存・読込 ---
 
@@ -2312,3 +2240,4 @@
     </script>
 </body>
 </html>
+
